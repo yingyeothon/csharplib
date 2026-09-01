@@ -1,0 +1,338 @@
+  Backoff.Create() : IBackoff
+  Backoff.Create(BackoffOptions) : IBackoff
+  BackoffOptions.Factor : Double get set
+  BackoffOptions.InitialMs : Double get set
+  BackoffOptions.Jitter : Double get set
+  BackoffOptions.MaxAttempts : Nullable<Int32> get set
+  BackoffOptions.MaxMs : Double get set
+  BackoffOptions.Random : Func<Double> get set
+  BackoffOptions.ctor()
+  Capabilities.AllowsScope(SayScope) : Boolean
+  Capabilities.Debug : Nullable<Boolean> get
+  Capabilities.Event : Nullable<Boolean> get
+  Capabilities.Party : Nullable<Boolean> get
+  Capabilities.Pos : Nullable<Boolean> get
+  Capabilities.Say : IReadOnlyList<String> get
+  Capabilities.ctor(Nullable<Boolean>, IReadOnlyList<String>, Nullable<Boolean>, Nullable<Boolean>, Nullable<Boolean>)
+  CloseCodes.Classify(Int32, GatewayChannelKind) : CloseDisposition
+  CloseDisposition.Kind : CloseDispositionKind get
+  CloseDisposition.Reason : String get
+  CloseDisposition.ctor(CloseDispositionKind, String)
+  CloseDispositionKind.Aborted : CloseDispositionKind
+  CloseDispositionKind.ClientBug : CloseDispositionKind
+  CloseDispositionKind.Finished : CloseDispositionKind
+  CloseDispositionKind.Reconnect : CloseDispositionKind
+  CloseDispositionKind.Stop : CloseDispositionKind
+  CloseDispositionKind.value__ : Int32
+  DisconnectedEvent.Code : Int32 get
+  DisconnectedEvent.Reason : String get
+  DisconnectedEvent.WillReconnect : Boolean get
+  DisconnectedEvent.ctor(Int32, String, Boolean)
+  EnterFrame.Peer : Peer get
+  EnterFrame.Zone : String get
+  ErrorFrame.Code : String get
+  ErrorFrame.Message : String get
+  EventBroadcastFrame.From : String get
+  EventBroadcastFrame.Name : String get
+  EventBroadcastFrame.Payload : JsonValue get
+  EventBroadcastFrame.Scope : String get
+  EventBroadcastFrame.To : String get
+  FrameTypes.Enter : String
+  FrameTypes.Error : String
+  FrameTypes.Event : String
+  FrameTypes.Hello : String
+  FrameTypes.Leave : String
+  FrameTypes.Party : String
+  FrameTypes.PartyAccept : String
+  FrameTypes.PartyCreate : String
+  FrameTypes.PartyDecline : String
+  FrameTypes.PartyDeclined : String
+  FrameTypes.PartyInvite : String
+  FrameTypes.PartyLeave : String
+  FrameTypes.PartyList : String
+  FrameTypes.Ping : String
+  FrameTypes.Pong : String
+  FrameTypes.Pos : String
+  FrameTypes.ReservedGameFrameTypes : IReadOnlyList<String>
+  FrameTypes.Say : String
+  FrameTypes.Snapshot : String
+  GameEndedEvent.Code : Int32 get
+  GameEndedEvent.Reason : String get
+  GameEndedEvent.ctor(Int32, String)
+  GatewayChannelKind.Lobby : GatewayChannelKind
+  GatewayChannelKind.Q : GatewayChannelKind
+  GatewayChannelKind.value__ : Int32
+  GatewayClientOptions.Backoff : BackoffOptions get set
+  GatewayClientOptions.ChannelId : String get set
+  GatewayClientOptions.Clock : IClock get set
+  GatewayClientOptions.Logger : ILogger get set
+  GatewayClientOptions.MaxHandshakeFailures : Int32 get set
+  GatewayClientOptions.Token : String get set
+  GatewayClientOptions.Url : String get set
+  GatewayClientOptions.WebSocketFactory : IWebSocketFactory get set
+  GatewayClientState.Closed : GatewayClientState
+  GatewayClientState.Connected : GatewayClientState
+  GatewayClientState.Connecting : GatewayClientState
+  GatewayClientState.Idle : GatewayClientState
+  GatewayClientState.Reconnecting : GatewayClientState
+  GatewayClientState.value__ : Int32
+  GatewayCloseCode.Aborted : Int32
+  GatewayCloseCode.ChannelGone : Int32
+  GatewayCloseCode.Idle : Int32
+  GatewayCloseCode.Local : Int32
+  GatewayCloseCode.Policy : Int32
+  GatewayCloseCode.Replaced : Int32
+  GatewayErrorCode.AlreadyInParty : String
+  GatewayErrorCode.BadMessage : String
+  GatewayErrorCode.BadScope : String
+  GatewayErrorCode.BadZone : String
+  GatewayErrorCode.CapabilityOff : String
+  GatewayErrorCode.MoveTooFar : String
+  GatewayErrorCode.NoParty : String
+  GatewayErrorCode.NotInvited : String
+  GatewayErrorCode.NotLeader : String
+  GatewayErrorCode.PartyFull : String
+  GatewayErrorCode.RateLimited : String
+  GatewayErrorCode.ReservedType : String
+  GatewayErrorCode.TooLong : String
+  GatewayErrorCode.Unavailable : String
+  GatewayErrorCode.UnknownParty : String
+  GatewayErrorCode.UnknownUser : String
+  GatewayGameClient.Create(GatewayGameClientOptions) : IGatewayGameClient
+  GatewayGameClientOptions.GameId : String get set
+  GatewayGameClientOptions.ctor()
+  GatewayLobbyClient.Create(GatewayLobbyClientOptions) : IGatewayLobbyClient
+  GatewayLobbyClientOptions.HelloTimeoutMillis : Double get set
+  GatewayLobbyClientOptions.HttpFetcher : IHttpFetcher get set
+  GatewayLobbyClientOptions.ctor()
+  GatewayStoppedException.ctor(String)
+  GatewayUrl.Build(String, String, String?) : String
+  Hello.Capabilities : Capabilities get
+  Hello.ConnectionId : String get
+  Hello.MapUrl : String get
+  Hello.PartyId : String get
+  Hello.Raw : JsonValue get
+  Hello.Tick : Int32 get
+  Hello.UserId : String get
+  Hello.Zone : String get
+  Hello.ctor(String, String, Int32, String, String, String, Capabilities, JsonValue)
+  HttpFetchResult.Ok : Boolean get
+  HttpFetchResult.Status : Int32 get
+  HttpFetchResult.Text : String get
+  HttpFetchResult.ctor(Boolean, Int32, String)
+  HttpFetcher.Default : IHttpFetcher get
+  IBackoff.Attempts : Int32 get
+  IBackoff.Next() : Nullable<Double>
+  IBackoff.Reset() : Void
+  IClock.NowMillis : Double get
+  IGatewayGameClient.Close() : Void
+  IGatewayGameClient.ConnectAsync() : Task
+  IGatewayGameClient.Send(JsonValue) : Void
+  IGatewayGameClient.State : GatewayClientState get
+  IGatewayGameClient.event Aborted : Action<GameEndedEvent>
+  IGatewayGameClient.event Connected : Action
+  IGatewayGameClient.event Disconnected : Action<DisconnectedEvent>
+  IGatewayGameClient.event Finished : Action<GameEndedEvent>
+  IGatewayGameClient.event Frame : Action<JsonValue>
+  IGatewayGameClient.event ProtocolError : Action<ProtocolErrorEvent>
+  IGatewayGameClient.event Reconnecting : Action<ReconnectingEvent>
+  IGatewayGameClient.event Refused : Action<ErrorFrame>
+  IGatewayGameClient.event Stopped : Action<StoppedEvent>
+  IGatewayLobbyClient.Capabilities : Capabilities get
+  IGatewayLobbyClient.Close() : Void
+  IGatewayLobbyClient.ConnectAsync() : Task<Hello>
+  IGatewayLobbyClient.Event(SayScope, String, JsonValue, String?) : Void
+  IGatewayLobbyClient.Hello : Hello get
+  IGatewayLobbyClient.MapAsync(CancellationToken?) : Task<JsonValue>
+  IGatewayLobbyClient.Party : IPartyCommands get
+  IGatewayLobbyClient.PartyId : String get
+  IGatewayLobbyClient.Peers : IPeerMap get
+  IGatewayLobbyClient.Ping() : Void
+  IGatewayLobbyClient.Pos(String, Double, Double, String?) : Void
+  IGatewayLobbyClient.Roster : PartyFrame get
+  IGatewayLobbyClient.Say(SayScope, String, String?) : Void
+  IGatewayLobbyClient.Send(JsonValue) : Void
+  IGatewayLobbyClient.State : GatewayClientState get
+  IGatewayLobbyClient.event Connected : Action<Hello>
+  IGatewayLobbyClient.event Disconnected : Action<DisconnectedEvent>
+  IGatewayLobbyClient.event EventReceived : Action<EventBroadcastFrame>
+  IGatewayLobbyClient.event Frame : Action<LobbyServerFrame>
+  IGatewayLobbyClient.event PartyChanged : Action<PartyFrame>
+  IGatewayLobbyClient.event PartyDeclined : Action<PartyDeclinedFrame>
+  IGatewayLobbyClient.event PartyInvited : Action<PartyInviteFrame>
+  IGatewayLobbyClient.event PeerEnter : Action<Peer>
+  IGatewayLobbyClient.event PeerLeave : Action<String>
+  IGatewayLobbyClient.event PeerMove : Action<IReadOnlyList<Peer>>
+  IGatewayLobbyClient.event Pong : Action
+  IGatewayLobbyClient.event ProtocolError : Action<ProtocolErrorEvent>
+  IGatewayLobbyClient.event Reconnecting : Action<ReconnectingEvent>
+  IGatewayLobbyClient.event Refused : Action<ErrorFrame>
+  IGatewayLobbyClient.event Said : Action<SayBroadcastFrame>
+  IGatewayLobbyClient.event Snapshot : Action<SnapshotFrame>
+  IGatewayLobbyClient.event Stopped : Action<StoppedEvent>
+  IGatewayPollable.Poll() : Void
+  IHttpFetcher.GetAsync(String, CancellationToken) : Task<HttpFetchResult>
+  IPartyCommands.Accept(String) : Void
+  IPartyCommands.Create() : Void
+  IPartyCommands.Decline(String) : Void
+  IPartyCommands.Invite(String) : Void
+  IPartyCommands.Leave() : Void
+  IPartyCommands.List() : Void
+  IPeerMap.All() : IReadOnlyList<Peer>
+  IPeerMap.Apply(LobbyServerFrame) : PeerChange
+  IPeerMap.Get(String) : Peer
+  IPeerMap.Reset() : Void
+  IPeerMap.Zone : String get
+  IWebSocket.Close(Int32, String) : Void
+  IWebSocket.SendText(String) : Void
+  IWebSocket.Start() : Void
+  IWebSocketEventSink.Post(SocketEvent) : Void
+  IWebSocketFactory.Create(WebSocketCreateContext) : IWebSocket
+  LeaveFrame.UserId : String get
+  LeaveFrame.Zone : String get
+  LobbyFrames.Read(JsonValue) : LobbyServerFrame
+  LobbyServerFrame.Raw : JsonValue get
+  LobbyServerFrame.Type : String get
+  MapFetchException.Status : Int32 get
+  MapFetchException.ctor(Int32)
+  PartyDeclinedFrame.PartyId : String get
+  PartyDeclinedFrame.UserId : String get
+  PartyFrame.Invited : IReadOnlyList<String> get
+  PartyFrame.LeaderId : String get
+  PartyFrame.Max : Int32 get
+  PartyFrame.Members : IReadOnlyList<PartyMember> get
+  PartyFrame.PartyId : String get
+  PartyInviteFrame.From : String get
+  PartyInviteFrame.PartyId : String get
+  PartyMember.Online : Boolean get
+  PartyMember.UserId : String get
+  Peer.Dir : String get
+  Peer.UserId : String get
+  Peer.X : Double get
+  Peer.Y : Double get
+  Peer.ctor(String, Double, Double, String)
+  PeerChange.Kind : PeerChangeKind get
+  PeerChange.Peers : IReadOnlyList<Peer> get
+  PeerChange.UserId : String get
+  PeerChange.Zone : String get
+  PeerChangeKind.Enter : PeerChangeKind
+  PeerChangeKind.Leave : PeerChangeKind
+  PeerChangeKind.Move : PeerChangeKind
+  PeerChangeKind.Snapshot : PeerChangeKind
+  PeerChangeKind.value__ : Int32
+  PeerMap.Create(PeerMapOptions) : IPeerMap
+  PeerMapOptions.SelfUserId : String get set
+  PeerMapOptions.ctor()
+  PosBroadcastFrame.Peers : IReadOnlyList<Peer> get
+  PosBroadcastFrame.Zone : String get
+  ProtocolErrorEvent.Message : String get
+  ProtocolErrorEvent.ctor(String)
+  ReconnectingEvent.Attempt : Int32 get
+  ReconnectingEvent.DelayMillis : Double get
+  ReconnectingEvent.ctor(Int32, Double)
+  SayBroadcastFrame.From : String get
+  SayBroadcastFrame.Scope : String get
+  SayBroadcastFrame.Text : String get
+  SayBroadcastFrame.To : String get
+  SayScope.Party : SayScope
+  SayScope.User : SayScope
+  SayScope.Zone : SayScope
+  SayScope.value__ : Int32
+  SayScopes.Party : String
+  SayScopes.ToWire(SayScope) : String
+  SayScopes.TryParse(String, SayScope&) : Boolean
+  SayScopes.User : String
+  SayScopes.Zone : String
+  SnapshotFrame.Peers : IReadOnlyList<Peer> get
+  SnapshotFrame.Zone : String get
+  SocketEvent.BinaryMessage(IWebSocket) : SocketEvent
+  SocketEvent.Closed(IWebSocket, Int32, String) : SocketEvent
+  SocketEvent.Code : Int32 get
+  SocketEvent.IsText : Boolean get
+  SocketEvent.Kind : SocketEventKind get
+  SocketEvent.Message(IWebSocket, String) : SocketEvent
+  SocketEvent.Opened(IWebSocket, String) : SocketEvent
+  SocketEvent.Protocol : String get
+  SocketEvent.Reason : String get
+  SocketEvent.Source : IWebSocket get
+  SocketEvent.Text : String get
+  SocketEventKind.Closed : SocketEventKind
+  SocketEventKind.Message : SocketEventKind
+  SocketEventKind.Opened : SocketEventKind
+  SocketEventKind.value__ : Int32
+  StoppedEvent.Code : Int32 get
+  StoppedEvent.Kind : CloseDispositionKind get
+  StoppedEvent.Reason : String get
+  StoppedEvent.ctor(CloseDispositionKind, String, Int32)
+  SystemClock.Instance : IClock
+  SystemClock.NowMillis : Double get
+  WebSocketCreateContext.Sink : IWebSocketEventSink get
+  WebSocketCreateContext.SubProtocols : IReadOnlyList<String> get
+  WebSocketCreateContext.Url : String get
+  WebSocketCreateContext.ctor(String, IReadOnlyList<String>, IWebSocketEventSink)
+  WebSocketTransport.Default : IWebSocketFactory get
+class BackoffOptions
+class Capabilities
+class EnterFrame
+class ErrorFrame
+class EventBroadcastFrame
+class GatewayClientOptions
+class GatewayGameClientOptions
+class GatewayLobbyClientOptions
+class GatewayStoppedException
+class Hello
+class LeaveFrame
+class LobbyServerFrame
+class MapFetchException
+class PartyDeclinedFrame
+class PartyFrame
+class PartyInviteFrame
+class PartyMember
+class Peer
+class PeerChange
+class PeerMapOptions
+class PongFrame
+class PosBroadcastFrame
+class SayBroadcastFrame
+class SnapshotFrame
+class SystemClock
+class UnknownServerFrame
+class WebSocketCreateContext
+enum CloseDispositionKind
+enum GatewayChannelKind
+enum GatewayClientState
+enum PeerChangeKind
+enum SayScope
+enum SocketEventKind
+interface IBackoff
+interface IClock
+interface IGatewayGameClient
+interface IGatewayLobbyClient
+interface IGatewayPollable
+interface IHttpFetcher
+interface IPartyCommands
+interface IPeerMap
+interface IWebSocket
+interface IWebSocketEventSink
+interface IWebSocketFactory
+static class Backoff
+static class CloseCodes
+static class FrameTypes
+static class GatewayCloseCode
+static class GatewayErrorCode
+static class GatewayGameClient
+static class GatewayLobbyClient
+static class GatewayUrl
+static class HttpFetcher
+static class LobbyFrames
+static class PeerMap
+static class SayScopes
+static class WebSocketTransport
+struct CloseDisposition
+struct DisconnectedEvent
+struct GameEndedEvent
+struct HttpFetchResult
+struct ProtocolErrorEvent
+struct ReconnectingEvent
+struct SocketEvent
+struct StoppedEvent

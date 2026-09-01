@@ -30,6 +30,7 @@
 dotnet build Yingyeothon.sln -c Release
 dotnet format Yingyeothon.sln --verify-no-changes   # CI gate
 dotnet test  Yingyeothon.sln -c Release
+./scripts/check-coverage.sh                        # per-package floor, line 80 / branch 70
 ./scripts/validate-packages.sh
 ```
 

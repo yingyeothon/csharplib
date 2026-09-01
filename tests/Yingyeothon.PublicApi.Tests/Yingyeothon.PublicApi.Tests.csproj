@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The one test project outside packages/. It is a cross-cutting gate rather than a
+    package's own unit tests: it needs to see all four assemblies at once, and Unity
+    must never import it. Living here is also what keeps scripts/validate-packages.sh
+    and scripts/check-coverage.sh — both of which walk packages/* — from picking it up.
+  -->
+  <PropertyGroup>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <AssemblyName>Yingyeothon.PublicApi.Tests</AssemblyName>
+    <RootNamespace>Yingyeothon.PublicApi.Tests</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <!-- Directory.Build.props turns off default compile items so Runtime/Unity/ can be
+       excluded per package; this project has to declare its own. -->
+  <ItemGroup>
+    <Compile Include="*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../packages/com.yingyeothon.codec/Yingyeothon.Codec.csproj" />
+    <ProjectReference Include="../../packages/com.yingyeothon.logger/Yingyeothon.Logger.csproj" />
+    <ProjectReference Include="../../packages/com.yingyeothon.event-broker/Yingyeothon.EventBroker.csproj" />
+    <ProjectReference Include="../../packages/com.yingyeothon.gamebase-client/Yingyeothon.Gamebase.Client.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Approved/*.approved.txt" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="NUnit" />
+    <PackageReference Include="NUnit3TestAdapter" />
+  </ItemGroup>
+
+</Project>

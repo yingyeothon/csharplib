@@ -21,5 +21,7 @@ jobs:
       - run: dotnet build Yingyeothon.sln -c Release --no-restore
       - run: dotnet format Yingyeothon.sln --verify-no-changes --no-restore
       - run: dotnet test Yingyeothon.sln -c Release --no-build
+      - name: Check every package covers itself
+        run: ./scripts/check-coverage.sh
       - name: Check the UPM packages stay importable by Unity
         run: ./scripts/validate-packages.sh

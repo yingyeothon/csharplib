@@ -1,0 +1,11 @@
+  EventBroker.Create() : IEventBroker
+  IEventBroker.FireAsync(TEvent) : Task<Boolean>
+  IEventListenable.Off(Action<TEvent>) : IEventListenable
+  IEventListenable.Off(Func<TEvent, Task>) : IEventListenable
+  IEventListenable.On(Action<TEvent>) : IEventListenable
+  IEventListenable.On(Func<TEvent, Task>) : IEventListenable
+  IEventListenable.Once(Action<TEvent>) : IEventListenable
+  IEventListenable.Once(Func<TEvent, Task>) : IEventListenable
+interface IEventBroker
+interface IEventListenable
+static class EventBroker

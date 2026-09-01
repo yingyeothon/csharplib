@@ -8,3 +8,7 @@ obj/
 *.suo
 .claude/
 TestResults/
+
+# The public-API gate writes the actual surface next to the approved snapshot when
+# they differ; approving it is a rename, so the received file is never committed.
+*.received.txt

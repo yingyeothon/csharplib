@@ -1,0 +1,32 @@
+  ConsoleLogger.Create() : ILogger
+  ConsoleLogger.Create(LogSeverity) : ILogger
+  FilteredLogger.Create(FilteredLoggerOptions) : ILogger
+  FilteredLoggerOptions.Severity : LogSeverity get set
+  FilteredLoggerOptions.Writer : ILogWriter get set
+  FilteredLoggerOptions.ctor()
+  ILogWriter.Debug(String, JsonValue?) : Void
+  ILogWriter.Error(String, JsonValue?) : Void
+  ILogWriter.Info(String, JsonValue?) : Void
+  ILogWriter.Warn(String, JsonValue?) : Void
+  ILogger.IsEnabled(LogSeverity) : Boolean
+  ILogger.Severity : LogSeverity get set
+  LogSeverity.Debug : LogSeverity
+  LogSeverity.Error : LogSeverity
+  LogSeverity.Info : LogSeverity
+  LogSeverity.None : LogSeverity
+  LogSeverity.Warn : LogSeverity
+  LogSeverity.value__ : Int32
+  LogWriters.Combine(ILogWriter[]) : ILogWriter
+  LogWriters.Console : ILogWriter
+  LogWriters.Format(LogSeverity, String, JsonValue) : String
+  LogWriters.FromAction(Action<LogSeverity, String, JsonValue>) : ILogWriter
+  LogWriters.Null : ILogWriter
+  NullLogger.Instance : ILogger
+class FilteredLoggerOptions
+enum LogSeverity
+interface ILogWriter
+interface ILogger
+static class ConsoleLogger
+static class FilteredLogger
+static class LogWriters
+static class NullLogger

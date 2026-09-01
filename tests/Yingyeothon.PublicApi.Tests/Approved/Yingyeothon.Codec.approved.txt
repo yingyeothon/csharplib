@@ -1,0 +1,106 @@
+  ICodec<TWire>.Decode(TWire) : JsonValue
+  ICodec<TWire>.Encode(JsonValue) : TWire
+  Json.Array(JsonValue[]) : JsonValue
+  Json.ArrayOfStrings(IEnumerable<String>) : JsonValue
+  Json.MaxBigLength : Int32
+  Json.MaxDepth : Int32
+  Json.MaxLength : Int32
+  Json.Object() : JsonObjectBuilder
+  Json.Parse(String) : JsonValue
+  Json.ParseBig(String, Int32) : JsonValue
+  Json.Stringify(JsonValue) : String
+  Json.TryParse(String, JsonValue&) : Boolean
+  Json.TryParse(String, JsonValue&, JsonParseFailure&) : Boolean
+  Json.TryParseBig(String, Int32, JsonValue&, JsonParseFailure&) : Boolean
+  JsonCodec.Decode(String) : JsonValue
+  JsonCodec.Encode(JsonValue) : String
+  JsonCodec.Instance : ICodec<String>
+  JsonKind.Array : JsonKind
+  JsonKind.Bool : JsonKind
+  JsonKind.Null : JsonKind
+  JsonKind.Number : JsonKind
+  JsonKind.Object : JsonKind
+  JsonKind.String : JsonKind
+  JsonKind.value__ : Int32
+  JsonKindException.Actual : JsonKind get
+  JsonKindException.Expected : JsonKind get
+  JsonKindException.ctor(JsonKind, JsonKind)
+  JsonNumberException.ctor(String)
+  JsonObjectBuilder.Build() : JsonValue
+  JsonObjectBuilder.Set(String, JsonValue) : JsonObjectBuilder
+  JsonObjectBuilder.Set(String, Nullable<Boolean>) : JsonObjectBuilder
+  JsonObjectBuilder.Set(String, Nullable<Double>) : JsonObjectBuilder
+  JsonObjectBuilder.Set(String, String) : JsonObjectBuilder
+  JsonObjectBuilder.SetNull(String) : JsonObjectBuilder
+  JsonObjectBuilder.ctor()
+  JsonParseError.DepthExceeded : JsonParseError
+  JsonParseError.ExpectedColon : JsonParseError
+  JsonParseError.ExpectedCommaOrEnd : JsonParseError
+  JsonParseError.ExpectedExponentDigit : JsonParseError
+  JsonParseError.ExpectedFractionDigit : JsonParseError
+  JsonParseError.ExpectedKey : JsonParseError
+  JsonParseError.ExpectedLiteral : JsonParseError
+  JsonParseError.ExpectedValue : JsonParseError
+  JsonParseError.InputTooLong : JsonParseError
+  JsonParseError.InvalidUnicodeEscape : JsonParseError
+  JsonParseError.None : JsonParseError
+  JsonParseError.NullInput : JsonParseError
+  JsonParseError.NumberOutOfRange : JsonParseError
+  JsonParseError.TrailingContent : JsonParseError
+  JsonParseError.TruncatedUnicodeEscape : JsonParseError
+  JsonParseError.UnescapedControlCharacter : JsonParseError
+  JsonParseError.UnexpectedEndOfInput : JsonParseError
+  JsonParseError.UnknownEscape : JsonParseError
+  JsonParseError.UnterminatedString : JsonParseError
+  JsonParseError.value__ : Int32
+  JsonParseException.Error : JsonParseError get
+  JsonParseException.Failure : JsonParseFailure get
+  JsonParseException.Index : Int32 get
+  JsonParseException.ctor(JsonParseFailure)
+  JsonParseFailure.Equals(JsonParseFailure) : Boolean
+  JsonParseFailure.Equals(Object) : Boolean
+  JsonParseFailure.Error : JsonParseError get
+  JsonParseFailure.GetHashCode() : Int32
+  JsonParseFailure.Index : Int32 get
+  JsonParseFailure.IsFailure : Boolean get
+  JsonParseFailure.ToString() : String
+  JsonParseFailure.ctor(JsonParseError, Int32)
+  JsonValue.Array(IEnumerable<JsonValue>) : JsonValue
+  JsonValue.ArrayOf(JsonValue[]) : JsonValue
+  JsonValue.AsArray() : IReadOnlyList<JsonValue>
+  JsonValue.AsBool() : Boolean
+  JsonValue.AsInt32() : Int32
+  JsonValue.AsNumber() : Double
+  JsonValue.AsObject() : IReadOnlyList<KeyValuePair<String, JsonValue>>
+  JsonValue.AsString() : String
+  JsonValue.Equals(JsonValue) : Boolean
+  JsonValue.Equals(Object) : Boolean
+  JsonValue.GetArrayOrEmpty(String) : IReadOnlyList<JsonValue>
+  JsonValue.GetBool(String) : Nullable<Boolean>
+  JsonValue.GetHashCode() : Int32
+  JsonValue.GetMemberOrNull(String) : JsonValue
+  JsonValue.GetNumber(String) : Nullable<Double>
+  JsonValue.GetString(String) : String
+  JsonValue.IsNull : Boolean get
+  JsonValue.Kind : JsonKind get
+  JsonValue.Null : JsonValue
+  JsonValue.Object(IEnumerable<KeyValuePair<String, JsonValue>>) : JsonValue
+  JsonValue.Of(Boolean) : JsonValue
+  JsonValue.Of(Double) : JsonValue
+  JsonValue.Of(Int32) : JsonValue
+  JsonValue.Of(String) : JsonValue
+  JsonValue.ToString() : String
+  JsonValue.TryGetMember(String, JsonValue&) : Boolean
+  JsonWriter.Write(JsonValue) : String
+class JsonKindException
+class JsonNumberException
+class JsonObjectBuilder
+class JsonParseException
+class JsonValue
+enum JsonKind
+enum JsonParseError
+interface ICodec<TWire>
+static class Json
+static class JsonCodec
+static class JsonWriter
+struct JsonParseFailure
