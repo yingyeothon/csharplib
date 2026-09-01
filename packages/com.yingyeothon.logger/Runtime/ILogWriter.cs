@@ -13,12 +13,16 @@ namespace Yingyeothon.Logger
     /// </remarks>
     public interface ILogWriter
     {
+        /// <summary>Writes at <see cref="LogSeverity.Debug"/>. Log routing facts — ids, codes, counts — never the thing being routed.</summary>
         void Debug(string message, JsonValue? context = null);
 
+        /// <summary>Writes at <see cref="LogSeverity.Info"/>.</summary>
         void Info(string message, JsonValue? context = null);
 
+        /// <summary>Writes at <see cref="LogSeverity.Warn"/>.</summary>
         void Warn(string message, JsonValue? context = null);
 
+        /// <summary>Writes at <see cref="LogSeverity.Error"/>.</summary>
         void Error(string message, JsonValue? context = null);
     }
 

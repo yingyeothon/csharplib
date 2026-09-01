@@ -3,10 +3,15 @@ namespace Yingyeothon.Gamebase.Client
     /// <summary>What a client should do about a close.</summary>
     public enum CloseDispositionKind
     {
+        /// <summary>Transient. Retry with backoff.</summary>
         Reconnect,
+        /// <summary>Terminal, and not the client's fault. Do not retry.</summary>
         Stop,
+        /// <summary>A <c>q</c> run died. A retry needs a new <c>gameId</c>.</summary>
         Aborted,
+        /// <summary>A <c>q</c> run ended normally and the game dropped the connection.</summary>
         Finished,
+        /// <summary>Terminal, and the client caused it. Retrying repeats it.</summary>
         ClientBug,
     }
 
@@ -19,8 +24,10 @@ namespace Yingyeothon.Gamebase.Client
             Reason = reason;
         }
 
+        /// <summary>What the client should do about it.</summary>
         public CloseDispositionKind Kind { get; }
 
+        /// <summary>A fixed description of the code. Never text the peer chose.</summary>
         public string Reason { get; }
     }
 

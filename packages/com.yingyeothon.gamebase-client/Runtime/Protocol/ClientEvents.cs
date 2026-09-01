@@ -5,10 +5,15 @@ namespace Yingyeothon.Gamebase.Client
     /// <summary>Where a client's connection currently is.</summary>
     public enum GatewayClientState
     {
+        /// <summary>Created, but <c>ConnectAsync</c> has not been called.</summary>
         Idle,
+        /// <summary>A socket is opening, or the lobby is waiting for <c>hello</c>.</summary>
         Connecting,
+        /// <summary>Usable. On a lobby channel that means <c>hello</c> has arrived.</summary>
         Connected,
+        /// <summary>The connection dropped and a retry is scheduled.</summary>
         Reconnecting,
+        /// <summary>Terminal. A client that reached this cannot be reissued.</summary>
         Closed,
     }
 
@@ -22,8 +27,10 @@ namespace Yingyeothon.Gamebase.Client
             WillReconnect = willReconnect;
         }
 
+        /// <summary>The WebSocket close code. See <see cref="GatewayCloseCode"/>.</summary>
         public int Code { get; }
 
+        /// <summary>The close reason as the SDK classified it. Never the peer's own text.</summary>
         public string Reason { get; }
 
         /// <summary>Whether a reconnect is already scheduled.</summary>
@@ -39,8 +46,10 @@ namespace Yingyeothon.Gamebase.Client
             DelayMillis = delayMillis;
         }
 
+        /// <summary>Which consecutive retry this is, counting from one.</summary>
         public int Attempt { get; }
 
+        /// <summary>How long the client will wait before opening the next socket.</summary>
         public double DelayMillis { get; }
     }
 
@@ -54,10 +63,13 @@ namespace Yingyeothon.Gamebase.Client
             Code = code;
         }
 
+        /// <summary>Why the connection will not be retried.</summary>
         public CloseDispositionKind Kind { get; }
 
+        /// <summary>Why it stopped, as the SDK classified it.</summary>
         public string Reason { get; }
 
+        /// <summary>The close code that ended it.</summary>
         public int Code { get; }
     }
 
@@ -69,6 +81,7 @@ namespace Yingyeothon.Gamebase.Client
             Message = message;
         }
 
+        /// <summary>A refusal code and an offset, or a capped frame type. Never quotes the frame.</summary>
         public string Message { get; }
     }
 
@@ -81,8 +94,10 @@ namespace Yingyeothon.Gamebase.Client
             Reason = reason;
         }
 
+        /// <summary>The close code: 1000 for a normal finish, 4001 for an abort.</summary>
         public int Code { get; }
 
+        /// <summary>How the run ended, as the SDK classified it.</summary>
         public string Reason { get; }
     }
 
@@ -94,6 +109,7 @@ namespace Yingyeothon.Gamebase.Client
     /// </remarks>
     public interface IGatewayPollable
     {
+        /// <summary>Drains what arrived, advances the timers, and raises the handlers — on the calling thread.</summary>
         void Poll();
     }
 

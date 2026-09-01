@@ -20,10 +20,11 @@ staged=$(git diff --cached --name-only --diff-filter=ACMR)
 #        clone disagrees with.
 # artifacts|bin|obj|Library|Temp|Logs: build output. A bin/ or obj/ inside a package
 #        folder becomes Unity project assets (scripts/validate-packages.sh).
-# .received.txt: the public-API gate's actual-surface dump; approving is a rename.
+# .received.*: the public-API and API-reference gates' actual output; approving is
+#        a rename, so a received file is never committed.
 # .env*/.envrc/local/: this repo needs no credentials, so one of these is a mistake.
 bad=$(printf '%s\n' "$staged" | grep -a -E \
-  '\.meta$|\.received\.txt$|(^|/)(artifacts|bin|obj|Library|Temp|Logs|UserSettings|Builds)/|(^|/)\.env(\.|$)|(^|/)\.envrc$|^local/' \
+  '\.meta$|\.received\.[a-z]+$|(^|/)(artifacts|bin|obj|Library|Temp|Logs|UserSettings|Builds)/|(^|/)\.env(\.|$)|(^|/)\.envrc$|^local/' \
   | grep -a -vE '\.env\.example$' || true)
 if [ -n "$bad" ]; then
   echo "pre-commit: refusing paths that must never be tracked:" >&2

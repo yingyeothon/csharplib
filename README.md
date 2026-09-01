@@ -1,12 +1,39 @@
 # csharplib
 
-C# reimplementations of the [tslib](https://github.com/yingyeothon/tslib) libraries a
-**game client** needs, built to a spec Unity can consume: `netstandard2.0` +
-`netstandard2.1`, C# 9, no reflection, no third-party dependencies, and no engine
-references in any Runtime assembly.
+The client libraries for the **yyt platform**: point them at the channels you
+provisioned in the [yyt console](https://console.yyt.life/ui/) and a Unity game is
+talking to the realtime gateway — positions, chat, parties, and a dungeon run against
+your own game actor.
 
-tslib has twenty packages, but most of them are AWS Lambda, Redis or Node-socket
-server code that cannot run on a client at all. These four are the ones that can.
+Built to a spec Unity can consume: `netstandard2.0` + `netstandard2.1`, C# 9, no
+reflection, no third-party dependencies, and no engine references in any Runtime
+assembly, so Mono and IL2CPP both compile it.
+
+```csharp
+var lobby = GatewayLobbyClient.Create(new GatewayLobbyClientOptions
+{
+    Url = "wss://gw.yyt.life",          // the channel's wsUrl, origin only
+    ChannelId = "lobby_0123456789ab",   // from the console
+    Token = channelJwt,                 // from your auth channel
+});
+
+Hello hello = await lobby.ConnectAsync();
+lobby.Pos(hello.Zone, x, y, "n");
+void Update() => lobby.Poll();          // or nothing happens
+```
+
+## Documentation
+
+**[Start here](docs/README.md)** — the guide is written to be enough on its own.
+
+| | |
+| --- | --- |
+| [Getting started](docs/getting-started.md) | empty Unity project to a connected, moving client |
+| [Console and options](docs/console-and-options.md) | what the console hands you, and every option |
+| [Authentication](docs/authentication.md) | how a client gets its channel JWT |
+| [Lobby](docs/lobby.md) / [Dungeon](docs/dungeon.md) | the two channel kinds, feature by feature |
+| [Errors](docs/errors.md) / [Troubleshooting](docs/troubleshooting.md) | every refusal, close code and symptom |
+| [API reference](docs/api/) | generated from the assemblies, gated in CI |
 
 ## Packages
 
@@ -28,6 +55,13 @@ graph LR
 `JsonValue` so a writer can render it without reflection, which IL2CPP's managed
 stripper would otherwise break.
 
+## Ported from tslib
+
+These four are C# reimplementations of the
+[tslib](https://github.com/yingyeothon/tslib) packages a game client can use. tslib has
+twenty; most are AWS Lambda, Redis or Node-socket server code that cannot run on a
+client at all.
+
 ## Not ported, and why
 
 `repository` (+ redis/s3/dynamodb), `actor-system` (+ redis/lambda), `lambda-gamebase`,
@@ -43,12 +77,15 @@ In Unity, _Window → Package Manager → Add package from git URL_. A git-URL p
 cannot resolve its own dependencies, so add each one it needs:
 
 ```
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.codec
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.logger
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.gamebase-client
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.codec#v0.1.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.logger#v0.1.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.gamebase-client#v0.1.0
 ```
 
-Unity generates the `.meta` files on import; they are not committed here.
+`com.yingyeothon.event-broker` is independent of the other three; add it the same way if
+you want it. Pin a tag rather than tracking `main`. Unity generates the `.meta` files on
+import; they are not committed here. Each package ships importable
+`Samples~`. [docs/unity.md](docs/unity.md) has the details.
 
 ## Development
 

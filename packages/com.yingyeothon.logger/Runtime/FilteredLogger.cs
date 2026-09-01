@@ -16,6 +16,7 @@ namespace Yingyeothon.Logger
     /// <summary>A logger that forwards to a writer only at or above its severity.</summary>
     public static class FilteredLogger
     {
+        /// <summary>Creates a logger that forwards to the option's writer above its threshold.</summary>
         public static ILogger Create(FilteredLoggerOptions options)
         {
             if (options == null)

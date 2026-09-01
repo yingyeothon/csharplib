@@ -72,10 +72,13 @@ namespace Yingyeothon.Codec
         /// <summary>Which of the six JSON kinds this value is.</summary>
         public JsonKind Kind { get; }
 
+        /// <summary>Whether this is JSON <c>null</c>. A C# null reference means the field was absent instead.</summary>
         public bool IsNull => Kind == JsonKind.Null;
 
+        /// <summary>A boolean value.</summary>
         public static JsonValue Of(bool value) => value ? TrueValue : FalseValue;
 
+        /// <summary>A number. Every number is a <c>double</c>; past 2^53 integers lose precision.</summary>
         public static JsonValue Of(double value)
         {
             if (double.IsNaN(value) || double.IsInfinity(value))
@@ -86,8 +89,10 @@ namespace Yingyeothon.Codec
             return new JsonValue(value);
         }
 
+        /// <summary>A number.</summary>
         public static JsonValue Of(int value) => new JsonValue(value);
 
+        /// <summary>A string value.</summary>
         public static JsonValue Of(string value)
         {
             if (value == null)
@@ -159,12 +164,14 @@ namespace Yingyeothon.Codec
 
         // ---- readers -------------------------------------------------------
 
+        /// <summary>The boolean, or throws <see cref="JsonKindException"/>.</summary>
         public bool AsBool()
         {
             Require(JsonKind.Bool);
             return _bool;
         }
 
+        /// <summary>The number, or throws <see cref="JsonKindException"/>.</summary>
         public double AsNumber()
         {
             Require(JsonKind.Number);
@@ -182,6 +189,7 @@ namespace Yingyeothon.Codec
         /// here and no reader could give it back. A wire field that needs more range
         /// than that has to arrive as a string.
         /// </remarks>
+        /// <summary>The number as an <c>int</c>, or throws <see cref="JsonNumberException"/> if it does not fit.</summary>
         public int AsInt32()
         {
             var number = AsNumber();
@@ -196,12 +204,14 @@ namespace Yingyeothon.Codec
             return (int)number;
         }
 
+        /// <summary>The string, or throws <see cref="JsonKindException"/>.</summary>
         public string AsString()
         {
             Require(JsonKind.String);
             return _string!;
         }
 
+        /// <summary>The array, or throws <see cref="JsonKindException"/>.</summary>
         public IReadOnlyList<JsonValue> AsArray()
         {
             Require(JsonKind.Array);

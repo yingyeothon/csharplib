@@ -6,6 +6,8 @@ two things no reflection-based serializer gives you on IL2CPP: a value model tha
 tells "the field is absent" apart from "the field is null", and a passthrough that
 leaves a game's own payload exactly as it arrived.
 
+Every frame and payload on the gateway API is a `JsonValue`, so this package is on the path whatever you build: [the guide](../../docs/README.md).
+
 ## Install
 
 Unity Package Manager, _Add package from git URL_:
@@ -120,3 +122,8 @@ separate, deliberate way to write a JSON null.
 - Numbers are always read and written with `CultureInfo.InvariantCulture`. A
   comma-decimal locale would otherwise put `1,5` on the wire, and the gateway drops
   that whole frame as `bad_message` without telling the client.
+
+## Samples
+
+One importable sample ships with this package: _Package Manager → the package →
+Samples → Import_.

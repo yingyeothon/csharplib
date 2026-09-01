@@ -3,6 +3,8 @@
 A type-safe event broker with asynchronous handlers, dispatched sequentially in
 registration order.
 
+Independent of the other three packages and of the gateway; see [the guide](../../docs/README.md) for what the rest of this repository is for.
+
 ## Install
 
 ```
@@ -52,3 +54,8 @@ tslib keys handlers by a name in a TypeScript event map. C# has no mapped types,
 a string-keyed broker would force `object` payloads and a cast per dispatch, so the
 **payload type is the key**: `On<PlayerDied>` registers for the event that carries a
 `PlayerDied`. Typos become compile errors instead of silently dead handlers.
+
+## Samples
+
+One importable sample ships with this package: _Package Manager → the package →
+Samples → Import_.

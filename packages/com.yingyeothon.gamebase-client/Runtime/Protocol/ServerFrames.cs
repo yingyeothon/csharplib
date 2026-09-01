@@ -12,6 +12,7 @@ namespace Yingyeothon.Gamebase.Client
             Raw = raw;
         }
 
+        /// <summary>The frame's <c>type</c> field, as it arrived.</summary>
         public string Type { get; }
 
         /// <summary>The frame as received, after party normalisation.</summary>
@@ -28,8 +29,10 @@ namespace Yingyeothon.Gamebase.Client
             Peers = peers;
         }
 
+        /// <summary>The zone this snapshot describes. It replaces whatever the peer map held.</summary>
         public string Zone { get; }
 
+        /// <summary>Every retained peer in the zone, including the receiver's own entry.</summary>
         public IReadOnlyList<Peer> Peers { get; }
     }
 
@@ -43,8 +46,10 @@ namespace Yingyeothon.Gamebase.Client
             Peer = peer;
         }
 
+        /// <summary>The zone the peer entered.</summary>
         public string Zone { get; }
 
+        /// <summary>The peer that became visible.</summary>
         public Peer Peer { get; }
     }
 
@@ -58,8 +63,10 @@ namespace Yingyeothon.Gamebase.Client
             UserId = userId;
         }
 
+        /// <summary>The zone the peer left.</summary>
         public string Zone { get; }
 
+        /// <summary>The peer that stopped being visible.</summary>
         public string UserId { get; }
     }
 
@@ -73,8 +80,10 @@ namespace Yingyeothon.Gamebase.Client
             Peers = peers;
         }
 
+        /// <summary>The zone these positions belong to.</summary>
         public string Zone { get; }
 
+        /// <summary>Only the peers that moved this tick, including the receiver's own entry.</summary>
         public IReadOnlyList<Peer> Peers { get; }
     }
 
@@ -90,13 +99,16 @@ namespace Yingyeothon.Gamebase.Client
             Text = text;
         }
 
+        /// <summary>The sender's <c>userId</c>.</summary>
         public string From { get; }
 
         /// <summary>The wire scope. Unknown values stay readable rather than being dropped.</summary>
         public string Scope { get; }
 
+        /// <summary>The addressee, on a whisper.</summary>
         public string? To { get; }
 
+        /// <summary>The message. Never log it: it is whatever the peer typed.</summary>
         public string Text { get; }
     }
 
@@ -113,12 +125,16 @@ namespace Yingyeothon.Gamebase.Client
             Payload = payload;
         }
 
+        /// <summary>The sender's <c>userId</c>.</summary>
         public string From { get; }
 
+        /// <summary>The wire scope: <c>zone</c>, <c>party</c> or <c>user</c>.</summary>
         public string Scope { get; }
 
+        /// <summary>The addressee, when the event was sent to one user.</summary>
         public string? To { get; }
 
+        /// <summary>The game-defined event name.</summary>
         public string Name { get; }
 
         /// <summary>The game's own payload, untouched. Null when the field was absent.</summary>
@@ -134,8 +150,10 @@ namespace Yingyeothon.Gamebase.Client
             Online = online;
         }
 
+        /// <summary>The member's identity.</summary>
         public string UserId { get; }
 
+        /// <summary>False while the member is disconnected; membership survives a drop.</summary>
         public bool Online { get; }
     }
 
@@ -170,12 +188,16 @@ namespace Yingyeothon.Gamebase.Client
         /// <summary>The party, or null when the frame says "you are in no party".</summary>
         public string? PartyId { get; }
 
+        /// <summary>The leader. Normalised to an empty string when the wire omitted it.</summary>
         public string LeaderId { get; }
 
+        /// <summary>The roster.</summary>
         public IReadOnlyList<PartyMember> Members { get; }
 
+        /// <summary>Pending invitations. Normalised to an empty list when the wire omitted it.</summary>
         public IReadOnlyList<string> Invited { get; }
 
+        /// <summary>The channel's party size cap. Normalised to zero when the wire omitted it.</summary>
         public int Max { get; }
     }
 
@@ -189,8 +211,10 @@ namespace Yingyeothon.Gamebase.Client
             From = from;
         }
 
+        /// <summary>The party being offered.</summary>
         public string PartyId { get; }
 
+        /// <summary>Who sent the invitation.</summary>
         public string From { get; }
     }
 
@@ -204,8 +228,10 @@ namespace Yingyeothon.Gamebase.Client
             UserId = userId;
         }
 
+        /// <summary>The party whose invitation was declined.</summary>
         public string PartyId { get; }
 
+        /// <summary>Who declined it.</summary>
         public string UserId { get; }
     }
 
@@ -231,6 +257,7 @@ namespace Yingyeothon.Gamebase.Client
         /// <summary>A documented refusal code; the set is open, so compare against <see cref="GatewayErrorCode"/> constants.</summary>
         public string Code { get; }
 
+        /// <summary>The gateway's explanation. Never log it: it may quote what the client sent.</summary>
         public string Message { get; }
     }
 

@@ -31,6 +31,7 @@ namespace Yingyeothon.Gamebase.Client
         /// </summary>
         public IWebSocket Source { get; }
 
+        /// <summary>What happened.</summary>
         public SocketEventKind Kind { get; }
 
         /// <summary>The subprotocol the server selected. Empty when it selected none.</summary>
@@ -42,19 +43,25 @@ namespace Yingyeothon.Gamebase.Client
         /// <summary>Whether the message was a text frame. A binary one is a protocol error.</summary>
         public bool IsText { get; }
 
+        /// <summary>The close code, on a close.</summary>
         public int Code { get; }
 
+        /// <summary>The close reason, on a close. Never log it: the peer may have chosen it.</summary>
         public string Reason { get; }
 
+        /// <summary>The handshake completed; <paramref name="protocol"/> is the subprotocol the server selected.</summary>
         public static SocketEvent Opened(IWebSocket source, string protocol)
             => new SocketEvent(source, SocketEventKind.Opened, protocol ?? string.Empty, null, false, 0, string.Empty);
 
+        /// <summary>A text frame arrived.</summary>
         public static SocketEvent Message(IWebSocket source, string text)
             => new SocketEvent(source, SocketEventKind.Message, string.Empty, text, true, 0, string.Empty);
 
+        /// <summary>A binary frame arrived, which is a protocol error on this gateway.</summary>
         public static SocketEvent BinaryMessage(IWebSocket source)
             => new SocketEvent(source, SocketEventKind.Message, string.Empty, null, false, 0, string.Empty);
 
+        /// <summary>The socket closed. Report this exactly once, with the locally requested code when the close was local.</summary>
         public static SocketEvent Closed(IWebSocket source, int code, string? reason)
             => new SocketEvent(source, SocketEventKind.Closed, string.Empty, null, false, code, reason ?? string.Empty);
     }
@@ -67,6 +74,7 @@ namespace Yingyeothon.Gamebase.Client
     /// </remarks>
     public interface IWebSocketEventSink
     {
+        /// <summary>Enqueues one observation. The only thing a transport may do from its own thread.</summary>
         void Post(SocketEvent socketEvent);
     }
 
@@ -93,11 +101,13 @@ namespace Yingyeothon.Gamebase.Client
             Sink = sink;
         }
 
+        /// <summary>The full handshake URL, query string included.</summary>
         public string Url { get; }
 
         /// <summary>Always <c>["bearer", token]</c>. The token never appears anywhere else.</summary>
         public IReadOnlyList<string> SubProtocols { get; }
 
+        /// <summary>Where the socket posts what it observes.</summary>
         public IWebSocketEventSink Sink { get; }
     }
 
@@ -113,6 +123,7 @@ namespace Yingyeothon.Gamebase.Client
     /// </remarks>
     public interface IWebSocketFactory
     {
+        /// <summary>Builds a socket. May throw for input it can reject up front; everything after that must arrive as a close.</summary>
         IWebSocket Create(WebSocketCreateContext context);
     }
 }

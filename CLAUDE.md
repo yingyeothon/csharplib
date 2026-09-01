@@ -10,9 +10,12 @@
   IL2CPP backends both compile it.
 - Source of truth documents:
   - `CONVENTIONS.md` — C# API design rules. Canonical; do not restate or contradict.
-  - `README.md` — package list, dependency graph, what was not ported and why.
+  - `README.md` — what the library is for, the package list and the dependency graph.
+  - `docs/` — the consumer's integration guide, indexed by `docs/README.md`.
+    `docs/api/*.md` is **generated**; fix the XML doc comment, never the file.
   - Each `packages/<name>/README.md` — that package's public API and the deliberate
     differences from its tslib original.
+  - `rules/documentation.md` says which layer owns what. One fact, one owner.
 - The normative wire spec for `gamebase-client` is the gateway's own README and
   `gateway/internal/lobby/protocol.go` in the `service` repository, not tslib.
 
@@ -32,6 +35,7 @@ dotnet format Yingyeothon.sln --verify-no-changes   # CI gate
 dotnet test  Yingyeothon.sln -c Release
 ./scripts/check-coverage.sh                        # per-package floor, line 80 / branch 70
 ./scripts/validate-packages.sh
+./scripts/check-docs.sh                            # links, index, API coverage
 ```
 
 ## Non-Negotiables
@@ -42,6 +46,8 @@ dotnet test  Yingyeothon.sln -c Release
 - Never log a token, a frame body, a payload or a close reason; log ids, codes and
   counts — see `rules/security.md`.
 - New or changed behavior ships with tests — see `rules/testing.md`.
+- A changed public surface updates the package README **and** its XML doc comment; the
+  generated reference is approved by rename — see `rules/documentation.md`.
 - Verify against a real Unity project on Mono and IL2CPP before a release —
   see `rules/manual-verification.md`.
 - Follow the per-task completion ritual in `rules/workflow.md`.

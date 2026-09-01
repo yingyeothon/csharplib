@@ -13,7 +13,7 @@ entry point; `CONVENTIONS.md` at the repo root is the canonical API design docum
 | [manual-verification.md](manual-verification.md) | Confirming a change works in a real consumer, after tests pass |
 | [security.md](security.md) | Touching the wire protocol, auth, or logging |
 | [tooling.md](tooling.md) | Build, format, test, or CI failures |
-| [documentation.md](documentation.md) | Editing any README or public API listing |
+| [documentation.md](documentation.md) | Editing any README, `docs/` page, sample, or public API listing |
 
 ## Maintenance
 

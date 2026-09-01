@@ -3,7 +3,9 @@
 ## Working agreement
 
 - Talk to the user in Korean; write all repository content — code, comments, READMEs,
-  rules, commit messages — in English.
+  `docs/`, rules, commit messages — in English. The audience for `docs/` is a game
+  client developer who may not read Korean, and one language means one owner per
+  sentence.
 - Commit messages are English, imperative, one coherent purpose per commit.
 - Stage intentionally. Never `git add .` while `artifacts/` or `.claude/` exist (they
   are git-ignored — keep them that way).
@@ -32,9 +34,10 @@ dotnet format Yingyeothon.sln --verify-no-changes
 dotnet test  Yingyeothon.sln -c Release
 ./scripts/check-coverage.sh
 ./scripts/validate-packages.sh
+./scripts/check-docs.sh
 ```
 
-`pre-push` runs all five, so this is a way to see the failure early rather than a
+`pre-push` runs all six, so this is a way to see the failure early rather than a
 step anyone can forget.
 
 ## Scope decisions already made

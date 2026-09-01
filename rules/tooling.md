@@ -3,9 +3,9 @@
 ## Order of operations
 
 - `dotnet build` → `dotnet format --verify-no-changes` → `dotnet test` →
-  `scripts/check-coverage.sh` → `scripts/validate-packages.sh`. CI runs exactly that
-  order in its `ci` job; `format` is a hard gate. `pre-push` runs the same five, so a
-  push cannot land red (`SKIP_CI_GATE=1 git push` skips only the build gate, never the
+  `scripts/check-coverage.sh` → `scripts/validate-packages.sh` →
+  `scripts/check-docs.sh`. CI runs exactly that order in its `ci` job; `format` is a
+  hard gate. `pre-push` runs the same six, so a push cannot land red (`SKIP_CI_GATE=1 git push` skips only the build gate, never the
   secret checks).
 - CI has two more jobs because the repo is public: `secrets-scan` (gitleaks over the
   full history) and `tracked-paths` (nothing of a forbidden shape is tracked). They
@@ -37,6 +37,13 @@
 - `tests/Yingyeothon.PublicApi.Tests` is deliberately outside `packages/`: both
   `validate-packages.sh` and `check-coverage.sh` walk `packages/*`, and Unity imports
   anything under a package folder. Being there is what keeps all three honest.
+- `tests/Yingyeothon.Samples.Build` is there for the same reason. It compiles the
+  engine-free half of every `Samples~` folder and carries no tests, so it fails the
+  build when a sample stops matching the API without disturbing the coverage gate.
+- `check-docs.sh` matches a type heading with `grep -F -x`. A prefix match let
+  `## interface IEventBroker` satisfy a lookup for a type that had been renamed to
+  `IEventBrokerRenamed` — found by testing the guard against a change it should have
+  refused, which is the only way a guard gets tested.
 - Test package versions are pinned centrally in `Directory.Packages.props`.
 
 ## Gotchas already hit

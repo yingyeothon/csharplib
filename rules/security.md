@@ -16,6 +16,13 @@ wrong.
   Repeating what is already public is not a disclosure; being the first to publish
   something is. Check `git grep` in `service` before adding a new one, and never add
   a stateful host, database or account name — those live in the private ops repo.
+- `docs/` names `console`, `auth`, `gw`, `d` and `match`.`yyt.life` because the public
+  `service` repo publishes all five (`cli/README.md`, `services/auth/README.md`,
+  `gateway/README.md`, `services/match/README.md`). **`POST /debug/token` and its
+  `x-debug-key` stay out of `docs/`**: they are a dev-only hook, and a consumer document
+  that teaches them invites a game to ship against them.
+- `yyt-platform.md` (untracked, in the parent directory), `service/todo/**` and
+  `service/local/**` are private. Nothing from them belongs here, however useful.
 - The one credential-shaped literal in the tree is the test fixture
   `eyJ.secret-token.sig`, which is three dot-separated words that look like a JWT and
   are not one. The "never logs the token" tests need a literal to search for. Keep it

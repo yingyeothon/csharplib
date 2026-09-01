@@ -39,8 +39,10 @@ namespace Yingyeothon.Gamebase.Client
     /// <summary>Creates <see cref="IBackoff"/> schedules.</summary>
     public static class Backoff
     {
+        /// <summary>A schedule with the default 500 ms, doubling, capped at 15 s, 20% jitter.</summary>
         public static IBackoff Create() => Create(new BackoffOptions());
 
+        /// <summary>A schedule with the given parameters.</summary>
         public static IBackoff Create(BackoffOptions options)
         {
             if (options == null)

@@ -3,6 +3,8 @@
 A minimal structured logger: a severity threshold you can change at runtime, writers
 you can compose, and a context rendered without reflection.
 
+Pass a logger to a gateway client through `GatewayClientOptions.Logger`; [docs/unity.md](../../docs/unity.md#logging-to-the-editor-console) has the Unity wiring.
+
 ## Install
 
 ```
@@ -68,3 +70,8 @@ ILogger logger = FilteredLogger.Create(new FilteredLoggerOptions
 - `consoleWriter` writes to `System.Console`; Unity wiring goes through
   `LogWriters.FromAction`, because a Runtime assembly here declares
   `noEngineReferences`.
+
+## Samples
+
+One importable sample ships with this package: _Package Manager → the package →
+Samples → Import_.

@@ -13,10 +13,13 @@ namespace Yingyeothon.Gamebase.Client
             Text = text;
         }
 
+        /// <summary>Whether the status was a success.</summary>
         public bool Ok { get; }
 
+        /// <summary>The HTTP status code.</summary>
         public int Status { get; }
 
+        /// <summary>The response body. Never log it: the URL came off the wire.</summary>
         public string Text { get; }
     }
 
@@ -28,6 +31,7 @@ namespace Yingyeothon.Gamebase.Client
     /// </remarks>
     public interface IHttpFetcher
     {
+        /// <summary>Fetches a public URL. Bound it: a timeout, a size cap and a small redirect budget.</summary>
         Task<HttpFetchResult> GetAsync(string url, CancellationToken cancellationToken);
     }
 }

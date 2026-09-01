@@ -25,6 +25,8 @@ jobs:
         run: ./scripts/check-coverage.sh
       - name: Check the UPM packages stay importable by Unity
         run: ./scripts/validate-packages.sh
+      - name: Check the docs link, index and cover the public surface
+        run: ./scripts/check-docs.sh
 
   # This repository is public. The local hooks catch a leak before it is committed,
   # but only on a machine that installed them, so the same scan runs here over the
@@ -49,7 +51,7 @@ jobs:
       - name: No .meta, build output or credential-shaped path is tracked
         run: |
           bad=$(git ls-files | grep -a -E \
-            '\.meta$|\.received\.txt$|(^|/)(artifacts|bin|obj|Library|Temp|Logs|UserSettings|Builds)/|(^|/)\.env(\.|$)|(^|/)\.envrc$|^local/' \
+            '\.meta$|\.received\.[a-z]+$|(^|/)(artifacts|bin|obj|Library|Temp|Logs|UserSettings|Builds)/|(^|/)\.env(\.|$)|(^|/)\.envrc$|^local/' \
             | grep -a -vE '\.env\.example$' || true)
           if [ -n "$bad" ]; then echo "tracked paths that must not exist:"; echo "$bad"; exit 1; fi
           echo "tracked paths are clean"

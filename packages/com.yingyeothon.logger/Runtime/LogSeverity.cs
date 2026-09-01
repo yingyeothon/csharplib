@@ -7,10 +7,15 @@ namespace Yingyeothon.Logger
     /// </summary>
     public enum LogSeverity
     {
+        /// <summary>Detail for diagnosis. Never a payload, a token or a frame body, even here.</summary>
         Debug = 100,
+        /// <summary>Normal operation worth recording.</summary>
         Info = 500,
+        /// <summary>Something recoverable went wrong.</summary>
         Warn = 700,
+        /// <summary>Something failed.</summary>
         Error = 900,
+        /// <summary>Above every level, so a logger set to it writes nothing.</summary>
         None = int.MaxValue,
     }
 }

@@ -5,6 +5,7 @@ namespace Yingyeothon.Gamebase.Client
     /// <summary>A monotonic millisecond clock. Injected so timeouts are testable.</summary>
     public interface IClock
     {
+        /// <summary>A monotonic reading in milliseconds. Only differences between readings are meaningful.</summary>
         double NowMillis { get; }
     }
 
@@ -16,6 +17,7 @@ namespace Yingyeothon.Gamebase.Client
     /// </remarks>
     public sealed class SystemClock : IClock
     {
+        /// <summary>The shared monotonic clock every client uses unless a test injects its own.</summary>
         public static readonly IClock Instance = new SystemClock();
 
         private readonly Stopwatch _stopwatch = Stopwatch.StartNew();

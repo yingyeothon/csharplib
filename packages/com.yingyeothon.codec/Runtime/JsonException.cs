@@ -144,8 +144,10 @@ namespace Yingyeothon.Codec
             Actual = actual;
         }
 
+        /// <summary>The kind the accessor required.</summary>
         public JsonKind Expected { get; }
 
+        /// <summary>The kind the value actually held.</summary>
         public JsonKind Actual { get; }
     }
 

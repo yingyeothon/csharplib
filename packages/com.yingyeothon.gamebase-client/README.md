@@ -6,7 +6,12 @@ to a `@yingyeothon/lambda-gamebase` actor — with typed frames, the bearer-subp
 handshake, reconnect with backoff, a ghost-free peer map, and the distinction between
 a run that was _aborted_ and one that _finished_.
 
-The normative wire spec is the gateway's own README in the service repository.
+The normative wire spec is the gateway's own README in the service repository. This file
+is the package's reference; **[the guide](../../docs/README.md) is where to start** —
+[Getting started](../../docs/getting-started.md),
+[Lobby](../../docs/lobby.md), [Dungeon](../../docs/dungeon.md) and
+[Errors](../../docs/errors.md) cover every feature listed below in the order a game
+needs them.
 
 ## Install
 
@@ -15,7 +20,8 @@ https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.game
 ```
 
 Add `com.yingyeothon.codec` and `com.yingyeothon.logger` as well; a git-URL package
-cannot resolve its own dependencies.
+cannot resolve its own dependencies. Four importable samples ship with it — see
+[docs/unity.md](../../docs/unity.md#samples).
 
 ## Usage
 
@@ -105,7 +111,8 @@ continuation and may land anywhere — marshal back before touching the client.
 | `4004` channel gone    | `Stopped`                | `Stopped`                        |
 | `1000` normal          | `Stopped`                | `Finished`                       |
 | `1001` gateway restart | reconnect                | reconnect                        |
-| `1003` / `1009`        | `Stopped` (client bug)   | `Stopped` (client bug)           |
+| `1003` binary frame    | `Stopped` (client bug)   | `Stopped` (client bug)           |
+| `1009` frame too large | `Stopped` (client bug)   | `Stopped` (client bug)           |
 | `1011` enter failed    | reconnect                | reconnect                        |
 | anything else          | reconnect                | reconnect                        |
 
@@ -202,6 +209,7 @@ These were re-derived field by field from `gateway/internal/lobby/protocol.go` a
 `hub.go` in the `service` repository — the normative spec — rather than from tslib.
 
 - **`Event` is gated on the `event` capability alone**, never on the `say` scope list.
+  The consumer-facing statement is in [docs/lobby.md](../../docs/lobby.md#game-events).
   `handleEventLocked` checks `Capabilities.Event` and routes the scope; it never calls
   `AllowsSay`. A channel with `say: ["zone"]` and `event: true` still delivers a party
   event, so gating it here refused a frame the gateway would have sent.
@@ -226,5 +234,6 @@ These were re-derived field by field from `gateway/internal/lobby/protocol.go` a
   8 KB. Only `dir` is checked here. Each refusal increments a per-socket counter and
   fifty of them close with 4003, so a chat box that lets a player paste 2 KB will end
   the session — validate the text before calling `Say`.
-- **Inbound messages are capped at 64 KB** (double the gateway's documented 32 KB
-  outbound cap). A larger one arrives as close 1009 and stops rather than reconnects.
+- **Inbound messages are capped at 64 KB.** A larger one arrives as close 1009 and stops
+  rather than reconnects. The three different caps that produce 1009 are in
+  [docs/errors.md](../../docs/errors.md#close-codes).

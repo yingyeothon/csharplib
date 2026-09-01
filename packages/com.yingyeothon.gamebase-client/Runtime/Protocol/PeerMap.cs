@@ -6,9 +6,13 @@ namespace Yingyeothon.Gamebase.Client
     /// <summary>What applying a frame did to the peer map.</summary>
     public enum PeerChangeKind
     {
+        /// <summary>The zone was replaced wholesale.</summary>
         Snapshot,
+        /// <summary>One peer became visible.</summary>
         Enter,
+        /// <summary>One peer stopped being visible.</summary>
         Leave,
+        /// <summary>One or more known peers moved.</summary>
         Move,
     }
 
@@ -23,6 +27,7 @@ namespace Yingyeothon.Gamebase.Client
             UserId = userId;
         }
 
+        /// <summary>What kind of change the frame produced.</summary>
         public PeerChangeKind Kind { get; }
 
         /// <summary>Set on a snapshot.</summary>
@@ -51,10 +56,13 @@ namespace Yingyeothon.Gamebase.Client
         /// <summary>Applies one frame; returns the change it produced, or null when it was ignored.</summary>
         PeerChange? Apply(LobbyServerFrame frame);
 
+        /// <summary>One peer, or null when the map does not know it.</summary>
         Peer? Get(string userId);
 
+        /// <summary>Every peer currently visible, in the order they arrived.</summary>
         IReadOnlyList<Peer> All();
 
+        /// <summary>Forgets every peer and the current zone. The client does this on every disconnect.</summary>
         void Reset();
     }
 
@@ -69,6 +77,7 @@ namespace Yingyeothon.Gamebase.Client
     /// </remarks>
     public static class PeerMap
     {
+        /// <summary>Creates a peer map that filters out the receiver's own entries.</summary>
         public static IPeerMap Create(PeerMapOptions options)
         {
             if (options == null)

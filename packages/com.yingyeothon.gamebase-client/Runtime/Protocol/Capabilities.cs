@@ -24,15 +24,19 @@ namespace Yingyeothon.Gamebase.Client
             Debug = debug;
         }
 
+        /// <summary>Whether positions may be sent. Null is unrestricted.</summary>
         public bool? Pos { get; }
 
         /// <summary>Allowed say/event scopes, or null when the channel restricts none.</summary>
         public IReadOnlyList<string>? Say { get; }
 
+        /// <summary>Whether the party commands are available. Null is unrestricted.</summary>
         public bool? Party { get; }
 
+        /// <summary>Whether game events may be sent. Gates <c>Event</c> alone, never the say list.</summary>
         public bool? Event { get; }
 
+        /// <summary>Reserved for admin commands. The gateway implements none yet.</summary>
         public bool? Debug { get; }
 
         internal static Capabilities FromJson(JsonValue? value)

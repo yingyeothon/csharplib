@@ -17,12 +17,14 @@ namespace Yingyeothon.Gamebase.Client
             Status = status;
         }
 
+        /// <summary>The HTTP status the map URL answered with.</summary>
         public int Status { get; }
     }
 
     /// <summary>The default <see cref="IHttpFetcher"/>, over one shared <see cref="HttpClient"/>.</summary>
     public static class HttpFetcher
     {
+        /// <summary>An <c>HttpClient</c> bounded at 30 seconds, 16 MB and 5 redirects. Does not work on Unity WebGL.</summary>
         public static IHttpFetcher Default { get; } = new HttpClientFetcher();
 
         private sealed class HttpClientFetcher : IHttpFetcher

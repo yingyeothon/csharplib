@@ -10,8 +10,10 @@ obj/
 TestResults/
 
 # The public-API gate writes the actual surface next to the approved snapshot when
-# they differ; approving it is a rename, so the received file is never committed.
+# they differ, and the API-reference gate does the same for docs/api/*.md. Approving
+# either is a rename, so a received file is never committed.
 *.received.txt
+*.received.md
 
 # Unity generates a .meta for everything it imports, including these packages when a
 # scratch project points at them. They are deliberately not committed (see

@@ -8,6 +8,7 @@ namespace Yingyeothon.EventBroker
     /// <remarks>A broker is not thread-safe; drive it from one thread, as tslib does.</remarks>
     public static class EventBroker
     {
+        /// <summary>Creates a broker. It is not thread-safe; drive it from one thread.</summary>
         public static IEventBroker Create() => new EventBrokerImpl();
 
         private sealed class Registration<TEvent>

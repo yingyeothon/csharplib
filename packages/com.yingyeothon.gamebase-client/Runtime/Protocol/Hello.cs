@@ -28,8 +28,10 @@ namespace Yingyeothon.Gamebase.Client
             Raw = raw;
         }
 
+        /// <summary>This player's identity, the same value as the token's <c>sub</c>.</summary>
         public string UserId { get; }
 
+        /// <summary>This socket. A reconnect gets a new one, and only the gateway may set it.</summary>
         public string ConnectionId { get; }
 
         /// <summary>Position flush interval in milliseconds (the channel's <c>flushIntervalMs</c>).</summary>
@@ -44,6 +46,7 @@ namespace Yingyeothon.Gamebase.Client
         /// <summary>Set when the gateway already knows this player's party; null otherwise.</summary>
         public string? PartyId { get; }
 
+        /// <summary>What the channel enables. A null field means unrestricted, not disabled.</summary>
         public Capabilities Capabilities { get; }
 
         /// <summary>The frame as received, so a field this SDK does not model is still reachable.</summary>

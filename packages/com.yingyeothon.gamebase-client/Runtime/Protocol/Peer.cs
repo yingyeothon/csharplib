@@ -13,10 +13,13 @@ namespace Yingyeothon.Gamebase.Client
             Dir = dir;
         }
 
+        /// <summary>The peer's identity.</summary>
         public string UserId { get; }
 
+        /// <summary>Position on the map's x axis. A <c>double</c>, because the wire is Go <c>float64</c>.</summary>
         public double X { get; }
 
+        /// <summary>Position on the map's y axis.</summary>
         public double Y { get; }
 
         /// <summary>
