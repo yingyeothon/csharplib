@@ -25,6 +25,7 @@ namespace Yingyeothon.Gamebase.Client.Samples
             _session.ChatArrived += frame => Debug.Log($"{frame.From}: {frame.Text}");
             _session.Dropped += e => Debug.Log($"dropped {e.Code}, reconnecting={e.WillReconnect}");
             _session.Ended += e => Debug.LogWarning($"stopped: {e.Kind} ({e.Code})");
+            _session.Refused += e => Debug.LogWarning($"refused: {e.Code}");
 
             // Announce the position on every connect, this one and every reconnect.
             _session.Connected += _ => _session.Move(transform.position.x, transform.position.z, "n");

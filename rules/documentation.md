@@ -82,3 +82,37 @@ can. Worth repeating for any substantial doc change:
   reconnecting — which is the common one.
 - **Code samples that do not compile.** `UnityEngine.ILogger` collides with
   `Yingyeothon.Logger.ILogger`, and `ConsoleLogger` writes where the editor cannot see.
+
+And two more that only running it could find — a review reads what is written, so what
+a page does not say survives every reading of it:
+
+- **A field list that is short.** `docs/authentication.md` named five keys of
+  `.well-known/config`; the response has nine, and one of the missing ones is the
+  `redirectAllowlist` that the same page's redirect flow tells a client to satisfy. A
+  list of what an endpoint returns is a claim like any other, and this one is checkable
+  without leaving the desk: the handler is `services/auth/src/app.ts` in the sibling
+  `service` repository, and the literal it returns is the field list. Do not settle for
+  `services/auth/README.md`, which lists six of the nine — that README is how the short
+  list got written. If you call the endpoint instead, record the field names and the
+  non-identifying values (`tokenTtlSec`, the shape of `issuer`); never record
+  `channelId`, `audience`, `callbackUrls`, `startUrl` or `redirectAllowlist`, which
+  name a live channel and its redirect URLs.
+- **The cost of importing what the page recommends.** Before the fix, importing the
+  samples put **12** CS8632 warnings in the consumer's console, from the three sample
+  files that use a nullable annotation — a sample leaves the package's compiler settings
+  behind when it lands in `Assets/`. Those three now carry `#nullable enable` and the
+  count is zero. Do not confuse that 12 with the **192** the packages themselves
+  emitted: separate defect, separate fix ([unity.md](unity.md)). One sentence covering
+  both would have been wrong about each. Nothing in the prose was wrong. Walk the
+  instruction, do not only read it.
+- **A documented step that does not work at all.** `docs/getting-started.md` §1 tells a
+  consumer to install by git URL, and that install compiled nothing, for want of `.meta`
+  files. Three reviews and every previous verification missed it because the recipe
+  *copies* the packages. When a page gives an install, a build or a deploy command,
+  **run that command, not an equivalent** — the equivalent is where the defect hides
+  ([manual-verification.md](manual-verification.md)).
+
+A claim about restoration, caching or "the server does this for you" needs a
+**negative control** before it is verified. See
+[manual-verification.md](manual-verification.md): the reconnect snapshot only became
+evidence next to a fresh identity that got none.

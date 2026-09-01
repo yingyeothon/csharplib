@@ -1,3 +1,7 @@
+// Imported into Assets/, this file compiles without the package's nullable
+// context, so the annotations below would warn (CS8632). Turn it on per file.
+#nullable enable
+
 using System;
 using System.Threading.Tasks;
 using Yingyeothon.Codec;

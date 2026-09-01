@@ -80,6 +80,47 @@ EOF
   done
 fi
 
+# Every asmdef needs a csc.rsp carrying -nullable:enable, and every csc.rsp must sit
+# beside an asmdef and carry nothing else: it is compiler arguments injected into a
+# consumer's build. rules/unity.md has why, and what a stray token does to it.
+rsp_line='-nullable:enable'
+while IFS= read -r asmdef; do
+  [ -n "$asmdef" ] || continue
+  rsp="$(dirname "$asmdef")/csc.rsp"
+  if [ ! -f "$rsp" ]; then
+    note "${asmdef#packages/}: no csc.rsp beside it; Unity would warn CS8632 on every annotation"
+  fi
+done <<EOF
+$(find packages -name '*.asmdef' -not -path '*/Samples~/*' | sort)
+EOF
+
+while IFS= read -r rsp; do
+  [ -n "$rsp" ] || continue
+  dir=$(dirname "$rsp")
+  if [ -z "$(find "$dir" -maxdepth 1 -name '*.asmdef')" ]; then
+    note "${rsp#packages/}: a csc.rsp with no asmdef beside it applies to nothing"
+  fi
+  # Blank lines contribute no token, so they are allowed; anything else is not.
+  content=$(tr -d '\r' < "$rsp" | grep -v '^[[:space:]]*$' || true)
+  if [ "$content" != "$rsp_line" ]; then
+    note "${rsp#packages/}: its only non-blank line must be '$rsp_line'"
+  fi
+done <<EOF
+$(find packages -name 'csc.rsp' | sort)
+EOF
+
+# A sample lands in the consumer's Assets/, out of reach of any package csc.rsp, so a
+# sample that uses a nullable annotation carries its own directive. rules/unity.md.
+while IFS= read -r sample; do
+  [ -n "$sample" ] || continue
+  if grep -aqE '[A-Za-z0-9_>)]\? [A-Za-z_]' "$sample" \
+     && ! grep -aq '^#nullable' "$sample"; then
+    note "${sample#packages/}: uses a nullable annotation but has no '#nullable enable'"
+  fi
+done <<EOF
+$(find packages -path '*/Samples~/*' -name '*.cs' | sort)
+EOF
+
 # Reflection-based serialization is what IL2CPP's managed stripper breaks, and it
 # breaks it silently at runtime rather than at build time.
 if grep -rnE '\bActivator\.CreateInstance|GetType\(\)\.GetPropert|GetType\(\)\.GetField|Reflection\.Emit' \

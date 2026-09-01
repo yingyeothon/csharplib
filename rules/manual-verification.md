@@ -101,6 +101,87 @@ the exit code alone. `tests/Yingyeothon.PublicApi.Tests` lives outside `packages
 is correctly absent. Eleven transport tests report **ignored**, with the reason: Mono's
 `HttpListener` cannot accept a WebSocket.
 
+### Install the way a consumer installs, not only the way this recipe does
+
+**The scratch project above copies the packages, and copying hides the defect that
+matters most.** A copied package sits in `Packages/` and is *mutable*, so Unity writes
+the `.meta` files it needs. A package a consumer installs — a git URL, a tarball, a
+registry — is unpacked into `Library/PackageCache` and is *immutable*, and there Unity
+generates nothing: an asset with no `.meta` is **ignored**, silently, one log line each.
+
+Run this before any tag, from a bare clone so no uncommitted file can rescue it:
+
+```bash
+git clone --bare <repo> /tmp/x.git          # the URL must end in .git or UPM rejects it
+# manifest.json: "com.yingyeothon.codec": "file:///tmp/x.git?path=/packages/com.yingyeothon.codec"
+<editor> -batchmode -nographics -quit -projectPath <project> -logFile <log>
+find <project>/Library -name 'Yingyeothon*.dll'          # must list all four
+grep -c "immutable folder" <log>                         # must be 0
+```
+
+**`find` returning nothing is the failure, and nothing else reports it** — the editor
+exits 0, no test fails, and `-executeMethod` still runs, because the consumer's own
+scripts compile fine against a package that contributed no assemblies at all.
+
+Two facts this check establishes that the copied project cannot:
+
+- Unity **suppresses compiler warnings from an immutable package.** The same sources
+  that print 192 CS8632 as an embedded copy print none from `Library/PackageCache`. So
+  a warning count measured in the scratch project describes the *vendored* consumer,
+  not the git-URL one — do not report it as "what a consumer sees" without saying
+  which.
+- `Samples~` and `csc.rsp` both travel correctly through an immutable install, once the
+  assets are visible at all.
+
+### Check the samples the way the Package Manager does
+
+`package.json`'s `samples` array and the `#if UNITY_5_3_OR_NEWER` `MonoBehaviour`
+halves are the part of this repository that **no** `dotnet` build compiles —
+`tests/Yingyeothon.Samples.Build` takes the engine-free half by design. Drive the
+editor's own API rather than clicking. Put this under `Assets/Editor/` (it needs
+`UnityEditor`) and call it with `-executeMethod SampleImport.ImportAll`:
+
+```csharp
+using System.Linq;
+using UnityEditor.PackageManager.UI;
+using UnityEngine;
+
+public static class SampleImport
+{
+    public static void ImportAll()
+    {
+        foreach (var package in new[] { "com.yingyeothon.codec", "com.yingyeothon.event-broker",
+                                        "com.yingyeothon.gamebase-client", "com.yingyeothon.logger" })
+        {
+            var samples = Sample.FindByPackage(package, string.Empty).ToList();
+            Debug.Log($"[SAMPLES] {package} count={samples.Count}");
+            foreach (var sample in samples)
+            {
+                sample.Import(Sample.ImportOptions.OverridePreviousImports);
+            }
+        }
+    }
+}
+```
+
+`FindByPackage` reads the same `samples` array the import buttons are built from, so
+each count must equal the length of that package's array — a mismatch means an entry is
+malformed, not that someone added a sample. Then run the editor again with any
+`-executeMethod`: it only runs once every script compiles.
+
+**Reaching the method proves zero *errors*, not zero warnings** — a warning never stops
+`-executeMethod`. For warnings, `grep -c 'warning CS' <log>` and attribute each one to
+`Packages/`, `Assets/Samples/` or your own harness before reporting a number.
+
+**Unity prints a warning once, when the assembly is actually rebuilt.** A second
+batch-mode run reports zero warnings whether or not any exist, and reading that as
+"clean" is how 192 CS8632 warnings survived a previous verification. Force the rebuild
+by deleting `<project>/Library/ScriptAssemblies`, and confirm from the log that a
+compile actually happened (`CompileScripts`) — touching the sources is not enough on
+its own, because Unity re-hashes content. When a compiler flag is what you are
+testing, take it away and watch the warnings return: **delete the rsp from the scratch
+project's `Packages/` copy, never from this repository**, and re-copy afterwards.
+
 ### Build and run a player
 
 A build that succeeds proves nothing about stripping — the player has to run. Put a
@@ -121,15 +202,125 @@ Always record the **commit** as well as the date: a release asks whether this ru
 covers the code being tagged, and a date alone cannot answer it
 ([release.md](release.md)).
 
-**2026-09-01**, at commit `f5fce56`, on Unity Personal, against **2021.3.45f2** (the
-floor) and **6000.0.25f1**. Identical results on both:
+**2026-09-01**, at the commit whose parent is `70c334d` and whose tree adds the eight
+`csc.rsp` files — **replace this clause with the sha before cutting any tag**
+([release.md](release.md) step 2). Unity Personal, Ubuntu 24.04.
 
-| Check | Result |
-| --- | --- |
-| EditMode, all four packages | 459 tests — 448 passed, **0 failed**, 11 ignored |
-| `StandaloneLinux64` Mono | built, and the player ran and logged from every package |
-| `StandaloneLinux64` IL2CPP, stripping **High** | built, and the player ran the same |
-| WebGL | compiled and linked; the guard was not exercised in a browser |
+| Check | 2021.3.45f2 | 6000.0.25f1 |
+| --- | --- | --- |
+| Samples listed and imported | one per `samples[]` entry: 4 / 1 / 1 / 1 | same |
+| Imported samples compile in `Assets/` | 0 errors, 0 warnings from `Packages/`, `Assets/Samples/` and the pasted snippet | same |
+| Without `csc.rsp`, embedded | 192 CS8632 (158 `Runtime`, 34 `Tests`) | same |
+| `docs/getting-started.md` §4 pasted into a fresh script | compiles | same |
+| EditMode, all four packages | **0 failed**; ignored are exactly the eleven named above. 459/448/11 at this commit, not a threshold | same |
+| `StandaloneLinux64` Mono, stripping **High** | built, and the player ran and logged from every package | same |
+| `StandaloneLinux64` IL2CPP, stripping **High** | built, and the player ran the same | same |
+| WebGL | compiled and linked; the guard was not exercised in a browser | same |
+
+The two editors agreed on every row. When they do not, that is the finding — 2021.3 is
+the floor for a reason ([Which editor](#which-editor)).
+
+**Do not carry a player row forward on "the sources did not change".** This run added a
+`csc.rsp` per asmdef, which is not a source change and which
+`git diff -- 'packages/**/Runtime/**'` cannot show at all while the files are untracked
+— and turning the nullable context on makes Roslyn emit `NullableAttribute`,
+`NullableContextAttribute` and `EmbeddedAttribute` into the Unity-built assemblies. That
+is exactly the metadata `ManagedStrippingLevel.High` and `Runtime/link.xml` are tested
+against. A compiler flag is a build change even when no `.cs` moved.
+
+### The install path is broken, and this run is what found it
+
+**A git-URL install of `70c334d` compiles nothing.** All four packages resolve, and then
+every asset in them is ignored — 448 log lines of *"has no meta file, but it's in an
+immutable folder"* — so `Library` ends up with **zero** `Yingyeothon*.dll`. This is not
+a regression from this change; it is the state of the tree, and it makes
+`docs/getting-started.md` §1 and `docs/unity.md` § Installing describe a path that does
+not work.
+
+The cause is a straight collision between two deliberate decisions: UPM requires `.meta`
+files in a package consumed from an immutable source, and this repository does not commit
+them (`.gitignore`, and [The scratch project](#the-scratch-project) is built around their
+absence). Copying the packages hides it, and copying is what every verification here has
+done.
+
+Confirmed both directions on 6000.0.25f1, from bare clones:
+
+| Bare clone contains | Assets ignored | Assemblies compiled | Samples |
+| --- | --- | --- | --- |
+| no `.meta` (the tree as it stands) | 448 | **none** | — |
+| `.meta` committed | 32 (the unpaired `csc.rsp.meta`) | all four | — |
+| `.meta` **and** `csc.rsp` committed | **0** | all four, 0 errors, 0 CS8632 | **7 import** |
+
+So the fix works and is one decision: **commit the `.meta` files.** That reverses a
+documented policy in `docs/unity.md`, `.gitignore` and this file, so it is the user's
+call and not a thing to fold into an unrelated commit. Until it is made, **no tag**
+([release.md](release.md)) — a consumer following the guide gets four packages with no
+code in them.
+
+### Against the dev gateway, same date
+
+Verified live on the `morpg` dev channels, with a console app that never printed the
+token. Read the channel's settings first — `yyt channels get <lobbyChannelId> --json`
+gives `config.capabilities.pos`, `config.flushIntervalMs`, `config.defaultZone` and
+`config.mapUrl`. Here `pos` was enabled and `flushIntervalMs` was 200; both matter
+below. **Read those settings, do not set them.** They are shared dev infrastructure; if
+a value has to change to tell a default from a configured one, change exactly one,
+record the previous value here, and restore it in the same session.
+
+| Claim | Where it lives | Result |
+| --- | --- | --- |
+| `.well-known/config` is unauthenticated and names the channel | `docs/authentication.md` | 200, nine fields; the page listed five and was corrected |
+| GitHub with an `idToken` is a `400` | `docs/authentication.md` | 400 `github requires accessToken`, the documented reason verbatim |
+| `verify` answers `{ userId, exp, channelId }` | `docs/authentication.md` | exactly those three |
+| `tokenTtlSec` defaults to 24 h | `docs/authentication.md` | 86400 |
+| Console setting → `hello` field | `docs/console-and-options.md` | **8 of 8 match**: `defaultZone`→`Zone`, `mapUrl`→`MapUrl`, `flushIntervalMs`→`Tick`, and `pos` / `say` / `party` / `event` / `debug`→`Capabilities` |
+| A reconnect with a retained position gets a `snapshot` with no `Pos` | `docs/lobby.md` | **confirmed**, by the control below |
+| `4000` Replaced is `Stop`, not a reconnect | `docs/errors.md` | `Stopped kind=Stop code=4000` |
+
+**Vary one thing.** The first attempt at the reconnect claim compared a returning user
+against *a different, never-announced user*, which varies identity and history at once
+and cannot separate "this user's position was restored" from "the gateway always sends
+one". The control that settles it uses **one** identity across three connections — and
+it must be an identity with no history, so pass a `userId` you have never used to
+`POST /debug/token` (it takes one; reusing the last one reproduces the confound):
+
+| | Sends `Pos`? | Snapshot | `Peers.Zone` |
+| --- | --- | --- | --- |
+| A1, first ever connect | no | **none**, and no frames at all | empty |
+| A2, same identity | yes | one | the zone |
+| A3, same identity | no | **one, unprompted** | the zone |
+
+A1 against A3 is the claim, and the only difference between them is that this identity
+has announced since. Two preconditions the run depended on and a future one must keep:
+the channel must have `pos` enabled (`gateway/internal/lobby/hub.go` restores only
+then), and A2 must outlive one `flushIntervalMs` — the position reaches Redis from the
+flush loop, not from the `pos` frame, so a reconnect faster than a tick restores
+nothing.
+
+Read from the source rather than observed, and marked so on purpose:
+
+- **The idle timeout cannot be tripped by a frozen game loop.** In
+  `gateway/internal/conn/conn.go`: the `PongHandler` set in the constructor (~:101)
+  resets the read deadline, the write loop sends a **protocol-level** ping (~:257), and
+  the read loop resets the deadline on *any* inbound frame (~:237) — so
+  `docs/errors.md`'s "no pong within 75 seconds" is narrower than the code's own "no
+  pong and no traffic". `ClientWebSocket` answers a protocol ping from its own receive
+  loop, independent of `Poll()`. Cite the function, not the line: these numbers drift
+  with the sibling repository, which is not pinned here. A live run can show a socket
+  surviving 75 s unpolled; it cannot show why.
+
+Not covered, and each is a real gap rather than a formality:
+
+- The provider exchange with a **real** GitHub access token. There is no provider
+  credential here, so only its refusal path was exercised.
+- **`4002` Idle → reconnect, and the backoff.** Not reachable from a client for the
+  reason above, and this repository does not own the gateway to restart it. It *is*
+  reachable through the public `IWebSocketFactory` seam with a double that stops
+  answering pings — that is a test to write, not a gateway run.
+- The WebGL guard in a browser.
+- Whether Unity honours a `csc.rsp` in an **immutable** package (a git-URL install
+  resolves into `Library/PackageCache`). Both scratch projects used copied, embedded
+  packages. Worth one run before a tag.
 
 ## Making states reachable without infrastructure
 

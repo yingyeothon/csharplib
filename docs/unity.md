@@ -33,6 +33,21 @@ asmdef**, reference the assemblies you use by name: `Yingyeothon.Gamebase.Client
 packages into `Packages/` instead of using a git URL, **copy** the folders rather than
 symlinking them — Unity writes `.meta` files into whatever it imports.
 
+These sources are written with nullable annotations, and Unity has no project-wide
+setting for them, so each assembly folder carries a `csc.rsp` holding `-nullable:enable`
+that Unity applies to that assembly alone. Two consequences worth knowing, because
+nothing warns you about either:
+
+- **The flag does not follow a file out of its folder.** A `Runtime` source you copy
+  into `Assets/` to patch, and an imported sample you extend, compile under *your*
+  project's settings. If the file uses `string?` and your assembly has no nullable
+  context, you get `CS8632` on every annotation. Adding `#nullable enable` at the top of
+  that file is the fix; the three samples that need it already have it.
+- **Your own assembly is yours to configure.** Signatures copied out of the
+  [API reference](README.md#reference) carry `?`, so an asmdef of your own that uses them
+  wants the same one-line `csc.rsp` beside it, or `#nullable disable` and no
+  annotations. Either is fine; this SDK does not care which you pick.
+
 ## Samples
 
 Each package ships importable samples: _Package Manager → the package → Samples →

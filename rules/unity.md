@@ -31,6 +31,65 @@ constraints that follow, and none of them fail at `dotnet build`.
 - `.meta` files are not committed; Unity generates them on import. If stable GUIDs
   ever matter, generate them once from a real editor and commit the lot.
 
+## Nullable, and the one line that carries it
+
+`Directory.Build.props` sets `<Nullable>enable</Nullable>`, and **that reaches the
+dotnet build only**. An asmdef has no equivalent and there is no project-wide switch, so
+Unity compiles the same sources with nullable off and every reference-type `?` in them
+becomes a CS8632 — one per annotation, so the count tracks the annotations and is not a
+threshold. **The invariant is zero CS8632 with the rsp files in place.** For scale:
+with them removed, both 2021.3.45f2 and 6000.0.25f1 emitted 192 (158 `Runtime`, 34
+`Tests`, the latter only in a project that lists the package under `testables`), and
+that is what a consumer who **vendors** the sources sees. A consumer who installs
+normally sees none of them either way — Unity suppresses warnings from an immutable
+package — so this is a fix for the vendored path and for anyone reading the sources,
+not a wall every user was staring at. What carries the setting is a `csc.rsp` beside
+each asmdef:
+
+```
+-nullable:enable
+```
+
+Four things about that file, each of which cost something to learn:
+
+- **It holds exactly that one line.** A `#` comment is not stripped: the tokens reach
+  csc as arguments and each word comes back as `error CS2001: Source file '<word>'
+  could not be found`, so the *whole project* stops compiling — 140 errors from one
+  three-word comment, observed on 2021.3.45f2. Roslyn's own response-file parser does
+  treat `#` as a comment, so this is Unity's handling, not csc's; either way, do not
+  put one there. A bare-flag test passing says nothing about a commented one.
+- **Every asmdef under `packages/` needs its own**, `Samples~` excepted — which is
+  exactly what `scripts/validate-packages.sh` enforces, in both directions. The file is
+  per-assembly, not per-package. An asmdef outside `packages/` is covered by no guard;
+  if you add one, extend the script.
+- **`event-broker` has no annotations at all** and its two rsp files silence nothing.
+  They exist so the rule is "every asmdef" rather than "every asmdef that currently
+  needs it", which is the version a new file can violate silently.
+- **A `csc.rsp` is compiler arguments injected into a consumer's build** — `-r:`,
+  `-define:`, `-analyzer:` and `-unsafe` are all accepted there. That is why
+  `scripts/validate-packages.sh` pins the content and also checks the reverse
+  direction: every rsp in the tree must sit beside an asmdef and carry nothing else.
+
+A sample is **not** covered by any of this: `Samples~` is copied into the consumer's
+`Assets/`, out of reach of a package rsp, so a sample file that uses a nullable
+annotation carries its own `#nullable enable` — three of the eight sample `.cs` files
+today, and the guard requires it of any sample that annotates, so a new one cannot
+regress silently. Note that the directive turns on the flow analysis
+(CS8600/8602/8618) as well as the annotations, not only the CS8632 it was reached for;
+these are clean under both.
+
+`scripts/validate-packages.sh`'s `rsp_line` is the **enforcing** copy of that string:
+change it there first, then the eight files, then this section and `docs/unity.md`. If
+they ever disagree, the script is right.
+
+What a consumer needs to know about this is one section in
+[docs/unity.md § Installing](../docs/unity.md#installing) — that the flag does not follow
+a file out of its folder. Everything above is the maintainer's half and stays here.
+
+Unity hides none of this: warnings from a package assembly print like any other. They
+were invisible only because nothing had forced a clean recompile —
+[manual-verification.md](manual-verification.md) has how to force one.
+
 ## IL2CPP
 
 - No reflection: no `Activator.CreateInstance`, no `GetType().GetProperty`, no

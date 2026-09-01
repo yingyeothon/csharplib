@@ -17,9 +17,10 @@ issues a JWT for your channel, and you put it in `GatewayClientOptions.Token`.
 
 Base URL: `https://auth.yyt.life` (dev: `https://auth-dev.yyt.life`).
 
-`GET /c/{authChannelId}/.well-known/config` is unauthenticated and returns the
-channel's `audience`, `tokenTtlSec`, configured providers, `startUrl` and `expiresAt`.
-Read it at startup and you hard-code only a base URL and a channel id.
+`GET /c/{authChannelId}/.well-known/config` is unauthenticated and returns nine fields:
+`channelId`, `issuer`, `audience`, `tokenTtlSec`, `providers`, `callbackUrls`,
+`startUrl`, `redirectAllowlist` and `expiresAt`. Read it at startup and you hard-code
+only a base URL and a channel id.
 
 ## Exchanging a provider credential
 

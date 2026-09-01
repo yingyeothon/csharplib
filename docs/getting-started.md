@@ -57,6 +57,8 @@ converts what you hold. The `SignIn` sample is that request
 (_Package Manager → Yingyeothon Gamebase Client → Samples → Import_):
 
 ```csharp
+using Yingyeothon.Gamebase.Client.Samples;   // the sample's own namespace
+
 ChannelToken token = await ChannelSignIn.ExchangeAsync(
     authBaseUrl:   "https://auth.yyt.life",
     authChannelId: "auth_0123456789abcdef",
@@ -65,6 +67,11 @@ ChannelToken token = await ChannelSignIn.ExchangeAsync(
 
 string channelJwt = token.Jwt;
 ```
+
+**Google is the other argument.** GitHub sends the provider's *access* token, Google its
+*id* token, and the auth service refuses the wrong one with a `400` whose message names
+which it wanted. For Google, pass the id token and say so:
+`credentialIsIdToken: true`.
 
 The token is good for the channel's `tokenTtlSec` (24 hours by default), it works for
 the lobby socket and the dungeon socket alike, and **there is no refresh endpoint** —
@@ -105,11 +112,14 @@ public sealed class LobbyQuickstart : MonoBehaviour
         _lobby.Said += frame => Debug.Log($"{frame.From}: {frame.Text}");
         _lobby.Disconnected += e => Debug.Log($"dropped {e.Code}, reconnecting={e.WillReconnect}");
         _lobby.Stopped += e => Debug.LogWarning($"stopped: {e.Kind} ({e.Code})");
+        _lobby.Refused += e => Debug.LogWarning($"refused: {e.Code}");
 
         // Fires on the first hello AND after every reconnect. On a reconnect the
         // gateway may already have restored the retained position and sent a
-        // snapshot; announcing a position far from that one is refused as
-        // move_too_far, so send where the player actually is.
+        // snapshot; announcing a position further than the channel's maxMoveDelta
+        // from that one is refused as move_too_far, which arrives on Refused and
+        // nowhere else. Send where the player actually is, and watch that handler.
+        // Lobby § The peer map has the two cases.
         _lobby.Connected += hello =>
         {
             _zone = hello.Zone;

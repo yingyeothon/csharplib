@@ -1,3 +1,7 @@
+// Imported into Assets/, this file compiles without the package's nullable
+// context, so the annotations below would warn (CS8632). Turn it on per file.
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -35,6 +39,7 @@ namespace Yingyeothon.Gamebase.Client.Samples
             _client.Said += frame => ChatArrived?.Invoke(frame);
             _client.Disconnected += e => Dropped?.Invoke(e);
             _client.Stopped += e => Ended?.Invoke(e);
+            _client.Refused += e => Refused?.Invoke(e);
         }
 
         /// <summary>The zone the last <c>hello</c> named, before any move of our own.</summary>
@@ -53,6 +58,12 @@ namespace Yingyeothon.Gamebase.Client.Samples
         public event Action<DisconnectedEvent>? Dropped;
 
         public event Action<StoppedEvent>? Ended;
+
+        /// <summary>
+        /// The gateway refused something we sent. A <c>move_too_far</c> lands here and
+        /// nowhere else, so a position that never took effect is silent without this.
+        /// </summary>
+        public event Action<ErrorFrame>? Refused;
 
         /// <summary>Completes on the gateway's <c>hello</c>, not on the socket opening.</summary>
         public Task<Hello> ConnectAsync() => _client.ConnectAsync();
