@@ -24,6 +24,23 @@ namespace Yingyeothon.Gamebase.Client.Tests
         }
     }
 
+    /// <summary>A fetcher the test completes by hand, so a fetch can be in flight.</summary>
+    internal sealed class GatedHttpFetcher : IHttpFetcher
+    {
+        private readonly TaskCompletionSource<HttpFetchResult> _pending =
+            new TaskCompletionSource<HttpFetchResult>();
+
+        internal int Calls { get; private set; }
+
+        internal void Complete(HttpFetchResult response) => _pending.TrySetResult(response);
+
+        public Task<HttpFetchResult> GetAsync(string url, CancellationToken cancellationToken)
+        {
+            Calls++;
+            return _pending.Task;
+        }
+    }
+
     [TestFixture]
     public class MapFetchTests
     {
@@ -118,6 +135,62 @@ namespace Yingyeothon.Gamebase.Client.Tests
             await harness.Client.MapAsync();
 
             Assert.That(fetcher.Requested, Has.Count.EqualTo(1));
+        }
+
+        /// <remarks>
+        /// FetchAsync returned the cached task and discarded the second caller's
+        /// token, so only the first caller's token was wired into the fetch: a scene
+        /// loader cancelling its own MapAsync threw OperationCanceledException at a
+        /// HUD that had passed no token at all — and the entry was already evicted, so
+        /// the failure was not even reproducible.
+        /// </remarks>
+        [Test]
+        public async Task OneCallersCancellationDoesNotCancelAnothersSharedFetch()
+        {
+            var fetcher = new GatedHttpFetcher();
+            var harness = new LobbyHarness(o => o.HttpFetcher = fetcher);
+            await harness.ConnectAsync();
+
+            using var scene = new CancellationTokenSource();
+            var sceneMap = harness.Client.MapAsync(scene.Token);
+            var hudMap = harness.Client.MapAsync();
+
+            Assert.That(fetcher.Calls, Is.EqualTo(1), "the fetch is shared");
+
+            scene.Cancel();
+
+            Assert.That(async () => await sceneMap, Throws.InstanceOf<OperationCanceledException>());
+            Assert.That(hudMap.IsCompleted, Is.False);
+
+            fetcher.Complete(new HttpFetchResult(true, 200, "{\"zones\":[\"town\"]}"));
+
+            var map = await hudMap;
+
+            Assert.That(map.GetMemberOrNull("zones"), Is.Not.Null);
+            Assert.That(fetcher.Calls, Is.EqualTo(1));
+        }
+
+        /// <remarks>
+        /// A body too large to parse used to fall through to JsonValue.Of(text) — one
+        /// enormous string pretending to be a map, which no caller notices until it
+        /// reads a field. That is the exact breakage the limit exists to prevent.
+        /// </remarks>
+        [Test]
+        public async Task ABodyTooLargeToParseFailsInsteadOfDegradingToAString()
+        {
+            var fetcher = new FakeHttpFetcher();
+            fetcher.Enqueue(new HttpFetchResult(true, 200, "[" + new string('0', 17 * 1024 * 1024) + "]"));
+            var harness = new LobbyHarness(o => o.HttpFetcher = fetcher);
+            await harness.ConnectAsync();
+
+            Assert.That(async () => await harness.Client.MapAsync(), Throws.InstanceOf<MapFetchException>());
+
+            // Positive control: a body that is merely not JSON is still handed back as
+            // text, because the asset is the game's and the SDK only transports it.
+            fetcher.Enqueue(new HttpFetchResult(true, 200, "not json at all"));
+            var text = await harness.Client.MapAsync();
+
+            Assert.That(text.Kind, Is.EqualTo(JsonKind.String));
         }
     }
 }

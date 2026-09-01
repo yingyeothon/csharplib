@@ -108,10 +108,12 @@ namespace Yingyeothon.Gamebase.Client
         private void OnFrame(string type, JsonValue raw)
         {
             // Game frames are opaque, so an error frame is recognised structurally
-            // rather than by trusting the type alone.
+            // rather than by trusting the type alone. The discriminator is a string
+            // `code`: the gateway's ErrorFrame marshals `message` with omitempty, so
+            // requiring it would hand a refusal to the game as if it were its own
+            // data and let the client keep sending into a rising `bad` counter.
             if (string.Equals(type, FrameTypes.Error, StringComparison.Ordinal)
-                && raw.GetString("code") != null
-                && raw.GetString("message") != null)
+                && raw.GetString("code") != null)
             {
                 var error = (ErrorFrame)LobbyFrames.Read(type, raw);
                 _logger.Warn(

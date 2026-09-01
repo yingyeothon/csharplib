@@ -27,9 +27,16 @@ namespace Yingyeothon.Gamebase.Client
 
         private sealed class HttpClientFetcher : IHttpFetcher
         {
+            /// <summary>
+            /// The largest body this fetcher will buffer. It matches the map parser's
+            /// own limit, so a body too large to parse is refused before it is a
+            /// string rather than after.
+            /// </summary>
+            private const int MaxBodyBytes = 16 * 1024 * 1024;
+
             // One client for the process: a new HttpClient per request exhausts
             // sockets, and this one never carries credentials by construction.
-            private static readonly HttpClient Client = new HttpClient();
+            private static readonly HttpClient Client = CreateClient();
 
             public async Task<HttpFetchResult> GetAsync(string url, CancellationToken cancellationToken)
             {
@@ -38,6 +45,30 @@ namespace Yingyeothon.Gamebase.Client
                     var text = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                     return new HttpFetchResult(response.IsSuccessStatusCode, (int)response.StatusCode, text);
                 }
+            }
+
+            private static HttpClient CreateClient()
+            {
+                var handler = new HttpClientHandler();
+                if (handler.SupportsRedirectConfiguration)
+                {
+                    // hello.mapUrl comes off the wire, so its redirect chain is
+                    // chosen by whoever set the channel's map. A handful of hops is
+                    // a CDN; the default fifty is a traversal budget.
+                    handler.AllowAutoRedirect = true;
+                    handler.MaxAutomaticRedirections = 5;
+                }
+
+                return new HttpClient(handler)
+                {
+                    // The defaults here are 100 seconds and two gigabytes, on a URL
+                    // this SDK did not choose. A map is a small immutable public
+                    // asset; a fetch that needs more than this is not one, and
+                    // without a timeout a slow-loris host stalls MapAsync for a
+                    // minute and a half with nothing the caller can do.
+                    Timeout = TimeSpan.FromSeconds(30),
+                    MaxResponseContentBufferSize = MaxBodyBytes,
+                };
             }
         }
     }
@@ -72,33 +103,81 @@ namespace Yingyeothon.Gamebase.Client
 
         internal Task<JsonValue> FetchAsync(string mapUrl, CancellationToken cancellationToken)
         {
-            var source = new TaskCompletionSource<JsonValue>();
+            Task<JsonValue> shared;
+            TaskCompletionSource<JsonValue>? started = null;
             lock (_gate)
             {
                 if (_cache.TryGetValue(mapUrl, out var cached))
                 {
-                    return cached;
+                    shared = cached;
                 }
-
-                // Publish the entry before the load starts. A fetcher that answers
-                // synchronously would otherwise finish — and evict — before the
-                // assignment ran, putting the failed task back into the cache.
-                _cache[mapUrl] = source.Task;
-                _logger.Debug("fetching map", Json.Object().Set("mapUrl", mapUrl).Build());
+                else
+                {
+                    // Publish the entry before the load starts. A fetcher that answers
+                    // synchronously would otherwise finish — and evict — before the
+                    // assignment ran, putting the failed task back into the cache.
+                    started = new TaskCompletionSource<JsonValue>();
+                    _cache[mapUrl] = started.Task;
+                    shared = started.Task;
+                    _logger.Debug(
+                        "fetching map",
+                        Json.Object().Set("mapUrlLength", (double)mapUrl.Length).Build());
+                }
             }
 
-            _ = CompleteAsync(mapUrl, source, cancellationToken);
-            return source.Task;
+            if (started != null)
+            {
+                // No caller's token drives the shared work: whoever asked second would
+                // otherwise be cancelled by whoever asked first, for a fetch it never
+                // asked to cancel. The HttpClient timeout is what bounds it instead.
+                _ = CompleteAsync(mapUrl, started);
+            }
+
+            return Observe(shared, cancellationToken);
         }
 
-        private async Task CompleteAsync(
-            string mapUrl,
-            TaskCompletionSource<JsonValue> source,
-            CancellationToken cancellationToken)
+        /// <summary>
+        /// Hands one caller its own view of a shared fetch, so its
+        /// <see cref="CancellationToken"/> cancels its own await and nobody else's.
+        /// </summary>
+        private static Task<JsonValue> Observe(Task<JsonValue> shared, CancellationToken cancellationToken)
         {
+            if (!cancellationToken.CanBeCanceled || shared.IsCompleted)
+            {
+                return shared;
+            }
+
+            var observer = new TaskCompletionSource<JsonValue>();
+            var registration = cancellationToken.Register(() => observer.TrySetCanceled());
+            shared.ContinueWith(
+                task =>
+                {
+                    registration.Dispose();
+                    if (task.IsFaulted)
+                    {
+                        observer.TrySetException(task.Exception!.InnerExceptions);
+                    }
+                    else if (task.IsCanceled)
+                    {
+                        observer.TrySetCanceled();
+                    }
+                    else
+                    {
+                        observer.TrySetResult(task.Result);
+                    }
+                },
+                CancellationToken.None,
+                TaskContinuationOptions.ExecuteSynchronously,
+                TaskScheduler.Default);
+            return observer.Task;
+        }
+
+        private async Task CompleteAsync(string mapUrl, TaskCompletionSource<JsonValue> source)
+        {
+            JsonValue result;
             try
             {
-                var response = await _fetcher.GetAsync(mapUrl, cancellationToken).ConfigureAwait(false);
+                var response = await _fetcher.GetAsync(mapUrl, CancellationToken.None).ConfigureAwait(false);
                 if (!response.Ok)
                 {
                     throw new MapFetchException(response.Status);
@@ -112,9 +191,21 @@ namespace Yingyeothon.Gamebase.Client
                 // limit a large map would parse "unsuccessfully" and be handed back as
                 // one enormous string, which no caller would notice until it tried to
                 // read a field.
-                source.SetResult(Json.TryParseBig(response.Text, MaxMapJsonLength, out var parsed, out _)
-                    ? parsed
-                    : JsonValue.Of(response.Text));
+                if (Json.TryParseBig(response.Text, MaxMapJsonLength, out var parsed, out var failure))
+                {
+                    result = parsed;
+                }
+                else if (failure.Error == JsonParseError.InputTooLong)
+                {
+                    // Too big to parse must fail, not degrade. Handing back one
+                    // enormous string is exactly the silent breakage this limit
+                    // exists to prevent: no caller notices until it reads a field.
+                    throw new MapFetchException(response.Status);
+                }
+                else
+                {
+                    result = JsonValue.Of(response.Text);
+                }
             }
             catch (Exception error)
             {
@@ -125,8 +216,14 @@ namespace Yingyeothon.Gamebase.Client
 
                 // Evict first, then fail: a handler that retries immediately must not
                 // be handed the failure it just saw.
-                source.SetException(error);
+                source.TrySetException(error);
+                return;
             }
+
+            // Outside the try: settlement runs continuations inline, and a handler
+            // that threw back into this frame used to evict a successful fetch and
+            // then complete the source twice.
+            source.TrySetResult(result);
         }
     }
 }

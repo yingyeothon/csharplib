@@ -55,6 +55,13 @@ namespace Yingyeothon.Gamebase.Client
         /// </summary>
         private const int MaxPollPasses = 16;
 
+        /// <summary>
+        /// How many queued events one pass may handle. The queue is unbounded and fed
+        /// from the receive thread, so without this a peer can keep the drain running
+        /// and stall the frame that called <see cref="Poll"/>.
+        /// </summary>
+        private const int MaxEventsPerPass = 256;
+
         private readonly ConcurrentQueue<SocketEvent> _events = new ConcurrentQueue<SocketEvent>();
         private readonly GatewaySocketOptions _options;
         private readonly IWebSocketFactory _factory;
@@ -75,6 +82,17 @@ namespace Yingyeothon.Gamebase.Client
         private int _pumpingThreadId;
 
         private IWebSocket? _socket;
+
+        /// <summary>
+        /// This state machine has asked <see cref="_socket"/> to close and is only
+        /// waiting for its close event. Without it, everything the socket had already
+        /// queued behind the close is still delivered: a <c>hello</c> that was in
+        /// flight when the hello deadline fired, or one sent by a gateway that never
+        /// echoed the bearer subprotocol, would run <see cref="MarkReady"/> and hand
+        /// an awaiter a connection this machine had already rejected.
+        /// </summary>
+        private bool _retired;
+
         private bool _closedByUser;
         private bool _ready;
         private bool _opened;
@@ -131,14 +149,20 @@ namespace Yingyeothon.Gamebase.Client
 
             try
             {
+                var exhausted = true;
                 for (var pass = 0; pass < MaxPollPasses; pass++)
                 {
                     var progressed = false;
 
-                    while (_events.TryDequeue(out var socketEvent))
+                    // Bounded like the outer loop: the queue is fed by the receive
+                    // thread, so an unbounded drain lets a peer that produces frames
+                    // faster than this parses them hold the caller's frame forever.
+                    var drained = 0;
+                    while (drained < MaxEventsPerPass && _events.TryDequeue(out var socketEvent))
                     {
                         Handle(socketEvent);
                         progressed = true;
+                        drained++;
                     }
 
                     // Events first: a hello that arrived in the same tick as its
@@ -160,8 +184,22 @@ namespace Yingyeothon.Gamebase.Client
 
                     if (!progressed)
                     {
+                        exhausted = false;
                         break;
                     }
+                }
+
+                if (exhausted)
+                {
+                    // Nothing is lost — the queue and both deadlines survive to the
+                    // next Poll — but a pump that never reaches quiescence is a
+                    // symptom worth seeing rather than a silence.
+                    _logger.Debug(
+                        "gateway poll budget exhausted",
+                        Json.Object()
+                            .Set("channelId", _options.ChannelId)
+                            .Set("passes", (double)MaxPollPasses)
+                            .Build());
                 }
             }
             finally
@@ -219,20 +257,22 @@ namespace Yingyeothon.Gamebase.Client
                 current.Dispose();
             }
 
+            ScheduleFailure(new GatewayStoppedException("closed before the connection became ready"));
             if (wasReady || current != null)
             {
                 Disconnected?.Invoke(new DisconnectedEvent(1000, "client closed", false));
             }
 
-            ScheduleFailure(new GatewayStoppedException("closed before the connection became ready"));
             FlushSettlement();
         }
 
         internal void Send(JsonValue frame)
         {
             RequireNotConcurrent();
-            if (!_ready || _socket == null)
+            if (!_ready || _retired || _socket == null)
             {
+                // A retired socket is still assigned until its close event arrives;
+                // writing to it drops the frame silently.
                 throw new InvalidOperationException("cannot send in state " + State);
             }
 
@@ -246,8 +286,13 @@ namespace Yingyeothon.Gamebase.Client
                 return;
             }
 
-            _disposed = true;
+            // Latch only once Close has run. Close enforces the same
+            // one-thread-at-a-time contract as every other entry point, and a Dispose
+            // that raced the pump used to set the flag first — so the retry returned
+            // silently and the socket, its receive task and its CancellationTokenSource
+            // stayed alive for the rest of the session.
             Close();
+            _disposed = true;
         }
 
         // ---- transitions ---------------------------------------------------
@@ -277,6 +322,7 @@ namespace Yingyeothon.Gamebase.Client
 
             _socket = created;
             _opened = false;
+            _retired = false;
             try
             {
                 created.Start();
@@ -294,6 +340,14 @@ namespace Yingyeothon.Gamebase.Client
             // Anything from a socket this state machine has already replaced is a
             // ghost: it must not reopen, close, or feed the current connection.
             if (!ReferenceEquals(socketEvent.Source, _socket))
+            {
+                return;
+            }
+
+            // A retired socket may still report its close — that is what drives the
+            // reconnect — but nothing it says before that can change this machine's
+            // mind, because the decision has already been made.
+            if (_retired && socketEvent.Kind != SocketEventKind.Closed)
             {
                 return;
             }
@@ -325,14 +379,17 @@ namespace Yingyeothon.Gamebase.Client
                 return;
             }
 
-            Opened?.Invoke(protocol);
-
             if (_options.Kind == GatewayChannelKind.Q)
             {
+                // Ready first: a q channel has no hello, so the dungeon client turns
+                // this very event into its public Connected, and the documented
+                // pattern is to send the first frame from that handler.
                 MarkReady();
+                Opened?.Invoke(protocol);
                 return;
             }
 
+            Opened?.Invoke(protocol);
             _helloDeadline = _clock.NowMillis + _options.HelloTimeoutMillis;
         }
 
@@ -353,17 +410,33 @@ namespace Yingyeothon.Gamebase.Client
                 return;
             }
 
-            if (parsed.Kind != JsonKind.Object)
+            string type;
+            if (_options.Kind == GatewayChannelKind.Lobby)
             {
-                ProtocolError?.Invoke(new ProtocolErrorEvent("frame has no string type"));
-                return;
-            }
+                // The lobby defines the vocabulary and refuses anything outside it,
+                // exactly as the gateway's own hub does.
+                if (parsed.Kind != JsonKind.Object)
+                {
+                    ProtocolError?.Invoke(new ProtocolErrorEvent("frame has no string type"));
+                    return;
+                }
 
-            var type = parsed.GetString("type");
-            if (type == null)
+                var declared = parsed.GetString("type");
+                if (declared == null)
+                {
+                    ProtocolError?.Invoke(new ProtocolErrorEvent("frame has no string type"));
+                    return;
+                }
+
+                type = declared;
+            }
+            else
             {
-                ProtocolError?.Invoke(new ProtocolErrorEvent("frame has no string type"));
-                return;
+                // A q channel has no vocabulary: the gateway forwards the game
+                // actor's message with SendRaw, verbatim, so an array, a number or a
+                // bare string is a legitimate game frame and refusing it would drop
+                // the run's own data.
+                type = (parsed.Kind == JsonKind.Object ? parsed.GetString("type") : null) ?? string.Empty;
             }
 
             if (_options.Kind == GatewayChannelKind.Lobby && !_ready)
@@ -372,7 +445,7 @@ namespace Yingyeothon.Gamebase.Client
                 {
                     // Keep waiting: the hello deadline is what ends this, not one
                     // stray frame.
-                    ProtocolError?.Invoke(new ProtocolErrorEvent("expected hello, got " + type));
+                    ProtocolError?.Invoke(new ProtocolErrorEvent("expected hello, got " + Normalize.Diagnostic(type)));
                     return;
                 }
 
@@ -390,6 +463,7 @@ namespace Yingyeothon.Gamebase.Client
             var closed = _socket;
             _socket = null;
             _ready = false;
+            _retired = false;
             _helloDeadline = null;
             closed?.Dispose();
 
@@ -454,6 +528,14 @@ namespace Yingyeothon.Gamebase.Client
 
             State = GatewayClientState.Reconnecting;
             Disconnected?.Invoke(new DisconnectedEvent(code, disposition.Reason, true));
+            if (_closedByUser)
+            {
+                // "The connection dropped, tear it down" is the obvious reaction, and
+                // Close() already cleared the deadline. Announcing a reconnect after
+                // it would show a reconnecting UI for a session the game just ended.
+                return;
+            }
+
             _logger.Info(
                 "gateway reconnecting",
                 Json.Object()
@@ -479,14 +561,20 @@ namespace Yingyeothon.Gamebase.Client
                     .Set("kind", disposition.Kind.ToString())
                     .Set("reason", disposition.Reason)
                     .Build());
+            // Schedule before raising. The settlement still happens at the end of the
+            // pass, but a handler that throws — a null reference on a destroyed
+            // GameObject is the ordinary Unity case — would otherwise unwind past
+            // ScheduleFailure and leave `await ConnectAsync()` pending forever, with
+            // State already Closed so it can never be reissued.
+            ScheduleFailure(new GatewayStoppedException("gateway connection stopped: " + disposition.Reason));
             Disconnected?.Invoke(new DisconnectedEvent(code, disposition.Reason, false));
             Stopped?.Invoke(new StoppedEvent(disposition.Kind, disposition.Reason, code));
-            ScheduleFailure(new GatewayStoppedException("gateway connection stopped: " + disposition.Reason));
         }
 
         private void LocalClose(CloseDisposition disposition, string reason)
         {
             _closeOverride = disposition;
+            _retired = true;
             if (_socket != null)
             {
                 SafeClose(_socket, GatewayCloseCode.Local, reason);

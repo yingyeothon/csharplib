@@ -37,7 +37,16 @@ namespace Yingyeothon.Gamebase.Client
                 value.GetNumber("y") ?? 0,
                 value.GetString("dir"));
 
+        /// <summary>
+        /// The peer as the latest <c>pos</c> states it. <c>dir</c> REPLACES rather
+        /// than merges: the gateway rebuilds the whole peer from each inbound frame
+        /// (<c>Peer{UserID, X, Y, Dir: in.Dir}</c>) and marshals it with
+        /// <c>dir,omitempty</c>, so an omitted <c>dir</c> is the authoritative "this
+        /// peer has no facing", not "unchanged". Carrying the old value forward
+        /// leaves a peer facing a direction it has cleared, with no later frame able
+        /// to correct it.
+        /// </summary>
         internal Peer WithPosition(double x, double y, string? dir)
-            => new Peer(UserId, x, y, dir ?? Dir);
+            => new Peer(UserId, x, y, dir);
     }
 }

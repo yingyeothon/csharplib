@@ -137,14 +137,18 @@ namespace Yingyeothon.Gamebase.Client
 
         public void Say(SayScope scope, string text, string? to = null)
         {
-            RequireScope(scope);
+            RequireSayScope(scope);
             _socket.Send(LobbyFrameWriter.Say(scope, to, text));
         }
 
         public void Event(SayScope scope, string name, JsonValue? payload, string? to = null)
         {
+            // Only the `event` capability, never the say list: the gateway's
+            // handleEventLocked checks Capabilities.Event and then routes the scope,
+            // and it never calls AllowsSay. A channel that restricts chat to `zone`
+            // still routes a party event, so guarding on the say list here refuses a
+            // frame the gateway would have delivered.
             RequireCapability(Capabilities?.Event, "event");
-            RequireScope(scope);
             _socket.Send(LobbyFrameWriter.Event(scope, to, name, payload));
         }
 
@@ -201,7 +205,11 @@ namespace Yingyeothon.Gamebase.Client
             }
         }
 
-        private void RequireScope(SayScope scope)
+        /// <summary>
+        /// Gates <c>say</c>, and only <c>say</c> — the say list is the gateway's chat
+        /// ACL, not a general scope ACL.
+        /// </summary>
+        private void RequireSayScope(SayScope scope)
         {
             var capabilities = Capabilities;
             if (capabilities != null && !capabilities.AllowsScope(scope))
@@ -267,7 +275,7 @@ namespace Yingyeothon.Gamebase.Client
                     Refused?.Invoke(error);
                     return;
                 default:
-                    ProtocolError?.Invoke(new ProtocolErrorEvent("unknown frame type " + frame.Type));
+                    ProtocolError?.Invoke(new ProtocolErrorEvent("unknown frame type " + Normalize.Diagnostic(frame.Type)));
                     return;
             }
         }

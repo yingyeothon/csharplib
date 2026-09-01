@@ -37,6 +37,15 @@ namespace Yingyeothon.Gamebase.Client.Tests
 
         public int DisposeCount { get; private set; }
 
+        /// <summary>
+        /// Makes <see cref="Close"/> record the request without reporting it, the way
+        /// the real transport does: <c>ClientWebSocketTransport.Close</c> starts an
+        /// async close and the event arrives on the receive thread later. The test
+        /// then calls <see cref="ServerClose(int, string)"/> itself, which is the only
+        /// way to reach anything that happens between the two.
+        /// </summary>
+        public bool DeferClose { get; set; }
+
         public void Start() => Started = true;
 
         public void SendText(string text)
@@ -64,7 +73,10 @@ namespace Yingyeothon.Gamebase.Client.Tests
             }
 
             ClientClose = (code, reason);
-            ServerClose(code, reason);
+            if (!DeferClose)
+            {
+                ServerClose(code, reason);
+            }
         }
 
         public void Dispose() => DisposeCount++;

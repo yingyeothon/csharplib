@@ -108,9 +108,14 @@ namespace Yingyeothon.Gamebase.Client.Tests
         [Test]
         public async Task ANullSayListMeansUnrestricted()
         {
-            // The gateway's Go `[]string` has no omitempty, so a channel that
-            // restricts nothing marshals `"say": null`. Folding that into an empty
-            // list would refuse every chat message the channel actually allows.
+            // The gateway never actually sends this — `capabilities()` in hub.go
+            // always builds a non-nil slice, so `say` is always a JSON array — and if
+            // some other producer ever did, Go's AllowsSay would refuse every scope
+            // for a nil slice. The SDK stays permissive for the unreachable shape on
+            // purpose: being stricter than the server refuses a frame locally that
+            // the server would have delivered, which is the worse of the two
+            // failures. `"say": []` is the shape that IS on the wire, and it is
+            // covered below.
             var harness = new LobbyHarness();
             var hello = Json.Object()
                 .Set("type", "hello")
@@ -173,6 +178,52 @@ namespace Yingyeothon.Gamebase.Client.Tests
             harness.Client.Send(Json.Object().Set("type", "custom").Set("n", 1d).Build());
 
             Assert.That(Json.Stringify(harness.Socket.Sent[0]), Is.EqualTo("{\"type\":\"custom\",\"n\":1}"));
+        }
+
+        /// <remarks>
+        /// The say list is the gateway's chat ACL and nothing else: handleEventLocked
+        /// checks Capabilities.Event and then routes the scope, and never calls
+        /// AllowsSay. Gating Event on the say list refused a frame the gateway would
+        /// have delivered — a party loot notification on a zone-only-chat channel.
+        /// </remarks>
+        [Test]
+        public async Task AnEventIsGatedOnTheEventCapabilityAndNotOnTheSayList()
+        {
+            var harness = new LobbyHarness();
+            await harness.ConnectAsync(Frames.Hello(say: new[] { "zone" }, channelEvent: true));
+            var client = harness.Client;
+
+            client.Event(SayScope.Party, "loot", null);
+            client.Event(SayScope.User, "whisper", null, "bob");
+
+            Assert.That(harness.Socket.Sent.Count, Is.EqualTo(2));
+            Assert.That(harness.Socket.Sent[0].GetString("scope"), Is.EqualTo("party"));
+            Assert.That(harness.Socket.Sent[1].GetString("scope"), Is.EqualTo("user"));
+
+            // Positive control: chat itself is still restricted to the one scope.
+            Assert.Throws<InvalidOperationException>(() => client.Say(SayScope.Party, "hi"));
+        }
+
+        /// <remarks>
+        /// This is the shape the gateway really sends for a chat-disabled channel —
+        /// hub.go's capabilities() always marshals a non-nil slice — so it is the one
+        /// that has to refuse.
+        /// </remarks>
+        [Test]
+        public async Task AnEmptySayListRefusesEveryScope()
+        {
+            var harness = new LobbyHarness();
+            await harness.ConnectAsync(Frames.Hello(say: new string[0]));
+            var client = harness.Client;
+
+            Assert.Throws<InvalidOperationException>(() => client.Say(SayScope.Zone, "hi"));
+            Assert.Throws<InvalidOperationException>(() => client.Say(SayScope.Party, "hi"));
+            Assert.Throws<InvalidOperationException>(() => client.Say(SayScope.User, "hi", "bob"));
+
+            // Positive control: the channel is otherwise usable.
+            client.Pos("town", 1, 1);
+
+            Assert.That(harness.Socket.Sent, Has.Count.EqualTo(1));
         }
     }
 }

@@ -56,6 +56,16 @@ namespace Yingyeothon.Gamebase.Client
     {
         private const int ReceiveBufferSize = 8 * 1024;
 
+        /// <summary>
+        /// The largest message this client will reassemble, in bytes. The gateway
+        /// caps its own outbound frames at 32 KB (its README's "text frames only,
+        /// 16 KB inbound cap, 32 KB outbound cap"), so this is double the largest
+        /// legitimate frame. Without it a peer streaming continuation frames grows a
+        /// MemoryStream without bound, and the codec's own 1 MiB cap cannot help:
+        /// that one is checked against a string the transport has already built.
+        /// </summary>
+        private const int MaxMessageBytes = 64 * 1024;
+
         /// <summary>The WebSocket close reason limit, in UTF-8 bytes.</summary>
         private const int MaxCloseReasonBytes = 123;
 
@@ -118,6 +128,17 @@ namespace Yingyeothon.Gamebase.Client
 
         public void Close(int code, string reason)
         {
+            // 0 is this field's "no local close yet" sentinel, so it cannot also be a
+            // code: storing it would leave the latch open, let the next call overwrite
+            // the reason, and post a close of 0 that CloseCodes reads as unknown and
+            // retries. A client may only send 1000 or 3000-4999 anyway, which is what
+            // the fake has always enforced.
+            if (code != 1000 && (code < 3000 || code > 4999))
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(code), "A client close code must be 1000 or 3000-4999.");
+            }
+
             // First local close wins, code and reason together. Assigning the reason
             // unconditionally would pair a later call's text with the earlier code.
             if (Interlocked.CompareExchange(ref _localCloseCode, code, 0) == 0)
@@ -189,6 +210,8 @@ namespace Yingyeothon.Gamebase.Client
                 using (var message = new MemoryStream())
                 {
                     WebSocketReceiveResult result;
+                    var binary = false;
+                    var total = 0L;
                     do
                     {
                         result = await _socket.ReceiveAsync(segment, _cancellation.Token).ConfigureAwait(false);
@@ -197,19 +220,42 @@ namespace Yingyeothon.Gamebase.Client
                             var code = _socket.CloseStatus.HasValue ? (int)_socket.CloseStatus.Value : 1005;
                             var reason = _socket.CloseStatusDescription ?? string.Empty;
 
+                            // Report first. The acknowledgement below waits on the
+                            // send lock, and a send blocked against a peer that
+                            // stopped reading would otherwise hold the close back
+                            // indefinitely, leaving the state machine believing it is
+                            // still connected and never reconnecting.
+                            PostClose(code, reason);
+
                             // Answer the close frame. Without this the peer's own
                             // CloseAsync never completes and the gateway is left
                             // holding a half-closed connection until its idle timer.
                             await AcknowledgeCloseAsync().ConfigureAwait(false);
-                            PostClose(code, reason);
                             return;
                         }
 
-                        message.Write(buffer, 0, result.Count);
+                        binary |= result.MessageType == WebSocketMessageType.Binary;
+                        total += result.Count;
+                        if (total > MaxMessageBytes)
+                        {
+                            // Everything after construction arrives as a close, never
+                            // as a throw. 1009 stops rather than reconnects, which is
+                            // right: a client that reconnected would meet the same
+                            // flood. The state machine disposes the socket from there.
+                            PostClose(1009, "message too large");
+                            return;
+                        }
+
+                        // A binary message is reported by kind and never by content,
+                        // so its bytes are counted and dropped rather than buffered.
+                        if (!binary)
+                        {
+                            message.Write(buffer, 0, result.Count);
+                        }
                     }
                     while (!result.EndOfMessage);
 
-                    if (result.MessageType == WebSocketMessageType.Binary)
+                    if (binary)
                     {
                         _sink.Post(SocketEvent.BinaryMessage(this));
                         continue;
@@ -224,7 +270,13 @@ namespace Yingyeothon.Gamebase.Client
 
         private async Task AcknowledgeCloseAsync()
         {
-            await _sendLock.WaitAsync().ConfigureAwait(false);
+            // Bounded: the acknowledgement is a courtesy to the peer, and a send stuck
+            // against a full TCP buffer must not turn it into a hang.
+            if (!await WaitForSendAsync().ConfigureAwait(false))
+            {
+                return;
+            }
+
             try
             {
                 if (_socket.State == WebSocketState.CloseReceived)
@@ -251,10 +303,14 @@ namespace Yingyeothon.Gamebase.Client
 
         private async Task SendAsync(string text)
         {
-            await _sendLock.WaitAsync().ConfigureAwait(false);
+            // The wait is inside the try: SendText discards this task, so an
+            // ObjectDisposedException from a semaphore Dispose raced this far would
+            // otherwise be captured into a task nobody observes.
+            var held = false;
             try
             {
-                if (_socket.State != WebSocketState.Open)
+                held = await WaitForSendAsync().ConfigureAwait(false);
+                if (!held || _socket.State != WebSocketState.Open)
                 {
                     return;
                 }
@@ -273,12 +329,37 @@ namespace Yingyeothon.Gamebase.Client
             }
             finally
             {
-                Release(_sendLock);
+                if (held)
+                {
+                    Release(_sendLock);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Takes the send lock with a bound, reporting whether it was acquired. Every
+        /// write to the socket goes through it, because a second concurrent write
+        /// aborts the socket on the older BCLs Unity ships.
+        /// </summary>
+        private async Task<bool> WaitForSendAsync()
+        {
+            try
+            {
+                return await _sendLock.WaitAsync(TimeSpan.FromSeconds(2)).ConfigureAwait(false);
+            }
+            catch (ObjectDisposedException)
+            {
+                return false;
             }
         }
 
         private async Task CloseAsync()
         {
+            // The close is a write like any other, so it takes the same lock: two
+            // outstanding writes on one ClientWebSocket abort it on the BCL vintages
+            // Unity's Mono and IL2CPP backends ship, and the requested code never
+            // reaches the gateway.
+            var held = await WaitForSendAsync().ConfigureAwait(false);
             try
             {
                 if (_socket.State == WebSocketState.Open || _socket.State == WebSocketState.CloseReceived)
@@ -298,6 +379,13 @@ namespace Yingyeothon.Gamebase.Client
             {
                 // The close handshake failing changes nothing: the socket is over
                 // either way, and PostClose below reports it exactly once.
+            }
+            finally
+            {
+                if (held)
+                {
+                    Release(_sendLock);
+                }
             }
 
             PostClose(_localCloseCode, _localCloseReason);
@@ -341,7 +429,11 @@ namespace Yingyeothon.Gamebase.Client
             }
 
             // Cut on a character boundary; CloseOutputAsync throws on a longer reason.
-            var length = reason.Length;
+            // Start at the byte limit rather than the length: every char is at least
+            // one UTF-8 byte, so nothing beyond it can fit, and starting at
+            // reason.Length made this O(n^2) in both time and allocation on a string
+            // a caller chose.
+            var length = Math.Min(reason.Length, MaxCloseReasonBytes);
             while (length > 0 && Encoding.UTF8.GetByteCount(reason.Substring(0, length)) > MaxCloseReasonBytes)
             {
                 length--;
@@ -364,8 +456,9 @@ namespace Yingyeothon.Gamebase.Client
                 throw new ArgumentException("A subprotocol cannot be empty.");
             }
 
-            foreach (var c in value)
+            for (var index = 0; index < value.Length; index++)
             {
+                var c = value[index];
                 var ok = (c >= 'a' && c <= 'z')
                     || (c >= 'A' && c <= 'Z')
                     || (c >= '0' && c <= '9')
@@ -375,8 +468,15 @@ namespace Yingyeothon.Gamebase.Client
                     // A JWT is base64url plus dots, all legal here. A padded or
                     // standard-base64 token is not, and failing now is what turns it
                     // into a clear "cannot open WebSocket" instead of a silent retry.
+                    //
+                    // The offending character is NOT in the message: the second
+                    // subprotocol is the token, this message becomes a close reason
+                    // that GatewaySocket logs, and rules/security.md admits no
+                    // severity threshold for a credential reaching a log line. The
+                    // position says as much for debugging and leaks nothing.
                     throw new ArgumentException(
-                        "A subprotocol may only contain HTTP token characters; found '" + c + "'.");
+                        "A subprotocol may only contain HTTP token characters; the one at index "
+                        + index + " does not.");
                 }
             }
         }

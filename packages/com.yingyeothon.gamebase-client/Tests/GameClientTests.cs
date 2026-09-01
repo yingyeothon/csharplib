@@ -231,5 +231,106 @@ namespace Yingyeothon.Gamebase.Client.Tests
                 => throw new PlatformNotSupportedException(
                     "ClientWebSocket does not work on WebGL; set WebSocketFactory on the client options.");
         }
+
+        /// <remarks>
+        /// The q bridge forwards the actor's message with SendRaw, verbatim, so it has
+        /// no vocabulary at all. Requiring a JSON object with a string `type` — the
+        /// lobby's rule — dropped a run's own data and the game just appeared to hang.
+        /// </remarks>
+        [Test]
+        public async Task PassesThroughAFrameThatIsNotAnObjectWithATypeAtAll()
+        {
+            var harness = new GameHarness();
+            await harness.ConnectAsync();
+            var frames = new List<JsonValue>();
+            var errors = new List<ProtocolErrorEvent>();
+            harness.Client.Frame += f => frames.Add(f);
+            harness.Client.ProtocolError += e => errors.Add(e);
+
+            harness.Socket.ServerSendRaw("[1,2,3]");
+            harness.Socket.ServerSendRaw("{\"result\":\"win\",\"score\":10}");
+            harness.Socket.ServerSendRaw("\"just a string\"");
+            harness.Socket.ServerSendRaw("42");
+            harness.Poll();
+
+            Assert.That(errors, Is.Empty);
+            Assert.That(frames, Has.Count.EqualTo(4));
+            Assert.That(frames[0].Kind, Is.EqualTo(JsonKind.Array));
+            Assert.That(frames[1].GetString("result"), Is.EqualTo("win"));
+            Assert.That(frames[2].Kind, Is.EqualTo(JsonKind.String));
+            Assert.That(frames[3].Kind, Is.EqualTo(JsonKind.Number));
+
+            // Positive control: malformed JSON is still a protocol error.
+            harness.Socket.ServerSendRaw("{oops");
+            harness.Poll();
+
+            Assert.That(errors, Has.Count.EqualTo(1));
+        }
+
+        /// <remarks>
+        /// The gateway's ErrorFrame marshals `message` with omitempty, so requiring it
+        /// handed a refusal to the game as its own data and let the client keep
+        /// sending into a rising `bad` counter — 50 of which close the socket with
+        /// 4003.
+        /// </remarks>
+        [Test]
+        public async Task AGatewayRefusalWithNoMessageIsStillARefusal()
+        {
+            var harness = new GameHarness();
+            await harness.ConnectAsync();
+            var frames = new JsonValue?[] { null };
+            var errors = new List<ErrorFrame>();
+            harness.Client.Frame += f => frames[0] = f;
+            harness.Client.Refused += e => errors.Add(e);
+
+            harness.Socket.ServerSend(Json.Object().Set("type", "error").Set("code", "rate_limited").Build());
+            harness.Poll();
+
+            Assert.That(errors, Has.Count.EqualTo(1));
+            Assert.That(errors[0].Code, Is.EqualTo("rate_limited"));
+            Assert.That(frames[0], Is.Null);
+
+            // Positive control: a numeric `code` is still the game's own frame, since
+            // the string code is the whole discriminator.
+            harness.Socket.ServerSend(Json.Object().Set("type", "error").Set("code", 5d).Build());
+            harness.Poll();
+
+            Assert.That(errors, Has.Count.EqualTo(1));
+            Assert.That(frames[0], Is.Not.Null);
+        }
+
+        /// <remarks>
+        /// A q channel has no hello, so the dungeon client turns the socket's open
+        /// into its public Connected — and the documented pattern is to send the first
+        /// frame from that handler. It used to be raised before MarkReady, so it threw
+        /// "cannot send in state Connecting".
+        /// </remarks>
+        [Test]
+        public void TheFirstFrameCanBeSentFromTheConnectedHandler()
+        {
+            var harness = new GameHarness();
+            var states = new List<GatewayClientState>();
+            Exception? caught = null;
+            harness.Client.Connected += () =>
+            {
+                states.Add(harness.Client.State);
+                try
+                {
+                    harness.Client.Send(Json.Object().Set("type", "join").Build());
+                }
+                catch (Exception error)
+                {
+                    caught = error;
+                }
+            };
+
+            harness.Client.ConnectAsync();
+            harness.Socket.ServerOpen();
+            harness.Poll();
+
+            Assert.That(caught, Is.Null);
+            Assert.That(states, Is.EqualTo(new[] { GatewayClientState.Connected }));
+            Assert.That(harness.Socket.Sent, Has.Count.EqualTo(1));
+        }
     }
 }

@@ -301,5 +301,125 @@ namespace Yingyeothon.Gamebase.Client.Tests
             Assert.That(closed.Kind, Is.EqualTo(SocketEventKind.Closed));
             Assert.That(closed.Code, Is.EqualTo(1006));
         }
+
+        /// <remarks>
+        /// The gateway caps its outbound frames at 32 KB, so nothing legitimate is
+        /// near this. Without the cap a peer streaming continuation frames grew a
+        /// MemoryStream without bound, and the codec's own 1 MiB limit could not help:
+        /// it is checked against a string the transport has already built.
+        /// </remarks>
+        [Test]
+        public async Task AMessageOverTheSizeCapArrivesAsACloseInsteadOfGrowingForever()
+        {
+            var sink = new CollectingSink();
+            var accepting = AcceptAsync();
+            using var socket = Connect(sink);
+            var server = await accepting;
+            await sink.NextAsync(Timeout);
+
+            // One message, streamed as continuation frames that never end.
+            var chunk = new byte[16 * 1024];
+            for (var i = 0; i < chunk.Length; i++)
+            {
+                chunk[i] = (byte)'x';
+            }
+
+            for (var i = 0; i < 8; i++)
+            {
+                try
+                {
+                    await server.WebSocket.SendAsync(
+                        new ArraySegment<byte>(chunk), WebSocketMessageType.Text, false, CancellationToken.None);
+                }
+                catch (WebSocketException)
+                {
+                    // The client has already closed on us, which is the point.
+                    break;
+                }
+            }
+
+            var closed = await sink.NextAsync(Timeout);
+
+            Assert.That(closed.Kind, Is.EqualTo(SocketEventKind.Closed));
+            Assert.That(closed.Code, Is.EqualTo(1009));
+
+            // 1009 must stop rather than reconnect: a client that reconnected would
+            // meet the same flood.
+            Assert.That(
+                CloseCodes.Classify(closed.Code, GatewayChannelKind.Lobby).Kind,
+                Is.EqualTo(CloseDispositionKind.ClientBug));
+        }
+
+        /// <remarks>
+        /// A message just under the cap must still arrive whole — the pair is what
+        /// pins the boundary rather than a cap that swallowed everything.
+        /// </remarks>
+        [Test]
+        public async Task AMessageUnderTheSizeCapStillArrivesWhole()
+        {
+            var sink = new CollectingSink();
+            var accepting = AcceptAsync();
+            using var socket = Connect(sink);
+            var server = await accepting;
+            await sink.NextAsync(Timeout);
+
+            var text = new string('y', 63 * 1024);
+            await server.WebSocket.SendAsync(
+                new ArraySegment<byte>(Encoding.UTF8.GetBytes(text)),
+                WebSocketMessageType.Text,
+                true,
+                CancellationToken.None);
+
+            var message = await sink.NextAsync(Timeout);
+
+            Assert.That(message.Kind, Is.EqualTo(SocketEventKind.Message));
+            Assert.That(message.Text, Is.EqualTo(text));
+        }
+
+        /// <remarks>
+        /// The second subprotocol is the JWT, and this message becomes a close reason
+        /// that GatewaySocket logs at info. rules/security.md admits no severity
+        /// threshold for a credential reaching a log line.
+        /// </remarks>
+        [Test]
+        public void ARefusedSubprotocolNeverQuotesTheOffendingTokenCharacter()
+        {
+            var sink = new CollectingSink();
+
+            var error = Assert.Throws<ArgumentException>(() => WebSocketTransport.Default.Create(
+                new WebSocketCreateContext(_url, new[] { "bearer", "eyJhbGci.PAYLOAD==" }, sink)));
+
+            // Positive control: it did refuse, and it says why and where.
+            Assert.That(error!.Message, Does.Contain("HTTP token characters"));
+            Assert.That(error.Message, Does.Contain("index 16"));
+            Assert.That(error.Message, Does.Not.Contain("="));
+            Assert.That(error.Message, Does.Not.Contain("PAYLOAD"));
+        }
+
+        /// <remarks>
+        /// 0 is the transport's "no local close yet" sentinel, so storing it left the
+        /// latch open, let the next call overwrite the reason, and posted a close of 0
+        /// that CloseCodes reads as unknown and retries.
+        /// </remarks>
+        [Test]
+        public async Task ACloseCodeAClientMayNotSendIsRefusedUpFront()
+        {
+            var sink = new CollectingSink();
+            var accepting = AcceptAsync();
+            using var socket = Connect(sink);
+            await accepting;
+            await sink.NextAsync(Timeout);
+
+            Assert.Throws<ArgumentOutOfRangeException>(() => socket.Close(0, "uninitialised"));
+            Assert.Throws<ArgumentOutOfRangeException>(() => socket.Close(1006, "abnormal"));
+            Assert.Throws<ArgumentOutOfRangeException>(() => socket.Close(999, "reserved"));
+
+            // Positive control: the codes a client may send are accepted.
+            Assert.DoesNotThrow(() => socket.Close(GatewayCloseCode.Local, "hello timeout"));
+
+            var closed = await sink.NextAsync(Timeout);
+
+            Assert.That(closed.Code, Is.EqualTo(GatewayCloseCode.Local));
+        }
     }
 }

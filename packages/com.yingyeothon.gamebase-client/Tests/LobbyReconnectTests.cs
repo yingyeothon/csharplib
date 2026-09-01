@@ -306,5 +306,36 @@ namespace Yingyeothon.Gamebase.Client.Tests
             Assert.That(harness.Factory.Sockets, Has.Count.EqualTo(6));
             Assert.That(harness.Factory.Sockets.Select(s => s.DisposeCount), Is.All.EqualTo(1));
         }
+
+        /// <remarks>
+        /// ScheduleReconnect raised Disconnected and only then armed the deadline, so
+        /// "the connection dropped, tear it down" — a Close() from that handler — was
+        /// followed by a Reconnecting event for a session the game had just ended.
+        /// Only Open()'s own _closedByUser re-check kept a second socket from opening.
+        /// </remarks>
+        [Test]
+        public async Task ClosingFromTheDisconnectedHandlerSuppressesTheReconnect()
+        {
+            var harness = new LobbyHarness();
+            await harness.ConnectAsync();
+            var order = new List<string>();
+            harness.Client.Disconnected += e =>
+            {
+                order.Add("disconnected:" + e.Code + ":" + e.WillReconnect);
+                harness.Client.Close();
+            };
+            harness.Client.Reconnecting += e => order.Add("reconnecting:" + e.Attempt);
+
+            harness.Socket.ServerClose(GatewayCloseCode.Idle, "idle");
+            harness.Poll();
+
+            Assert.That(order, Is.EqualTo(new[] { "disconnected:4002:True" }));
+            Assert.That(harness.Client.State, Is.EqualTo(GatewayClientState.Closed));
+
+            // And no second socket, however long the game keeps pumping.
+            harness.Advance(60000);
+
+            Assert.That(harness.Factory.Sockets, Has.Count.EqualTo(1));
+        }
     }
 }

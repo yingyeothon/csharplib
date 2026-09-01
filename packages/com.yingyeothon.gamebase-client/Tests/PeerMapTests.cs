@@ -115,19 +115,33 @@ namespace Yingyeothon.Gamebase.Client.Tests
             Assert.That(Apply(map, Frames.Pos("town", Frames.Peer("alice", 1, 1))), Is.Null);
         }
 
+        /// <remarks>
+        /// The gateway rebuilds the whole peer from each inbound pos
+        /// (<c>Peer{UserID, X, Y, Dir: in.Dir}</c>) and marshals it with
+        /// <c>dir,omitempty</c>, so an omitted <c>dir</c> in a batch says the peer has
+        /// no facing — it is not "unchanged". Carrying the old value forward left a
+        /// peer facing a direction it had cleared, with no later frame able to correct
+        /// it, and made the same peer's facing depend on whether it arrived by
+        /// <c>snapshot</c> (null) or by <c>pos</c> (stale).
+        /// </remarks>
         [Test]
-        public void APosThatOmitsDirKeepsThePreviousFacing()
+        public void APosThatOmitsDirClearsTheFacingBecauseTheGatewaySaysSo()
         {
             var map = Create();
             Apply(map, Frames.Snapshot("town", Frames.Peer("bob", 1, 1, "left")));
 
             Apply(map, Frames.Pos("town", Frames.Peer("bob", 2, 2)));
 
-            Assert.That(map.Get("bob")!.Dir, Is.EqualTo("left"));
+            Assert.That(map.Get("bob")!.Dir, Is.Null);
 
             Apply(map, Frames.Pos("town", Frames.Peer("bob", 3, 3, "right")));
 
             Assert.That(map.Get("bob")!.Dir, Is.EqualTo("right"));
+
+            // And the same peer arriving through either frame agrees.
+            Apply(map, Frames.Snapshot("town", Frames.Peer("bob", 4, 4)));
+
+            Assert.That(map.Get("bob")!.Dir, Is.Null);
         }
 
         [Test]
