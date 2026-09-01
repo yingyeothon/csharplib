@@ -1,0 +1,11 @@
+{
+  "name": "Yingyeothon.EventBroker",
+  "rootNamespace": "Yingyeothon.EventBroker",
+  "references": [],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "autoReferenced": true,
+  "noEngineReferences": false
+}

@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AssemblyName>Yingyeothon.Logger</AssemblyName>
+    <RootNamespace>Yingyeothon.Logger</RootNamespace>
+    <PackageId>Yingyeothon.Logger</PackageId>
+    <Description>Minimal structured logger with severity filtering and composable writers.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Runtime/**/*.cs" Exclude="Runtime/Unity/**/*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../com.yingyeothon.codec/Yingyeothon.Codec.csproj" />
+  </ItemGroup>
+
+</Project>

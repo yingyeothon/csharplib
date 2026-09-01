@@ -1,0 +1,11 @@
+{
+  "name": "Yingyeothon.Gamebase.Client",
+  "rootNamespace": "Yingyeothon.Gamebase.Client",
+  "references": ["Yingyeothon.Codec", "Yingyeothon.Logger"],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "autoReferenced": true,
+  "noEngineReferences": false
+}

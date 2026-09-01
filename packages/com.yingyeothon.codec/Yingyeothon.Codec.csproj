@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AssemblyName>Yingyeothon.Codec</AssemblyName>
+    <RootNamespace>Yingyeothon.Codec</RootNamespace>
+    <PackageId>Yingyeothon.Codec</PackageId>
+    <Description>Dependency-free JSON value tree, parser, writer and codec abstraction for Unity-compatible builds.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Runtime/**/*.cs" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,12 @@
+{
+  "name": "Yingyeothon.Logger.Tests",
+  "rootNamespace": "Yingyeothon.Logger.Tests",
+  "references": ["Yingyeothon.Logger", "Yingyeothon.Codec"],
+  "includePlatforms": ["Editor"],
+  "excludePlatforms": [],
+  "overrideReferences": true,
+  "precompiledReferences": ["nunit.framework.dll"],
+  "defineConstraints": ["UNITY_INCLUDE_TESTS"],
+  "autoReferenced": false,
+  "noEngineReferences": false
+}

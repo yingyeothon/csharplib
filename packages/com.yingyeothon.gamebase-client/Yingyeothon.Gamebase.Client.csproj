@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AssemblyName>Yingyeothon.Gamebase.Client</AssemblyName>
+    <RootNamespace>Yingyeothon.Gamebase.Client</RootNamespace>
+    <PackageId>Yingyeothon.Gamebase.Client</PackageId>
+    <Description>Client SDK for the yyt realtime WebSocket gateway: lobby and dungeon protocols with typed frames, reconnect and a peer map.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Runtime/**/*.cs" Exclude="Runtime/Unity/**/*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../com.yingyeothon.codec/Yingyeothon.Codec.csproj" />
+    <ProjectReference Include="../com.yingyeothon.logger/Yingyeothon.Logger.csproj" />
+  </ItemGroup>
+
+</Project>

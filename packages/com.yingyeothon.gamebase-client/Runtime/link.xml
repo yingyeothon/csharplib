@@ -1,0 +1,10 @@
+<!--
+  IL2CPP managed stripping removes types it cannot see being used. These
+  assemblies are reached through interfaces and generic factories, so preserve
+  them wholesale rather than chasing individual entry points.
+-->
+<linker>
+  <assembly fullname="Yingyeothon.Codec" preserve="all" />
+  <assembly fullname="Yingyeothon.Logger" preserve="all" />
+  <assembly fullname="Yingyeothon.Gamebase.Client" preserve="all" />
+</linker>

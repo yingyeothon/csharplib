@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AssemblyName>Yingyeothon.EventBroker</AssemblyName>
+    <RootNamespace>Yingyeothon.EventBroker</RootNamespace>
+    <PackageId>Yingyeothon.EventBroker</PackageId>
+    <Description>Type-safe asynchronous event broker with on/once/off registration.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Runtime/**/*.cs" />
+  </ItemGroup>
+
+</Project>

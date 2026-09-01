@@ -1,0 +1,25 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - run: dotnet restore Yingyeothon.sln
+      - run: dotnet build Yingyeothon.sln -c Release --no-restore
+      - run: dotnet format Yingyeothon.sln --verify-no-changes --no-restore
+      - run: dotnet test Yingyeothon.sln -c Release --no-build
+      - name: Check the UPM packages stay importable by Unity
+        run: ./scripts/validate-packages.sh

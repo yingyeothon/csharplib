@@ -1,0 +1,37 @@
+<Project>
+
+  <!--
+    Shared build settings for every project in this repository.
+
+    The libraries multi-target netstandard2.0 and netstandard2.1 so they load in
+    Unity's Mono and IL2CPP scripting backends; LangVersion is pinned to 9.0,
+    the highest C# version Unity 2021.3 LTS compiles. Build output goes to a
+    repository-level artifacts/ directory so no bin/ or obj/ folder ever appears
+    inside a package folder, where Unity would import it as project assets.
+  -->
+  <PropertyGroup>
+    <ArtifactsPath>$(MSBuildThisFileDirectory)artifacts</ArtifactsPath>
+    <UseArtifactsOutput>true</UseArtifactsOutput>
+
+    <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+
+    <!-- Compile items are declared per project so Runtime/Unity/ can be excluded. -->
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+
+    <Version>0.1.0</Version>
+    <Authors>yingyeothon</Authors>
+    <Company>yingyeothon</Company>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/yingyeothon/csharplib</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageProjectUrl>https://github.com/yingyeothon/csharplib</PackageProjectUrl>
+  </PropertyGroup>
+
+</Project>

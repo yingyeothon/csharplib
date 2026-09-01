@@ -1,0 +1,11 @@
+{
+  "name": "Yingyeothon.Logger",
+  "rootNamespace": "Yingyeothon.Logger",
+  "references": ["Yingyeothon.Codec"],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "autoReferenced": true,
+  "noEngineReferences": false
+}

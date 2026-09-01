@@ -1,0 +1,14 @@
+{
+  "name": "com.yingyeothon.gamebase-client",
+  "version": "0.1.0",
+  "displayName": "Yingyeothon Gamebase Client",
+  "description": "Client SDK for the yyt realtime WebSocket gateway: lobby and dungeon protocols with typed frames, reconnect and a peer map.",
+  "unity": "2021.3",
+  "license": "MIT",
+  "author": { "name": "yingyeothon", "url": "https://github.com/yingyeothon" },
+  "dependencies": {
+    "com.yingyeothon.codec": "0.1.0",
+    "com.yingyeothon.logger": "0.1.0"
+  },
+  "keywords": ["yyt", "yingyeothon"]
+}

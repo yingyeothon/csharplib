@@ -1,0 +1,12 @@
+{
+  "name": "Yingyeothon.Codec.Tests",
+  "rootNamespace": "Yingyeothon.Codec.Tests",
+  "references": ["Yingyeothon.Codec"],
+  "includePlatforms": ["Editor"],
+  "excludePlatforms": [],
+  "overrideReferences": true,
+  "precompiledReferences": ["nunit.framework.dll"],
+  "defineConstraints": ["UNITY_INCLUDE_TESTS"],
+  "autoReferenced": false,
+  "noEngineReferences": false
+}

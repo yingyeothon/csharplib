@@ -1,0 +1,12 @@
+{
+  "name": "Yingyeothon.EventBroker.Tests",
+  "rootNamespace": "Yingyeothon.EventBroker.Tests",
+  "references": ["Yingyeothon.EventBroker"],
+  "includePlatforms": ["Editor"],
+  "excludePlatforms": [],
+  "overrideReferences": true,
+  "precompiledReferences": ["nunit.framework.dll"],
+  "defineConstraints": ["UNITY_INCLUDE_TESTS"],
+  "autoReferenced": false,
+  "noEngineReferences": false
+}
