@@ -5,9 +5,22 @@
   "description": "Minimal structured logger with severity filtering and composable writers.",
   "unity": "2021.3",
   "license": "MIT",
-  "author": { "name": "yingyeothon", "url": "https://github.com/yingyeothon" },
+  "author": {
+    "name": "yingyeothon",
+    "url": "https://github.com/yingyeothon"
+  },
   "dependencies": {
     "com.yingyeothon.codec": "0.1.0"
   },
-  "keywords": ["yyt", "yingyeothon"]
+  "keywords": [
+    "yyt",
+    "yingyeothon"
+  ],
+  "samples": [
+    {
+      "displayName": "Unity Logging",
+      "description": "Routing the logger to the editor console, and what may go in a log line.",
+      "path": "Samples~/UnityLogging"
+    }
+  ]
 }

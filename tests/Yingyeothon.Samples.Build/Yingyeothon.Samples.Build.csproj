@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Compiles the engine-free half of every Samples~ folder.
+
+    A sample the docs point at is a promise, and a promise nothing compiles rots the
+    first time the API moves. Unity ignores a `Samples~` folder until the Package
+    Manager imports it, and `dotnet build` would ignore it too, so this project exists
+    only to fail when a sample stops matching the surface it demonstrates.
+
+    It is outside packages/ deliberately: scripts/validate-packages.sh and
+    scripts/check-coverage.sh both walk packages/*, and Unity imports anything under a
+    package folder. It carries no tests, so it changes neither gate.
+
+    Only the engine-free files are listed. The MonoBehaviour wrappers next to them are
+    guarded by #if UNITY_5_3_OR_NEWER and are Unity's to compile, exactly as
+    Runtime/Unity/** is.
+  -->
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.1</TargetFrameworks>
+    <AssemblyName>Yingyeothon.Samples.Build</AssemblyName>
+    <RootNamespace>Yingyeothon.Samples.Build</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="../../packages/com.yingyeothon.codec/Samples~/JsonBasics/*.cs" />
+    <Compile Include="../../packages/com.yingyeothon.logger/Samples~/UnityLogging/*.cs" />
+    <Compile Include="../../packages/com.yingyeothon.event-broker/Samples~/TypedEvents/*.cs" />
+    <Compile Include="../../packages/com.yingyeothon.gamebase-client/Samples~/SignIn/*.cs" />
+    <Compile Include="../../packages/com.yingyeothon.gamebase-client/Samples~/LobbyQuickstart/LobbySession.cs" />
+    <Compile Include="../../packages/com.yingyeothon.gamebase-client/Samples~/DungeonRun/*.cs" />
+    <Compile Include="../../packages/com.yingyeothon.gamebase-client/Samples~/WebGLTransport/*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../packages/com.yingyeothon.codec/Yingyeothon.Codec.csproj" />
+    <ProjectReference Include="../../packages/com.yingyeothon.logger/Yingyeothon.Logger.csproj" />
+    <ProjectReference Include="../../packages/com.yingyeothon.event-broker/Yingyeothon.EventBroker.csproj" />
+    <ProjectReference Include="../../packages/com.yingyeothon.gamebase-client/Yingyeothon.Gamebase.Client.csproj" />
+  </ItemGroup>
+
+</Project>

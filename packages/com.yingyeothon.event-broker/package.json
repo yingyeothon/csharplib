@@ -5,7 +5,20 @@
   "description": "Type-safe asynchronous event broker with on/once/off registration.",
   "unity": "2021.3",
   "license": "MIT",
-  "author": { "name": "yingyeothon", "url": "https://github.com/yingyeothon" },
+  "author": {
+    "name": "yingyeothon",
+    "url": "https://github.com/yingyeothon"
+  },
   "dependencies": {},
-  "keywords": ["yyt", "yingyeothon"]
+  "keywords": [
+    "yyt",
+    "yingyeothon"
+  ],
+  "samples": [
+    {
+      "displayName": "Typed Events",
+      "description": "The type-keyed broker, with On, Once and FireAsync.",
+      "path": "Samples~/TypedEvents"
+    }
+  ]
 }

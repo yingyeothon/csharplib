@@ -25,6 +25,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{2E826855
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Yingyeothon.PublicApi.Tests", "tests\Yingyeothon.PublicApi.Tests\Yingyeothon.PublicApi.Tests.csproj", "{7A2CC9C5-4237-47EE-AECA-B917792F638C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Yingyeothon.Samples.Build", "tests\Yingyeothon.Samples.Build\Yingyeothon.Samples.Build.csproj", "{2942F1FB-BF09-448B-8FB4-663DF9833449}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -70,6 +72,10 @@ Global
 		{7A2CC9C5-4237-47EE-AECA-B917792F638C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7A2CC9C5-4237-47EE-AECA-B917792F638C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7A2CC9C5-4237-47EE-AECA-B917792F638C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2942F1FB-BF09-448B-8FB4-663DF9833449}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2942F1FB-BF09-448B-8FB4-663DF9833449}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2942F1FB-BF09-448B-8FB4-663DF9833449}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2942F1FB-BF09-448B-8FB4-663DF9833449}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{ECEBF373-1DB4-417D-8A85-ED456AF0553B} = {DFCDE053-853B-4525-BE43-40B53E2DB5A5}
@@ -81,5 +87,6 @@ Global
 		{A3685CF6-3819-44D6-BE2D-B80FDB41942C} = {DFCDE053-853B-4525-BE43-40B53E2DB5A5}
 		{5E187D76-1C97-4ECC-9CBB-466BC3E0FCFA} = {DFCDE053-853B-4525-BE43-40B53E2DB5A5}
 		{7A2CC9C5-4237-47EE-AECA-B917792F638C} = {2E826855-6F24-4AEE-9451-9041E174DA85}
+		{2942F1FB-BF09-448B-8FB4-663DF9833449} = {2E826855-6F24-4AEE-9451-9041E174DA85}
 	EndGlobalSection
 EndGlobal

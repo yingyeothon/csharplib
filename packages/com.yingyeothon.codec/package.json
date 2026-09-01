@@ -5,7 +5,20 @@
   "description": "Dependency-free JSON value tree, parser, writer and codec abstraction for Unity-compatible builds.",
   "unity": "2021.3",
   "license": "MIT",
-  "author": { "name": "yingyeothon", "url": "https://github.com/yingyeothon" },
+  "author": {
+    "name": "yingyeothon",
+    "url": "https://github.com/yingyeothon"
+  },
   "dependencies": {},
-  "keywords": ["yyt", "yingyeothon"]
+  "keywords": [
+    "yyt",
+    "yingyeothon"
+  ],
+  "samples": [
+    {
+      "displayName": "Json Basics",
+      "description": "Building and reading the frames a gateway channel carries.",
+      "path": "Samples~/JsonBasics"
+    }
+  ]
 }
