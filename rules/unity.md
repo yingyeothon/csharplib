@@ -14,12 +14,14 @@ constraints that follow, and none of them fail at `dotnet build`.
 
 ## Assembly boundaries
 
-- **This file used to claim every Runtime asmdef sets `noEngineReferences: true`. None
-  of them does** — all four are `false`, and they have to be, because the engine glue
-  in `Runtime/Unity/**` lives inside the same assembly and references `UnityEngine`.
-  Making the claim true means moving that glue into its own asmdef. Until someone
-  decides which, the enforcement that keeps the sources plain-`dotnet build`-able is
-  the `.csproj` compile glob excluding `Runtime/Unity/**`, not the asmdef. Do not
+- Every Runtime asmdef sets `noEngineReferences: false`, and that is **settled, not
+  an oversight**: the engine glue in `Runtime/Unity/**` lives inside the same assembly
+  and references `UnityEngine`. The enforcement that keeps the sources
+  plain-`dotnet build`-able is the `.csproj` compile glob excluding `Runtime/Unity/**`,
+  and it is a real gate — the dotnet build fails the moment a non-`Runtime/Unity` file
+  touches the engine. Splitting the two glue files into their own asmdefs would let the
+  flag be `true`, at the cost of an extra asmdef reference in every consumer that wants
+  `GamebaseRunner`; not worth it for a flag whose job the glob already does. Do not
   "restore" the flag without moving the glue first: it will not compile in Unity.
 - Engine-facing glue lives in `Runtime/Unity/`, guarded by `#if UNITY_5_3_OR_NEWER`,
   and is excluded from the `.csproj` compile glob. Adding a file there means checking
@@ -68,6 +70,16 @@ constraints that follow, and none of them fail at `dotnet build`.
 - `await ConnectAsync()` resumes on the pump thread by design, so `Send()` is legal
   straight after it. A `MapAsync()` continuation is a normal task continuation and
   may land elsewhere; marshal back before touching the client.
+- **Never `ConfigureAwait(false)` on a task the caller awaits.** `GatewayLobbyClient`
+  did, and on Unity's Mono the continuation was not inlined — `await ConnectAsync()`
+  resumed on a thread-pool thread, which is exactly where `Send()` and every other
+  entry point are illegal, and where touching a `Transform` throws. A dotnet host
+  hides this because .NET inlines the same continuation. Settle a caller-visible task
+  from a synchronous `ContinueWith(..., TaskContinuationOptions.ExecuteSynchronously,
+  TaskScheduler.Default)` over the internal one, and leave the resumption context to
+  the caller: Unity's synchronization context puts them back on the main thread, a
+  console host resumes inline. `ConfigureAwait(false)` is still right inside the
+  transport's own background loops and in `MapFetcher`, which never resume a caller.
 
 ## Numbers and culture
 
@@ -75,6 +87,18 @@ constraints that follow, and none of them fail at `dotnet build`.
 - Every conversion uses `CultureInfo.InvariantCulture`. A German or Turkish locale
   otherwise writes `1,5`, the gateway drops the frame as `bad_message`, and the
   client is told nothing. There is a culture-parameterised test; keep it.
+- Mono's `double` formatting and parsing predate the IEEE-754 work in .NET Core 3.0,
+  so two things differ inside the editor and in a player:
+  - `double.TryParse("-0")` hands back **+0**, dropping the sign. `JsonParser`
+    restores it, so the value tree has the same shape on both runtimes.
+  - `ToString("R")` on a **subnormal** prints seventeen significant digits
+    (`4.94065645841247E-324`) where .NET prints the shortest round-trip form
+    (`5E-324`). Both read back to the same double, so the round-trip holds and the
+    text does not. Pin subnormals by round-trip, everything else by exact text.
+- `HttpListener` cannot accept a WebSocket on Mono — `AcceptWebSocketAsync` throws
+  `NotImplementedException`. The server half of the transport integration tests
+  therefore reports as ignored inside Unity, with the reason. The client half is
+  covered against the real gateway; see [manual-verification.md](manual-verification.md).
 
 ## Allocation
 

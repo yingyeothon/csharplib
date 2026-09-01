@@ -43,3 +43,35 @@
 - `UriBuilder` matches JS `new URL()` for these URLs, including normalising an empty
   path to `/` and not adding a port for `wss`. There is a test pinning the exact
   strings.
+
+## The `unity` CLI
+
+`~/.local/bin/unity` (v1.0.0-beta.5) drives the editors. It is worth using — `unity
+test` and `unity build` remove a lot of scaffolding — but it has traps that cost real
+time:
+
+- **Module installs can silently do nothing, and then claim success.** Both
+  `unity install <v> -m …` and `unity install-modules` exited 0 and reported
+  `Installed`, while `linux-il2cpp` had not been downloaded at all and `webgl` had
+  landed as an `Editor/` folder and nothing else. All they had written was
+  `"selected": true` (and `"isInstalled": true` on the 2021.3 schema) into
+  `~/Unity/Hub/Editor/<version>/modules.json`. The failures come much later and name
+  the wrong thing — "Currently selected scripting backend (IL2CPP) is not installed",
+  and a WebGL build that gets all the way to *"Build target 'WebGL' not supported"* in
+  postprocess. `--reinstall -f` does not repair it, because the Hub reads the same
+  file and agrees the module is there. **The repair:** set that module's `selected`
+  *and* `isInstalled` back to `false` in `modules.json`, then install through the Hub —
+  `unityhub -- --headless install-modules --version <v> --module <id> --childModules`.
+  **Confirm every module on the filesystem**, never from a status column:
+  `PlaybackEngines/LinuxStandaloneSupport/Variations/` must contain `*_il2cpp`
+  entries, and `PlaybackEngines/WebGLSupport/` must contain `BuildTools` and
+  `Variations`, not just `Editor`.
+- `unity editors`' `Platforms` column shows *selected* modules, not installed ones.
+- `unity install <v> --list-components` and `unity modules list <v>` both refuse a
+  version that is not installed, so plan the module set after the base install.
+- `--report-format both` is documented in `--help` and rejected at runtime; pass
+  `nunit` or `junit`. `unity test` has no `--no-tail`. `unity releases` rejects the
+  global `--no-pager`; use `UNITY_NO_PAGER=1`.
+- `unity releases` needs `--limit` raised (default 20) to reach anything old, and its
+  output pages by default — set `UNITY_NO_PAGER=1 UNITY_NON_INTERACTIVE=1` for every
+  scripted call.

@@ -87,6 +87,11 @@
   == v` passes just as well after someone changes `1E2` to `100.0`; only an exact
   assertion says the bytes are a decision. Re-parse each pinned string in the same
   test so a pin cannot drift into something invalid.
+- The one exception is a value whose spelling the **runtime** owns. Subnormals print
+  differently under Mono and under .NET, so pinning `5E-324` was a test that passed in
+  CI and failed in the editor. Pin those by round-trip, in their own test, naming the
+  difference — see [unity.md](unity.md). Reach for this only with evidence from a real
+  second runtime; "it might differ" is not evidence, and it would gut the pins.
 - Cover the failing grammar as densely as the succeeding one: every escape truncated
   at EOF, every bracket mismatch, every place a digit is required. Assert the reason
   and the offset, not just "it was refused" — a single code covering everything is a
@@ -101,6 +106,18 @@
 - Assert the boundary from both sides. "Depth 64 is accepted" and "depth 65 is
   refused" are one test each, and the pair is what pins an off-by-one that a single
   assertion happily agrees with.
+
+## Tests that only a second runtime can fail
+
+- `dotnet test` is one runtime. Running the same `packages/*/Tests` sources inside the
+  editor (`unity test --mode EditMode`, see [manual-verification.md](manual-verification.md))
+  is what found the `ConfigureAwait(false)` that resumed a caller on a thread-pool
+  thread and the two `double` differences above. None of them is expressible as a
+  dotnet-hosted test, so the editor run — not a new unit test — is their regression
+  guard. Say so in the commit rather than inventing a test that cannot fail.
+- When a test cannot run on a runtime at all, `Assert.Ignore` with the reason. Eleven
+  red tests nobody can act on teach people to ignore the suite; eleven ignores with a
+  sentence teach them where the coverage actually comes from.
 
 ## What only an integration test can reach
 
