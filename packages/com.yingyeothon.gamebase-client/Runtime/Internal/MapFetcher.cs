@@ -52,6 +52,13 @@ namespace Yingyeothon.Gamebase.Client
     /// </remarks>
     internal sealed class MapFetcher
     {
+        /// <summary>
+        /// How much JSON a map asset may be. A map is a download rather than a frame,
+        /// so it gets its own limit instead of the frame-sized default — but it still
+        /// gets one, because the body comes from a URL the channel named.
+        /// </summary>
+        private const int MaxMapJsonLength = 16 * 1024 * 1024;
+
         private readonly Dictionary<string, Task<JsonValue>> _cache = new Dictionary<string, Task<JsonValue>>(StringComparer.Ordinal);
         private readonly object _gate = new object();
         private readonly IHttpFetcher _fetcher;
@@ -99,7 +106,13 @@ namespace Yingyeothon.Gamebase.Client
 
                 // A body that is not JSON is handed back as text rather than refused:
                 // the asset is the game's, and the SDK only transports it.
-                source.SetResult(Json.TryParse(response.Text, out var parsed)
+                //
+                // ParseBig, not Parse: a map asset is a download, not a frame, and
+                // routinely runs to several megabytes. Under the frame-sized default
+                // limit a large map would parse "unsuccessfully" and be handed back as
+                // one enormous string, which no caller would notice until it tried to
+                // read a field.
+                source.SetResult(Json.TryParseBig(response.Text, MaxMapJsonLength, out var parsed, out _)
                     ? parsed
                     : JsonValue.Of(response.Text));
             }

@@ -169,7 +169,31 @@ namespace Yingyeothon.Gamebase.Client.Tests
             harness.Socket.ServerSendRaw("<html>");
             harness.Poll();
 
-            Assert.That(errors, Is.EqualTo(new[] { "frame is not JSON" }));
+            // The reason is a code and an offset, so a field engineer can tell "the
+            // proxy returned an error page" from "a string was truncated".
+            Assert.That(errors, Is.EqualTo(new[] { "frame is not JSON: ExpectedValue at 0" }));
+        }
+
+        [Test]
+        public async Task AMalformedFrameNeverPutsItsContentInTheProtocolError()
+        {
+            // A ProtocolError message reaches whatever log writer the consumer
+            // installed, and a frame body is a payload or a credential echo.
+            const string Token = "S3CRET-TOKEN";
+            var harness = new GameHarness();
+            await harness.ConnectAsync();
+            var errors = new List<string>();
+            harness.Client.ProtocolError += e => errors.Add(e.Message);
+
+            harness.Socket.ServerSendRaw("{\"authorization\":\"bearer " + Token + "\"");
+            harness.Poll();
+
+            // Positive control: Does.Not.Contain passes against an empty list too.
+            Assert.That(errors, Has.Count.EqualTo(1));
+            Assert.That(errors[0], Does.Contain("ExpectedCommaOrEnd"));
+            Assert.That(errors[0], Does.Not.Contain(Token));
+            Assert.That(errors[0], Does.Not.Contain("bearer"));
+            Assert.That(errors[0], Does.Not.Contain("authorization"));
         }
 
         [Test]

@@ -172,12 +172,25 @@ namespace Yingyeothon.Codec
         }
 
         /// <summary>Reads the number as an <see cref="int"/>, refusing a fractional or out-of-range value.</summary>
+        /// <exception cref="JsonKindException">The value is not a number at all.</exception>
+        /// <exception cref="JsonNumberException">
+        /// The value is a number but is fractional or outside the <see cref="int"/> range.
+        /// </exception>
+        /// <remarks>
+        /// There is no <c>AsInt64</c>. The value is stored as a <see cref="double"/>,
+        /// so an integer past 2^53 has already lost precision by the time it gets
+        /// here and no reader could give it back. A wire field that needs more range
+        /// than that has to arrive as a string.
+        /// </remarks>
         public int AsInt32()
         {
             var number = AsNumber();
             if (number < int.MinValue || number > int.MaxValue || Math.Floor(number) != number)
             {
-                throw new JsonKindException(JsonKind.Number, JsonKind.Number);
+                // Not a kind error: the kind is right and the range is not, and
+                // "expected a Number but the value is a Number" told the reader
+                // nothing. The value itself stays out of the message; it is wire data.
+                throw new JsonNumberException("The JSON number is not an integer within the Int32 range.");
             }
 
             return (int)number;
@@ -266,7 +279,7 @@ namespace Yingyeothon.Codec
                 case JsonKind.Array:
                     return ItemsEqual(_items!, other._items!);
                 default:
-                    return MembersEqual(_members!, other._members!);
+                    return MembersEqual(other);
             }
         }
 
@@ -288,25 +301,26 @@ namespace Yingyeothon.Codec
             return true;
         }
 
-        private static bool MembersEqual(
-            IReadOnlyList<KeyValuePair<string, JsonValue>> left,
-            IReadOnlyList<KeyValuePair<string, JsonValue>> right)
+        private bool MembersEqual(JsonValue other)
         {
-            // Member order is not part of a JSON object's identity, so compare as a set.
+            // Member order is not part of a JSON object's identity, so compare as a
+            // set — through the index the other object already carries, because
+            // building a lookup here would allocate a dictionary on every comparison,
+            // and frames are compared per tick.
+            var left = _members!;
+            var right = other._members!;
             if (left.Count != right.Count)
             {
                 return false;
             }
 
-            var lookup = new Dictionary<string, JsonValue>(right.Count, StringComparer.Ordinal);
-            foreach (var member in right)
+            // Keys are unique by construction, so equal counts plus "every key on the
+            // left is on the right with an equal value" is set equality.
+            var index = other._index!;
+            for (var i = 0; i < left.Count; i++)
             {
-                lookup[member.Key] = member.Value;
-            }
-
-            foreach (var member in left)
-            {
-                if (!lookup.TryGetValue(member.Key, out var other) || !member.Value.Equals(other))
+                var member = left[i];
+                if (!index.TryGetValue(member.Key, out var at) || !member.Value.Equals(right[at].Value))
                 {
                     return false;
                 }

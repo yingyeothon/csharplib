@@ -22,6 +22,12 @@ wrong.
 - Never an `event` payload, a `q` frame, or a `map()` body. Those are game data, and
   `Debug` is not an exemption: a consumer plugs in a writer that persists forever.
 - For a refusal, log the code, not the message.
+- **An exception message built from the input is a frame body.** The JSON parser used
+  to say `Number '123456789e400' is out of range` and `Unknown escape sequence '\Q'`,
+  and both went straight into `ProtocolError` and from there into whatever writer the
+  consumer installed. A refusal now reports a `JsonParseError` and an offset, and the
+  test that keeps it that way asserts the message equals a template computed from the
+  code and the offset — an equality nothing derived from the input can satisfy.
 
 ## Trusting the wire
 

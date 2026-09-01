@@ -344,9 +344,12 @@ namespace Yingyeothon.Gamebase.Client
                 return;
             }
 
-            if (!Json.TryParse(socketEvent.Text, out var parsed))
+            if (!Json.TryParse(socketEvent.Text, out var parsed, out var failure))
             {
-                ProtocolError?.Invoke(new ProtocolErrorEvent("frame is not JSON"));
+                // The reason is a code and an offset. It is never the frame, which is
+                // whatever the peer just sent and may be a payload or a credential
+                // echo (rules/security.md).
+                ProtocolError?.Invoke(new ProtocolErrorEvent("frame is not JSON: " + failure));
                 return;
             }
 

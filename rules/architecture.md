@@ -79,6 +79,25 @@ consequences and the decisions that are easy to undo by accident.
   `CancellationTokenSource` alive for the rest of the session, and a reconnect storm
   leaks one per attempt.
 
+## A hot-path parser is a non-throwing core with a throwing wrapper
+
+- The socket parses every inbound frame, so the failing path is reached by whatever a
+  peer chooses to send. A core that returns a `JsonParseFailure` — a code and an
+  offset, in a struct — lets a hostile peer's garbage cost nothing but a return, and
+  `Json.Parse` stays available as a thin wrapper that throws for callers who want it.
+- Report the reason as a **code**, never as text quoted from the input; see
+  [security.md](security.md). The code names reach logs, so they are public API.
+- When a recursive descent stops throwing, every loop needs its own way out. The
+  throw used to be it; now `continue` may only run after a separator was consumed,
+  and every helper that fails returns the sentinel its caller checks. First failure
+  wins, or an outer, vaguer reason overwrites the real one.
+- Bound the input as well as the depth, and check the length **before** scanning —
+  a cap that costs a walk is not a cap. Give a genuinely larger document its own
+  entry point (`Json.ParseBig`) rather than raising the default that every frame pays.
+- The writer needs the same depth bound as the parser. A value tree a caller built by
+  hand has no bound, and recursing over it overflows the stack — which no catch block
+  can save — while emitting it would produce a frame this SDK cannot read back.
+
 ## Ordering inside a cache
 
 - Publish a cache entry **before** starting the work it stands for. `MapFetcher`

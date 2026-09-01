@@ -33,7 +33,7 @@ namespace Yingyeothon.Codec
                 throw new ArgumentNullException(nameof(text));
             }
 
-            return JsonParser.Parse(text);
+            return Json.Parse(text);
         }
 
         private sealed class JsonStringCodec : ICodec<string>

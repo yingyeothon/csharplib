@@ -199,7 +199,7 @@ namespace Yingyeothon.Gamebase.Client.Tests
 
             Assert.That(errors, Is.EqualTo(new[]
             {
-                "frame is not JSON",
+                "frame is not JSON: ExpectedLiteral at 0",
                 "frame has no string type",
                 "frame has no string type",
                 "non-text frame",

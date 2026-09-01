@@ -35,7 +35,7 @@ namespace Yingyeothon.Codec
                 builder.Length = 0;
             }
 
-            WriteValue(builder, value);
+            WriteValue(builder, value, 0);
             var text = builder.ToString();
 
             // Keep a modest buffer warm, but do not hold a huge one hostage.
@@ -47,7 +47,7 @@ namespace Yingyeothon.Codec
             return text;
         }
 
-        private static void WriteValue(StringBuilder builder, JsonValue value)
+        private static void WriteValue(StringBuilder builder, JsonValue value, int depth)
         {
             switch (value.Kind)
             {
@@ -64,15 +64,32 @@ namespace Yingyeothon.Codec
                     WriteString(builder, value.AsString());
                     return;
                 case JsonKind.Array:
-                    WriteArray(builder, value.AsArray());
+                    RequireDepth(depth);
+                    WriteArray(builder, value.AsArray(), depth + 1);
                     return;
                 default:
-                    WriteObject(builder, value.AsObject());
+                    RequireDepth(depth);
+                    WriteObject(builder, value.AsObject(), depth + 1);
                     return;
             }
         }
 
-        private static void WriteArray(StringBuilder builder, IReadOnlyList<JsonValue> items)
+        /// <param name="depth">How many containers are already open around this one.</param>
+        private static void RequireDepth(int depth)
+        {
+            // The same bound the parser enforces, counted the same way. A value nested
+            // deeper than this cannot be read back by this SDK, so writing it would
+            // put a frame on the wire that nothing here can parse; and recursing over
+            // a tree a caller built by hand would take the game's main thread down
+            // with a StackOverflow, which no catch block can save.
+            if (depth >= Json.MaxDepth)
+            {
+                throw new ArgumentException(
+                    "The value is nested deeper than Json.MaxDepth, so it could not be parsed back.", "value");
+            }
+        }
+
+        private static void WriteArray(StringBuilder builder, IReadOnlyList<JsonValue> items, int depth)
         {
             builder.Append('[');
             for (var i = 0; i < items.Count; i++)
@@ -82,13 +99,13 @@ namespace Yingyeothon.Codec
                     builder.Append(',');
                 }
 
-                WriteValue(builder, items[i]);
+                WriteValue(builder, items[i], depth);
             }
 
             builder.Append(']');
         }
 
-        private static void WriteObject(StringBuilder builder, IReadOnlyList<KeyValuePair<string, JsonValue>> members)
+        private static void WriteObject(StringBuilder builder, IReadOnlyList<KeyValuePair<string, JsonValue>> members, int depth)
         {
             builder.Append('{');
             for (var i = 0; i < members.Count; i++)
@@ -100,7 +117,7 @@ namespace Yingyeothon.Codec
 
                 WriteString(builder, members[i].Key);
                 builder.Append(':');
-                WriteValue(builder, members[i].Value);
+                WriteValue(builder, members[i].Value, depth);
             }
 
             builder.Append('}');
@@ -123,8 +140,9 @@ namespace Yingyeothon.Codec
         private static void WriteString(StringBuilder builder, string value)
         {
             builder.Append('"');
-            foreach (var c in value)
+            for (var i = 0; i < value.Length; i++)
             {
+                var c = value[i];
                 switch (c)
                 {
                     case '"':
@@ -151,7 +169,24 @@ namespace Yingyeothon.Codec
                     default:
                         if (c < 0x20)
                         {
-                            builder.Append("\\u").Append(((int)c).ToString("x4", CultureInfo.InvariantCulture));
+                            AppendUnicodeEscape(builder, c);
+                        }
+                        else if (char.IsSurrogate(c))
+                        {
+                            // A well-formed pair goes out raw; an unpaired half must
+                            // be escaped or it does not survive the UTF-8 encode a
+                            // text frame performs, and the peer receives U+FFFD
+                            // instead of what the game sent. ES2019 made
+                            // JSON.stringify do exactly this.
+                            if (char.IsHighSurrogate(c) && i + 1 < value.Length && char.IsLowSurrogate(value[i + 1]))
+                            {
+                                builder.Append(c).Append(value[i + 1]);
+                                i++;
+                            }
+                            else
+                            {
+                                AppendUnicodeEscape(builder, c);
+                            }
                         }
                         else
                         {
@@ -164,5 +199,8 @@ namespace Yingyeothon.Codec
 
             builder.Append('"');
         }
+
+        private static void AppendUnicodeEscape(StringBuilder builder, char c)
+            => builder.Append("\\u").Append(((int)c).ToString("x4", CultureInfo.InvariantCulture));
     }
 }

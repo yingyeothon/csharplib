@@ -61,6 +61,27 @@
   under an implementation that never resets.
 - Do not write an assertion whose expected value is computed from the actual one.
 
+## Parsers and codecs
+
+- Pin the wire format by exact string, not by round-trip alone. `Parse(Stringify(v))
+  == v` passes just as well after someone changes `1E2` to `100.0`; only an exact
+  assertion says the bytes are a decision. Re-parse each pinned string in the same
+  test so a pin cannot drift into something invalid.
+- Cover the failing grammar as densely as the succeeding one: every escape truncated
+  at EOF, every bracket mismatch, every place a digit is required. Assert the reason
+  and the offset, not just "it was refused" — a single code covering everything is a
+  parser that cannot be debugged in the field.
+- Property tests over a fixed-seed corpus catch what a hand-written list does not:
+  round-trip equality, write idempotence, `Equals` implying an equal hash, and — for
+  anything that becomes a text frame — that the output survives a UTF-8 encode and
+  decode. That last one is what caught the unpaired surrogate.
+- A parser that carries a failure in a field instead of throwing needs a test that
+  parses a bad document and a good one in the same loop. State that outlives a call
+  poisons every later frame on the socket.
+- Assert the boundary from both sides. "Depth 64 is accepted" and "depth 65 is
+  refused" are one test each, and the pair is what pins an off-by-one that a single
+  assertion happily agrees with.
+
 ## What only an integration test can reach
 
 - Subprotocol negotiation, a message fragmented across frames in the middle of a
