@@ -94,13 +94,44 @@ namespace Yingyeothon.Gamebase.Client
 
         public void Poll() => _socket.Poll();
 
-        public async Task<Hello> ConnectAsync()
+        /// <remarks>
+        /// Deliberately not an <c>async</c> method. An <c>await</c> here adds a state
+        /// machine between the socket's settlement and the caller's task, and Unity's
+        /// Mono does not run that continuation inline: with
+        /// <c>ConfigureAwait(false)</c> the caller resumed on a thread-pool thread,
+        /// which is precisely where <c>Send()</c> and every other entry point are
+        /// illegal. Settling our own source from a synchronous continuation keeps the
+        /// task completed on the pump thread, and leaves the resumption context the
+        /// caller's own choice — Unity's synchronization context puts them back on the
+        /// main thread, a console host resumes inline. Found by running the suite
+        /// inside the editor; no dotnet-hosted test could see it.
+        /// </remarks>
+        public Task<Hello> ConnectAsync()
         {
-            await _socket.ConnectAsync().ConfigureAwait(false);
+            var source = new TaskCompletionSource<Hello>();
+            _socket.ConnectAsync().ContinueWith(
+                connect =>
+                {
+                    if (connect.IsFaulted)
+                    {
+                        source.TrySetException(connect.Exception!.InnerExceptions);
+                    }
+                    else if (connect.IsCanceled)
+                    {
+                        source.TrySetCanceled();
+                    }
+                    else
+                    {
+                        // The socket only settles a connect after the hello handler has
+                        // run, so this is never null here.
+                        source.TrySetResult(Hello!);
+                    }
+                },
+                CancellationToken.None,
+                TaskContinuationOptions.ExecuteSynchronously,
+                TaskScheduler.Default);
 
-            // The socket only settles a connect after the hello handler has run, so
-            // this is never null here.
-            return Hello!;
+            return source.Task;
         }
 
         public void Close() => _socket.Close();

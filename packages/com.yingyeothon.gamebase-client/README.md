@@ -89,7 +89,10 @@ Call `Poll()` unconditionally, before any pause or `timeScale` check. Use the cl
 from one thread at a time: `Poll()` and every other call refuse while another thread
 is inside `Poll()`. Sending from inside a handler is fine — that is the normal way to
 answer an event — and `ConnectAsync` resumes on the pump, so `Send` is legal straight
-after `await`.
+after `await`. The connect task is settled on the thread that called `Poll()`, and
+your `await` then resumes on your own synchronization context: Unity's main thread in
+a game, inline in a console host. A `MapAsync()` continuation is a normal task
+continuation and may land anywhere — marshal back before touching the client.
 
 ## Reconnect policy
 

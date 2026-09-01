@@ -129,7 +129,6 @@ namespace Yingyeothon.Codec.Tests
             Assert.That(double.IsNegative(Json.Parse("-1e-400").AsNumber()), Is.True);
         }
 
-        [TestCase("1e-320", "1E-320")]
         [TestCase("1E2", "100")]
         [TestCase("-0", "0")]
         [TestCase("0.1", "0.1")]
@@ -137,7 +136,6 @@ namespace Yingyeothon.Codec.Tests
         [TestCase("-1.25", "-1.25")]
         [TestCase("1e21", "1E+21")]
         [TestCase("1e-7", "1E-07")]
-        [TestCase("5e-324", "5E-324")]
         [TestCase("1.7976931348623157e308", "1.7976931348623157E+308")]
         public void TheWireFormatOfANumberIsPinned(string text, string expected)
         {
@@ -149,6 +147,45 @@ namespace Yingyeothon.Codec.Tests
             // pin, so assert the pinned text is still a number this parser reads back
             // to the same double.
             Assert.That(Json.Parse(written).AsNumber(), Is.EqualTo(Json.Parse(text).AsNumber()));
+        }
+
+        /// <remarks>
+        /// Subnormals are the one place the spelling is not portable, so they are
+        /// pinned by round-trip rather than by text. .NET Core writes the shortest
+        /// form that reads back ("5E-324"); Unity's Mono writes seventeen significant
+        /// digits ("4.94065645841247E-324"). Both parse back to the same double,
+        /// which is the property the wire actually needs — and no game position is
+        /// ever subnormal. Running the suite inside the editor is what turned the old
+        /// text pin from a passing test into a failing one.
+        /// </remarks>
+        [TestCase("1e-320")]
+        [TestCase("5e-324")]
+        [TestCase("-5e-324")]
+        public void ASubnormalRoundTripsEvenThoughItsSpellingIsRuntimeSpecific(string text)
+        {
+            var parsed = Json.Parse(text);
+            var written = Json.Stringify(parsed);
+
+            Assert.That(Json.Parse(written).AsNumber(), Is.EqualTo(parsed.AsNumber()));
+            Assert.That(parsed.AsNumber(), Is.Not.EqualTo(0d));
+        }
+
+        /// <remarks>
+        /// Mono's double.TryParse predates the IEEE-754 work in .NET Core 3.0 and
+        /// drops the sign of a zero, so the parser restores it. Without that, the same
+        /// frame produced a different value tree in the editor than in a dotnet host.
+        /// </remarks>
+        [TestCase("-0")]
+        [TestCase("-0.0")]
+        [TestCase("-0e5")]
+        [TestCase("-1e-400")]
+        public void ANegativeZeroKeepsItsSignOnEveryRuntime(string text)
+        {
+            var value = Json.Parse(text).AsNumber();
+
+            Assert.That(value, Is.EqualTo(0d));
+            Assert.That(double.IsNegative(value), Is.True);
+            Assert.That(Json.Stringify(Json.Parse(text)), Is.EqualTo("0"));
         }
 
         [Test]

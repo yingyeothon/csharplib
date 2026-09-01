@@ -105,10 +105,29 @@ namespace Yingyeothon.Gamebase.Client.Tests
             return socket;
         }
 
+        /// <remarks>
+        /// The server half of these tests, not the client half. Unity's Mono never
+        /// implemented server-side WebSocket in HttpListener and throws
+        /// NotImplementedException from AcceptWebSocketAsync, so inside the editor
+        /// these are reported as ignored with the reason rather than as eleven red
+        /// tests nobody can act on. The client half — the transport this SDK actually
+        /// ships — is covered against the real gateway; see
+        /// rules/manual-verification.md.
+        /// </remarks>
         private async Task<HttpListenerWebSocketContext> AcceptAsync(string? subProtocol = "bearer")
         {
             var context = await _listener!.GetContextAsync().ConfigureAwait(false);
-            return await context.AcceptWebSocketAsync(subProtocol).ConfigureAwait(false);
+            try
+            {
+                return await context.AcceptWebSocketAsync(subProtocol).ConfigureAwait(false);
+            }
+            catch (NotImplementedException)
+            {
+                Assert.Ignore(
+                    "HttpListener cannot accept a WebSocket on this runtime "
+                    + "(Unity's Mono); the real transport is covered against the dev gateway.");
+                throw;
+            }
         }
 
         [Test]

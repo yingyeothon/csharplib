@@ -459,6 +459,16 @@ namespace Yingyeothon.Codec
                 return false;
             }
 
+            // .NET Core 3.0 made double.TryParse IEEE-754 compliant and kept the sign
+            // of a negative zero; Unity's Mono predates that and hands back +0 for
+            // "-0" and for anything that underflows from below. Restoring the sign
+            // here is what makes the value tree the same shape on both runtimes —
+            // JSON.parse("-0") is -0 too. The writer still spells it "0".
+            if (value == 0d && _text[start] == '-')
+            {
+                value = -0d;
+            }
+
             return true;
         }
 
