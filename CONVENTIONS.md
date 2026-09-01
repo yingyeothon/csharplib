@@ -4,6 +4,12 @@ These rules apply to every package here. They are the C# translation of tslib's
 `CONVENTIONS.md`; where the two differ, the reason is written down rather than left
 to be rediscovered.
 
+**Nothing has been released yet.** The version is `0.1.0` and no tag exists, so
+breaking changes to a public surface are allowed until the first one — the approved
+snapshots under `tests/Yingyeothon.PublicApi.Tests/Approved/` are a review gate, not
+yet a compatibility contract. Delete this paragraph with the first release; after it,
+`rules/release.md` governs.
+
 ## Shape: interfaces and factories, not public classes
 
 - A stateful resource is a public `interface I*`, an `internal sealed class`

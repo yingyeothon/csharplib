@@ -5,18 +5,20 @@ frame and a handful of strings, every one of which comes from the yyt console.
 
 ## 1. Install the packages
 
-Add three git URLs in _Package Manager → + → Add package from git URL_, pinning a tag
-so your team does not silently track `main`:
+Add three git URLs in _Package Manager → + → Add package from git URL_:
 
 ```
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.codec#v0.1.0
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.logger#v0.1.0
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.gamebase-client#v0.1.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.codec
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.logger
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.gamebase-client
 ```
 
 A git-URL package cannot resolve its own dependencies, so all three must be present;
 adding them in this order avoids Package Manager reporting a missing one in between. The
-minimum editor is **Unity 2021.3**. [Unity § Installing](unity.md#installing) has the rest:
+minimum editor is **Unity 2021.3**.
+
+**No release has been tagged yet**, so a git URL without a fragment tracks `main`. Once
+a tag exists, append `#<tag>` to each URL so your team does not silently move. [Unity § Installing](unity.md#installing) has the rest:
 asmdefs, `.meta` files, and vendoring into `Packages/`.
 
 ## 2. Collect the ids from the console
@@ -105,8 +107,9 @@ public sealed class LobbyQuickstart : MonoBehaviour
         _lobby.Stopped += e => Debug.LogWarning($"stopped: {e.Kind} ({e.Code})");
 
         // Fires on the first hello AND after every reconnect. On a reconnect the
-        // gateway may have restored the retained position already and sent a
-        // snapshot, so announce only what the player actually is now.
+        // gateway may already have restored the retained position and sent a
+        // snapshot; announcing a position far from that one is refused as
+        // move_too_far, so send where the player actually is.
         _lobby.Connected += hello =>
         {
             _zone = hello.Zone;

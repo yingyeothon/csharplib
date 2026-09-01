@@ -104,7 +104,12 @@ namespace Yingyeothon.Gamebase.Client
         /// <summary>The full handshake URL, query string included.</summary>
         public string Url { get; }
 
-        /// <summary>Always <c>["bearer", token]</c>. The token never appears anywhere else.</summary>
+        /// <summary>
+        /// Always <c>["bearer", token]</c> — so <b>this carries the raw channel
+        /// JWT</b>. Hand it to the socket and nowhere else: never log it, never put it
+        /// in a URL, and never persist it. The token appears in no other argument of
+        /// this API.
+        /// </summary>
         public IReadOnlyList<string> SubProtocols { get; }
 
         /// <summary>Where the socket posts what it observes.</summary>
@@ -124,6 +129,11 @@ namespace Yingyeothon.Gamebase.Client
     public interface IWebSocketFactory
     {
         /// <summary>Builds a socket. May throw for input it can reject up front; everything after that must arrive as a close.</summary>
+        /// <remarks>
+        /// An implementation receives the player's credential in
+        /// <see cref="WebSocketCreateContext.SubProtocols"/>. Treat it as one: pass it
+        /// to the handshake and let it go.
+        /// </remarks>
         IWebSocket Create(WebSocketCreateContext context);
     }
 }

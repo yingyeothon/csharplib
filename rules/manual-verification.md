@@ -3,6 +3,13 @@
 Unit tests passing is not proof a change works for a game. After they pass, exercise
 it where it will actually run.
 
+**No tag is cut without a current run of this file** — a UPM consumer gets whatever
+the tag points at, compiled by Unity's compiler. See [release.md](release.md).
+
+The sibling `service` repository is checked out next to this one — `../service` from
+the repo root — and every `service/...` path in these rules is relative to it. Read it;
+never write to it from here ([workflow.md](workflow.md)).
+
 ## Against a real gateway
 
 1. `dotnet build Yingyeothon.sln -c Release`.
@@ -110,8 +117,12 @@ generic `On<T>`, `Json.Parse`/`Stringify`, `LogWriters.FromAction`, and
 
 ### Last verified
 
-**2026-09-01**, on Unity Personal, against **2021.3.45f2** (the floor) and
-**6000.0.25f1**. Identical results on both:
+Always record the **commit** as well as the date: a release asks whether this run
+covers the code being tagged, and a date alone cannot answer it
+([release.md](release.md)).
+
+**2026-09-01**, at commit `f5fce56`, on Unity Personal, against **2021.3.45f2** (the
+floor) and **6000.0.25f1**. Identical results on both:
 
 | Check | Result |
 | --- | --- |

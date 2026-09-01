@@ -45,6 +45,9 @@
   `IEventBrokerRenamed` — found by testing the guard against a change it should have
   refused, which is the only way a guard gets tested.
 - Test package versions are pinned centrally in `Directory.Packages.props`.
+- The version lives in `Directory.Build.props`, every `packages/*/package.json`, and
+  every sibling pin inside those manifests; `validate-packages.sh` fails when they
+  disagree. Bumping it is a release act — see [release.md](release.md).
 
 ## Gotchas already hit
 

@@ -77,13 +77,14 @@ In Unity, _Window → Package Manager → Add package from git URL_. A git-URL p
 cannot resolve its own dependencies, so add each one it needs:
 
 ```
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.codec#v0.1.0
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.logger#v0.1.0
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.gamebase-client#v0.1.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.codec
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.logger
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.gamebase-client
 ```
 
 `com.yingyeothon.event-broker` is independent of the other three; add it the same way if
-you want it. Pin a tag rather than tracking `main`. Unity generates the `.meta` files on
+you want it. **No release has been tagged yet**, so these URLs track `main`; append
+`#<tag>` to pin one as soon as there is one. Unity generates the `.meta` files on
 import; they are not committed here. Each package ships importable
 `Samples~`. [docs/unity.md](docs/unity.md) has the details.
 

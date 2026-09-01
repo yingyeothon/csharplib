@@ -42,7 +42,8 @@ good, at which point it fails with `GatewayStoppedException`.
 after the `await` is legal. See [Connection lifecycle](connection-lifecycle.md).
 
 The `Connected` event carries the same `Hello` and fires **again after every successful
-reconnect**, which is where a game re-announces its position.
+reconnect** — with a new `ConnectionId`, and a peer map that has been reset. What
+refills it is [the gateway's decision, not yours](#the-peer-map).
 
 ## `hello` and capabilities
 

@@ -772,7 +772,7 @@ Everything a factory needs to build a socket.
 | Member | Summary |
 | --- | --- |
 | `Sink : IWebSocketEventSink get` | Where the socket posts what it observes. |
-| `SubProtocols : IReadOnlyList<String> get` | Always `["bearer", token]` . The token never appears anywhere else. |
+| `SubProtocols : IReadOnlyList<String> get` | Always `["bearer", token]` — so this carries the raw channel JWT . Hand it to the socket and nowhere else: never log it, never put it in a URL, and never persist it. The token appears in no other argument of this API. |
 | `Url : String get` | The full handshake URL, query string included. |
 | `ctor(String, IReadOnlyList<String>, IWebSocketEventSink)` |  |
 

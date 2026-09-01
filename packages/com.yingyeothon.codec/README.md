@@ -16,6 +16,9 @@ Unity Package Manager, _Add package from git URL_:
 https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.codec
 ```
 
+**No release has been tagged yet**, so this URL tracks `main`; append `#<tag>` to
+pin one as soon as there is one.
+
 ## Usage
 
 ```csharp

@@ -11,6 +11,9 @@ Independent of the other three packages and of the gateway; see [the guide](../.
 https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.event-broker
 ```
 
+**No release has been tagged yet**, so this URL tracks `main`; append `#<tag>` to
+pin one as soon as there is one.
+
 No dependencies.
 
 ## Usage

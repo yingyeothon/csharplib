@@ -19,6 +19,9 @@ needs them.
 https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.gamebase-client
 ```
 
+**No release has been tagged yet**, so this URL tracks `main`; append `#<tag>` to
+pin one as soon as there is one.
+
 Add `com.yingyeothon.codec` and `com.yingyeothon.logger` as well; a git-URL package
 cannot resolve its own dependencies. Four importable samples ship with it — see
 [docs/unity.md](../../docs/unity.md#samples).

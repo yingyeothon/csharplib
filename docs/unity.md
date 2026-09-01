@@ -10,17 +10,18 @@ _Window → Package Manager → + → Add package from git URL_. A git-URL packa
 resolve its own dependencies, so add each one:
 
 ```
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.codec#v0.1.0
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.logger#v0.1.0
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.event-broker#v0.1.0
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.gamebase-client#v0.1.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.codec
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.logger
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.event-broker
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.gamebase-client
 ```
 
 Add a package's dependencies before the package itself, or Package Manager reports them
 as missing until you do.
 
-Pin a tag (`#v0.1.0`) rather than tracking `main`, so a teammate's fresh import is the
-version you tested against.
+A URL with no fragment tracks `main`. **No release has been tagged yet**; once one is
+cut, append `#<tag>` to every URL so a teammate's fresh import is the version you tested
+against.
 
 Every runtime asmdef here is `autoReferenced`, so a script in Unity's default
 `Assembly-CSharp` needs no further step. **If your own scripts live in their own

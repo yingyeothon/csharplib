@@ -43,14 +43,21 @@ wrong.
     install is not a guard.
 - **Never `--no-verify`.** If a hook is wrong, fix the hook.
 - Two ways a shell guard fails open, both paid for in the `service` repo and both
-  written into these hooks — do not "simplify" either away:
+  written into every guard here — the hooks, `validate-packages.sh` and
+  `check-docs.sh`. Do not "simplify" either away:
   - `grep -q` exits at the first match, SIGPIPEs the upstream command, and under
     `set -o pipefail` that 141 makes the test **false**. Capture and count instead.
   - One NUL byte anywhere in a stream makes grep call the rest binary and stop
     matching. Every grep in a guard passes `-a`.
-- Prove any change to these hooks with a throwaway staged file that should be blocked
-  **and** an ordinary edit that should pass. A guard that has only ever been seen
-  saying yes has not been tested.
+- **Prove any change to a guard by watching it refuse.** A throwaway staged file that
+  should be blocked and an ordinary edit that should pass, for a hook; a deliberately
+  broken input for a script. A guard that has only ever been seen saying yes has not
+  been tested — and doing this is what found a prefix match in `check-docs.sh` that let
+  a renamed type through, and three fail-open reads in `validate-packages.sh`, one of
+  which passed while the assembly and the manifests carried different versions.
+- Make the broken input in a copy of the repo under `/tmp`, not in place. Reverting it
+  with `git checkout <file>` also discards any unstaged edit you had in that file
+  ([workflow.md](workflow.md)).
 - A leak already in history is not fixed by a new commit. Rewrite it
   (`git filter-repo --replace-text`) and force-push, and assume anything already
   cloned, forked or cached stays out. If a real credential ever lands here, rotating
@@ -63,6 +70,11 @@ wrong.
 - It must never reach a log line, at any level. Client-side logs name the channel,
   the game, the user and the close code — nothing else. There is a test for this in
   both client suites, with a positive control.
+- **The token crosses a public extension point.** `IWebSocketFactory.Create` is handed
+  `WebSocketCreateContext.SubProtocols`, which is `["bearer", "<the raw JWT>"]`, and a
+  WebGL build is *expected* to implement one. A credential crossing an extension point
+  needs the warning at the extension point, not only in a rules file: say so in the XML
+  doc comment on the seam, so it reaches the implementer's IDE.
 - A subprotocol carrying non-token characters is refused at construction rather than
   at connect time, so a malformed credential fails visibly instead of retrying — but
   **that refusal's message must not quote the character it found**. The second
@@ -72,6 +84,22 @@ wrong.
 - The two "never writes the token" tests both drive `FakeWebSocketFactory` with a
   well-formed token, so neither can reach the real transport's validation. A test for
   that path has to use the real factory and a token that can actually fail it.
+
+## Building what goes out
+
+- **Escape at one choke-point, and test the escaping.** Everything this SDK puts on the
+  wire goes through `JsonWriter`/`JsonObjectBuilder` or `GatewayUrl.Build`; never
+  assemble a frame or a URL by concatenation somewhere else. `rules/tooling.md` records
+  the trap that has already been paid for here — `Uri.ToString()` **unescapes** for
+  display, so anything going on the wire uses `Uri.AbsoluteUri` — and that is a
+  security finding, not a formatting one.
+- **A size cap is in bytes; a string length is in characters.** The inbound cap is
+  derived from the gateway's outbound frame size, which Go counts in bytes. Measuring
+  it with `string.Length` lets a multi-byte payload through at up to three times the
+  intended size. The same applies to every field limit the gateway states.
+- Never interpolate untrusted data into a wire protocol. The client's own fields are no
+  exception: a zone name or a `dir` built from player input is peer data by the time it
+  reaches the frame.
 
 ## What not to log
 
@@ -113,3 +141,14 @@ wrong.
   credentials: a timeout, a response-size cap, and a small redirect budget. Without
   them a channel can point the client at an arbitrary host for 100 seconds and two
   gigabytes, and hand the body to the game.
+
+## Review habit
+
+- A change touching the **wire protocol, the token, or what reaches a log line** takes
+  security as its third review angle ([workflow.md](workflow.md) owns the slot). The
+  defects tslib inherited this way — command injection through interpolated user data,
+  a credential logged one level up from the secret — fail no test.
+- **The leak is usually one level up from the secret.** Logging a whole frame to report
+  a refusal prints the payload; logging a close reason prints what the peer chose;
+  logging an exception message built from the input prints the input. Log the decision,
+  not the object that carried it.

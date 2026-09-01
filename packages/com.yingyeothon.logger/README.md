@@ -11,6 +11,9 @@ Pass a logger to a gateway client through `GatewayClientOptions.Logger`; [docs/u
 https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.logger
 ```
 
+**No release has been tagged yet**, so this URL tracks `main`; append `#<tag>` to
+pin one as soon as there is one.
+
 Depends on `com.yingyeothon.codec`.
 
 ## Usage

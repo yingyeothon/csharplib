@@ -87,5 +87,50 @@ for approved in tests/Yingyeothon.PublicApi.Tests/Approved/*.approved.txt; do
   done < <(grep -a -E '^(class|enum|interface|struct|static class) ' "$approved")
 done
 
-[ "$fail" -eq 0 ] && echo "docs: $links relative links resolve, no orphan page, every public type documented"
+# ---- 4. every install URL agrees with the version --------------------------
+#
+# The tag is the release (rules/release.md), so an unpinned URL is honest only
+# while no tag exists and a URL pinned to a tag that is not cut is a 404 for every
+# consumer. There are fourteen of them across seven files and nothing else looks at
+# them: check 1 skips http(s) links on purpose.
+version=$(sed 's/<!--.*-->//g' Directory.Build.props \
+  | sed -n 's/.*<Version>\([^<]*\)<\/Version>.*/\1/p' | head -1)
+
+# Ask the remote, not the local ref store: a CI checkout carries no tags unless the
+# workflow sets fetch-tags, so reading `git tag -l` there would call every pinned URL
+# unreleased and turn CI red for good the day the first tag lands. The local list is
+# the offline fallback, and it is also what lets a release pin its URLs before the tag
+# is pushed (rules/release.md).
+tagged=$(git ls-remote --tags origin "refs/tags/v$version" 2>/dev/null || true)
+[ -n "$tagged" ] || tagged=$(git tag -l "v$version" 2>/dev/null || true)
+urls=0
+while IFS= read -r url; do
+  [ -n "$url" ] || continue
+  urls=$((urls + 1))
+  case "$url" in
+    *"#v$version")
+      [ -n "$tagged" ] || note "$url pins v$version, which is not a tag yet" ;;
+    *'#'*)
+      note "$url pins something other than v$version" ;;
+    *)
+      [ -z "$tagged" ] || note "$url tracks main, but v$version is tagged" ;;
+  esac
+done < <(grep -a -rho 'https://github.com/yingyeothon/csharplib\.git?path=[^ )`]*' \
+  README.md docs packages/*/README.md)
+
+# ---- 5. the pre-release prose agrees with the tag --------------------------
+#
+# Check 4 gates the URLs; without this a release could pin every one of them and
+# still ship seven files saying no release has been tagged.
+notice='No release has been tagged yet'
+for file in README.md docs/getting-started.md docs/unity.md packages/*/README.md; do
+  says=$(grep -a -c -F "$notice" "$file" 2>/dev/null || true)
+  if [ -n "$tagged" ] && [ "${says:-0}" -gt 0 ]; then
+    note "$file still says \"$notice\", but v$version is tagged"
+  elif [ -z "$tagged" ] && [ "${says:-0}" -eq 0 ]; then
+    note "$file carries an unpinned install URL but does not say why"
+  fi
+done
+
+[ "$fail" -eq 0 ] && echo "docs: $links relative links resolve, $urls install URLs match v$version, no orphan page, every public type documented"
 exit "$fail"
