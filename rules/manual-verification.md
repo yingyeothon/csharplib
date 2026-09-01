@@ -202,9 +202,10 @@ Always record the **commit** as well as the date: a release asks whether this ru
 covers the code being tagged, and a date alone cannot answer it
 ([release.md](release.md)).
 
-**2026-09-01**, at the commit whose parent is `70c334d` and whose tree adds the eight
-`csc.rsp` files — **replace this clause with the sha before cutting any tag**
-([release.md](release.md) step 2). Unity Personal, Ubuntu 24.04.
+**2026-09-01**, at commit `fbf7b6d` (its parent is `70c334d`), on Unity Personal,
+Ubuntu 24.04. The row was written in that commit and the sha filled in immediately
+after, which is the only way to satisfy "always record the commit" without a
+self-reference — do the same next time.
 
 | Check | 2021.3.45f2 | 6000.0.25f1 |
 | --- | --- | --- |
