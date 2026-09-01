@@ -1,0 +1,33 @@
+<Project>
+
+  <!--
+    Install the git hooks on the first build of a working tree.
+
+    The sibling repos get this from `pnpm install`; .NET has no equivalent install
+    step, so the build is the hook point. A guard nobody remembers to install is not a
+    guard, and this repo is public — see rules/security.md.
+
+    Deliberately inert where it would be noise or damage:
+      * no .git directory (a source drop, or an extracted UPM package),
+      * CI (the workflow has its own secrets-scan job and no hooks to run),
+      * a stamp already written for this working tree.
+    ContinueOnError keeps a build working on a machine without bash: the hooks are a
+    convenience for committing, never a build dependency.
+  -->
+  <Target Name="InstallGitHooks"
+          BeforeTargets="Build"
+          Condition="'$(CI)' != 'true'
+                     And '$(YYT_SKIP_HOOK_INSTALL)' != '1'
+                     And Exists('$(MSBuildThisFileDirectory).git')
+                     And !Exists('$(ArtifactsPath)/.git-hooks-installed')">
+    <Exec Command="&quot;$(MSBuildThisFileDirectory)scripts/install-git-hooks.sh&quot;"
+          WorkingDirectory="$(MSBuildThisFileDirectory)"
+          ContinueOnError="WarnAndContinue"
+          StandardOutputImportance="low" />
+    <MakeDir Directories="$(ArtifactsPath)" ContinueOnError="WarnAndContinue" />
+    <Touch Files="$(ArtifactsPath)/.git-hooks-installed"
+           AlwaysCreate="true"
+           ContinueOnError="WarnAndContinue" />
+  </Target>
+
+</Project>

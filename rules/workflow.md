@@ -7,6 +7,9 @@
 - Commit messages are English, imperative, one coherent purpose per commit.
 - Stage intentionally. Never `git add .` while `artifacts/` or `.claude/` exist (they
   are git-ignored — keep them that way).
+- The repo is **public**. Never `--no-verify`, and never `git reset --hard` with
+  uncommitted work in the tree — it takes the working tree with it. See
+  [security.md](security.md).
 
 ## Per-task completion ritual
 
@@ -27,8 +30,12 @@
 dotnet build Yingyeothon.sln -c Release
 dotnet format Yingyeothon.sln --verify-no-changes
 dotnet test  Yingyeothon.sln -c Release
+./scripts/check-coverage.sh
 ./scripts/validate-packages.sh
 ```
+
+`pre-push` runs all five, so this is a way to see the failure early rather than a
+step anyone can forget.
 
 ## Scope decisions already made
 

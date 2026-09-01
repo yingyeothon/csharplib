@@ -1,0 +1,33 @@
+# gitleaks config (v8 syntax). Default rules plus the credential-assignment rule the
+# sibling `service` repo uses, so a leak is caught the same way in both places.
+#
+# This repository has no infrastructure and needs no credentials: it is four client
+# libraries and their tests. So the rule here is not "redact the secrets we keep" — it
+# is "nothing of that shape should ever exist", and every allowlist entry below is a
+# test fixture that is obviously not a credential.
+title = "yyt csharplib"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "yyt-credential-assignment"
+description = "Credential-looking assignment (PASSWORD/SECRET/TOKEN/KEY = long literal on the same line)"
+regex = '''(?i)(?:password|secret|token|api[_-]?key|debug[_-]?key)[ \t]*[=:][ \t]*["']?([A-Za-z0-9+/=_\-]{16,})["']?'''
+secretGroup = 1
+entropy = 3.0
+[rules.allowlist]
+regexTarget = "line"
+regexes = [
+  '''(?i)(placeholder|example|changeme|xxx+|\$\{|<[a-z-]+>)''',
+  # C# type annotations and members, not values: `string Token`, `Token = token;`.
+  '''[=:][ \t]*[A-Za-z_][A-Za-z0-9_]*[ \t]*[;,)]''',
+]
+
+[allowlist]
+description = "Config itself and the deliberately fake token fixture"
+paths = ['''\.gitleaks\.toml$''']
+# LobbyHarness/GameHarness use "eyJ.secret-token.sig": three dot-separated words that
+# look like a JWT to a human and are not one. The tests that assert the token never
+# reaches a log line need a literal to search for, so it has to be in the source.
+regexes = ['''eyJ\.secret-token\.sig''']

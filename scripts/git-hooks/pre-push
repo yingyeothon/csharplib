@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# The last gate before anything becomes world-readable. Unlike pre-commit this sees
+# whole commits, so it also catches what `--no-verify`, an amend or a rebase slipped
+# past: it inspects the pushed tip's tree and scans the history reachable from it.
+#
+#   SKIP_CI_GATE=1 git push   runs the secret checks but not the build/test gate.
+#
+# Two traps this hook is written around, both learned the hard way in the sibling
+# `service` repo — do not "simplify" them back:
+#  * Never `grep -q`: it SIGPIPEs the upstream command and, under `pipefail`, the 141
+#    makes the test false, so the guard passes silently on the largest diffs.
+#  * Every grep runs with `-a`, or one NUL byte silences the rest of the scan.
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+
+command -v gitleaks >/dev/null || {
+  echo "pre-push: gitleaks is required (apt install gitleaks / brew install gitleaks)" >&2
+  exit 1
+}
+
+zero=0000000000000000000000000000000000000000
+pushed=0
+
+while read -r _lref lsha _rref rsha; do
+  [ "$lsha" = "$zero" ] && continue   # a branch deletion carries nothing
+  pushed=1
+
+  tracked=$(git ls-tree -r --name-only "$lsha" | grep -a -E \
+    '\.meta$|\.received\.txt$|(^|/)(artifacts|bin|obj|Library|Temp|Logs|UserSettings|Builds)/|(^|/)\.env(\.|$)|(^|/)\.envrc$|^local/' \
+    | grep -a -vE '\.env\.example$' || true)
+  if [ -n "$tracked" ]; then
+    echo "pre-push: paths that must never be tracked are in $lsha:" >&2
+    printf '%s\n' "$tracked" >&2
+    exit 1
+  fi
+
+  # Scan everything reachable from the pushed tip, not just the new range. A leak an
+  # older commit already carries is still being published on this push, and a later
+  # commit never undoes it — that needs a history rewrite
+  # (`git filter-repo --replace-text`) and a force push.
+  #
+  # After a rewrite the remote tip may no longer exist locally, so `$rsha..$lsha`
+  # would be an invalid range; the full scan sidesteps that too. This history is small
+  # enough that scanning all of it costs under a second.
+  gitleaks detect --redact --no-banner --config .gitleaks.toml --log-opts="$lsha"
+done
+
+[ "$pushed" = "1" ] || exit 0
+
+if [ -n "${SKIP_CI_GATE:-}" ]; then
+  echo "pre-push: SKIP_CI_GATE set, skipping the build gate"
+  exit 0
+fi
+
+# The same gate as .github/workflows/ci.yml, so a push cannot land red.
+echo "pre-push: running the CI gate (build, format, test, coverage, package structure)"
+dotnet build Yingyeothon.sln -c Release
+dotnet format Yingyeothon.sln --verify-no-changes --no-restore
+dotnet test Yingyeothon.sln -c Release --no-build
+./scripts/check-coverage.sh
+./scripts/validate-packages.sh

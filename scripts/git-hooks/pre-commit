@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# Defense in depth for a PUBLIC repo (rules/security.md):
+#  1. refuse paths that must never be tracked, even when force-added past .gitignore;
+#  2. gitleaks on the staged diff.
+#
+# Two traps this hook is written around, both learned the hard way in the sibling
+# `service` repo — do not "simplify" them back:
+#  * Never `grep -q`. It exits at the first match, which SIGPIPEs the upstream command,
+#    and under `set -o pipefail` that 141 makes the test false — so the guard passes
+#    silently on exactly the large diffs it exists to catch. Capture and count instead.
+#  * Every grep runs with `-a`. One NUL byte anywhere in the stream makes grep call the
+#    rest binary and stop matching, and half a history went unscanned that way.
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+
+staged=$(git diff --cached --name-only --diff-filter=ACMR)
+
+# .meta: Unity writes one for everything it imports, and this repo deliberately does
+#        not carry them (rules/unity.md) — a committed one pins a GUID every other
+#        clone disagrees with.
+# artifacts|bin|obj|Library|Temp|Logs: build output. A bin/ or obj/ inside a package
+#        folder becomes Unity project assets (scripts/validate-packages.sh).
+# .received.txt: the public-API gate's actual-surface dump; approving is a rename.
+# .env*/.envrc/local/: this repo needs no credentials, so one of these is a mistake.
+bad=$(printf '%s\n' "$staged" | grep -a -E \
+  '\.meta$|\.received\.txt$|(^|/)(artifacts|bin|obj|Library|Temp|Logs|UserSettings|Builds)/|(^|/)\.env(\.|$)|(^|/)\.envrc$|^local/' \
+  | grep -a -vE '\.env\.example$' || true)
+if [ -n "$bad" ]; then
+  echo "pre-commit: refusing paths that must never be tracked:" >&2
+  printf '%s\n' "$bad" >&2
+  exit 1
+fi
+
+command -v gitleaks >/dev/null || {
+  echo "pre-commit: gitleaks is required (apt install gitleaks / brew install gitleaks)" >&2
+  echo "pre-commit: install it, or run scripts/install-git-hooks.sh again after installing" >&2
+  exit 1
+}
+gitleaks protect --staged --redact --no-banner --config .gitleaks.toml

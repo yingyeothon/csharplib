@@ -12,3 +12,25 @@ TestResults/
 # The public-API gate writes the actual surface next to the approved snapshot when
 # they differ; approving it is a rename, so the received file is never committed.
 *.received.txt
+
+# Unity generates a .meta for everything it imports, including these packages when a
+# scratch project points at them. They are deliberately not committed (see
+# rules/unity.md), and a committed one would pin a GUID that every other clone
+# disagrees with. The pre-commit hook refuses them too, because .gitignore does not
+# survive `git add -f`.
+*.meta
+
+# A Unity project opened anywhere under the repo would otherwise offer these up.
+Library/
+Logs/
+Temp/
+UserSettings/
+Builds/
+
+# Defense in depth for a public repo: this repository has no infrastructure and needs
+# no credentials, so any file of these shapes is a mistake, not a configuration.
+.env
+.env.*
+!.env.example
+.envrc
+local/

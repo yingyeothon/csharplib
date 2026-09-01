@@ -4,7 +4,14 @@
 
 - `dotnet build` → `dotnet format --verify-no-changes` → `dotnet test` →
   `scripts/check-coverage.sh` → `scripts/validate-packages.sh`. CI runs exactly that
-  order; `format` is a hard gate.
+  order in its `ci` job; `format` is a hard gate. `pre-push` runs the same five, so a
+  push cannot land red (`SKIP_CI_GATE=1 git push` skips only the build gate, never the
+  secret checks).
+- CI has two more jobs because the repo is public: `secrets-scan` (gitleaks over the
+  full history) and `tracked-paths` (nothing of a forbidden shape is tracked). They
+  duplicate the local hooks on purpose — a contributor whose hooks were never
+  installed is exactly the case the hooks cannot cover. See
+  [security.md](security.md).
 - `check-coverage.sh` runs each suite on its own and reads only the package that suite
   belongs to, so no package can hide behind the aggregate. The floor is line 80 /
   branch 70 (`COVERAGE_LINE_MIN` / `COVERAGE_BRANCH_MIN` override it). Merging the
@@ -19,6 +26,10 @@
 - `EnableDefaultCompileItems` is off, so every project declares its `Compile` items.
   That is what lets `Runtime/Unity/**` be excluded from the dotnet build while Unity
   still compiles it.
+- `Directory.Build.targets` installs the git hooks on the first build of a working
+  tree, stamped by `artifacts/.git-hooks-installed`. It is inert in CI (`$(CI)`),
+  without a `.git` directory, and under `YYT_SKIP_HOOK_INSTALL=1`, and it never fails
+  a build — the hooks matter when committing, not when compiling.
 - `TreatWarningsAsErrors` is on. `CS1591` (missing XML comment) is the one suppressed
   warning; write the doc comment anyway on anything public.
 - Test projects override `TargetFrameworks` to `net8.0` while referencing the
