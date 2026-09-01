@@ -145,7 +145,8 @@ the peer map is empty until the game re-sends `Pos`.
   `enter` / `leave` types), and `Connected`, `Frame`, `Refused`, `Disconnected`,
   `Reconnecting`, `Aborted`, `Finished`, `Stopped`, `ProtocolError`.
 - `PeerMap.Create(PeerMapOptions)` → `IPeerMap`: the reducer behind `Peers` —
-  `Apply`, `Get`, `All`, `Zone`, `Reset`.
+  `Apply`, `Get`, `All`, `Zone`, `Reset` — returning a `PeerChange` (`PeerChangeKind`)
+  for each frame it accepted, or null for one it ignored.
 - `Backoff.Create(BackoffOptions)` → `IBackoff`: `Next`, `Reset`, `Attempts`.
 - `CloseCodes.Classify(code, kind)`, `GatewayCloseCode`, `CloseDisposition`,
   `CloseDispositionKind`, `GatewayChannelKind`.
@@ -155,9 +156,12 @@ the peer map is empty until the game re-sends `Pos`.
   `SnapshotFrame`, `EnterFrame`, `LeaveFrame`, `PosBroadcastFrame`,
   `SayBroadcastFrame`, `EventBroadcastFrame`, `PartyFrame`, `PartyMember`,
   `PartyInviteFrame`, `PartyDeclinedFrame`, `PongFrame`, `ErrorFrame`,
-  `UnknownServerFrame`.
+  `UnknownServerFrame`, all deriving from `LobbyServerFrame`.
+- Options: `GatewayClientOptions` is the base of `GatewayLobbyClientOptions` and
+  `GatewayGameClientOptions`; `IPartyCommands` is the type of `Party`.
 - Transport seams: `IWebSocket`, `IWebSocketFactory`, `IWebSocketEventSink`,
-  `SocketEvent`, `WebSocketCreateContext`, `WebSocketTransport.Default`,
+  `SocketEvent` (`SocketEventKind`), `WebSocketCreateContext`,
+  `WebSocketTransport.Default`,
   `IHttpFetcher`, `HttpFetchResult`, `HttpFetcher.Default`, `MapFetchException`.
 - Clock and pump: `IClock`, `SystemClock.Instance`, `IGatewayPollable`.
 - Events: `GatewayClientState`, `DisconnectedEvent`, `ReconnectingEvent`,
@@ -188,3 +192,36 @@ as they are.
   written against what a browser can see.
 - Frames are parsed by hand into typed classes, with the original `JsonValue` kept on
   `Raw`, so nothing depends on reflection under IL2CPP.
+
+## Wire decisions checked against the gateway's Go source
+
+These were re-derived field by field from `gateway/internal/lobby/protocol.go` and
+`hub.go` in the `service` repository — the normative spec — rather than from tslib.
+
+- **`Event` is gated on the `event` capability alone**, never on the `say` scope list.
+  `handleEventLocked` checks `Capabilities.Event` and routes the scope; it never calls
+  `AllowsSay`. A channel with `say: ["zone"]` and `event: true` still delivers a party
+  event, so gating it here refused a frame the gateway would have sent.
+- **A `pos` that omits `dir` clears the peer's facing.** The gateway rebuilds the
+  whole peer from each inbound frame and marshals it with `dir,omitempty`, so an
+  omitted `dir` is a statement, not a silence.
+- **`say: null` is treated as unrestricted, and the gateway never sends it.**
+  `capabilities()` always marshals a non-nil slice, so the real shape for a
+  chat-disabled channel is `say: []`, which refuses every scope. The permissive
+  reading of `null` is a deliberate choice for a shape that cannot occur: being
+  stricter than the server throws inside `Update()` for a frame the server would have
+  accepted, which is the worse failure.
+- **A `q` frame has no required shape.** The bridge forwards the actor's message with
+  `SendRaw`, verbatim, so an array, a number or a bare string is a legitimate game
+  frame. Only the lobby has a vocabulary. A `q` refusal is recognised by a string
+  `code` alone, because the gateway's `ErrorFrame` marks `message` `omitempty`.
+- **`SendText` is fire-and-forget by design.** The caller is the game's main thread and
+  must not block on the network; a send that fails ends the socket and arrives as a
+  close event like every other failure. There is no per-send result.
+- **What the SDK does not check locally.** The gateway also refuses `zone` over 64
+  bytes, `text` empty or over 1024 bytes, `name` over 64 bytes and `payload` over
+  8 KB. Only `dir` is checked here. Each refusal increments a per-socket counter and
+  fifty of them close with 4003, so a chat box that lets a player paste 2 KB will end
+  the session — validate the text before calling `Say`.
+- **Inbound messages are capped at 64 KB** (double the gateway's documented 32 KB
+  outbound cap). A larger one arrives as close 1009 and stops rather than reconnects.

@@ -14,9 +14,13 @@ constraints that follow, and none of them fail at `dotnet build`.
 
 ## Assembly boundaries
 
-- Every Runtime asmdef sets `noEngineReferences: true`. That is the enforcement that
-  the sources stay compilable by plain `dotnet build`, and it is what keeps
-  `UnityEngine.Debug` out of the logger.
+- **This file used to claim every Runtime asmdef sets `noEngineReferences: true`. None
+  of them does** — all four are `false`, and they have to be, because the engine glue
+  in `Runtime/Unity/**` lives inside the same assembly and references `UnityEngine`.
+  Making the claim true means moving that glue into its own asmdef. Until someone
+  decides which, the enforcement that keeps the sources plain-`dotnet build`-able is
+  the `.csproj` compile glob excluding `Runtime/Unity/**`, not the asmdef. Do not
+  "restore" the flag without moving the glue first: it will not compile in Unity.
 - Engine-facing glue lives in `Runtime/Unity/`, guarded by `#if UNITY_5_3_OR_NEWER`,
   and is excluded from the `.csproj` compile glob. Adding a file there means checking
   both builds.

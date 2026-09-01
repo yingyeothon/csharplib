@@ -19,7 +19,11 @@ Every `packages/<name>/README.md` uses the same sections, in this order:
 ## Keeping docs true
 
 - When the public API changes, update that package's `## Public API` in the same
-  commit. Drifted API listings were a real defect class in tslib.
+  commit. Drifted API listings were a real defect class in tslib — and this is now
+  **enforced**: `tests/Yingyeothon.PublicApi.Tests` fails when a public type is not
+  named in its package README, and separately when the assembly's public surface
+  differs from its approved snapshot. Approving a surface change is a rename of the
+  `.received.txt` the failure writes, and the README edit is the point of the pause.
 - When a dependency edge changes, update both the package table and the mermaid graph
   in the root `README.md`.
 - `CONVENTIONS.md` is canonical for API design. Point at it; do not duplicate it.

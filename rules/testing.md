@@ -10,7 +10,8 @@
 
 - Tests live in `packages/<name>/Tests/*.cs` and use the package's **public** surface.
   There is no `InternalsVisibleTo`; if a test needs something, that is a signal the
-  something should be public (that is how `LobbyFrames.Read` became public).
+  something should be public (that is how `LobbyFrames.Read` became public). The one
+  exception is `tests/Yingyeothon.PublicApi.Tests` — see below.
 - NUnit **3.14**, the version the Unity Test Framework ships, so the same sources
   compile in both places. Use the `Assert.That` constraint model only — NUnit 4
   removed the classic asserts.
@@ -23,11 +24,18 @@
   `ServerClose`, `ServerError`). It does no threading: every server action posts
   synchronously. `CreateOverride` is how "the socket cannot be constructed" is
   reached.
+- `FakeWebSocket.DeferClose` makes `Close()` record the request without reporting it,
+  which is what the **real** transport does — its close event arrives on the receive
+  thread later. Everything that happens in that window is invisible to the default
+  synchronous fake, and it is where the "a late hello resurrects a connection the
+  hello timeout gave up on" defect lived.
 - Time → `FakeClock` with `Advance`. Never `Task.Delay`, never a real timeout.
 - Randomness → `BackoffOptions.Random`. `() => 0` and `() => 0.999999` pin the jitter
   bounds; `Jitter = 0` gives exact delays for the reconnect tables.
-- HTTP → a fake `IHttpFetcher`. The real one is only exercised in the integration
-  tests.
+- HTTP → a fake `IHttpFetcher`. `HttpFetcher.Default` itself has **no** test coverage;
+  its bounds (timeout, size cap, redirect budget) are asserted only by reading them.
+  Do not claim otherwise — that claim stood here while the real fetcher had no bound
+  of any kind.
 - Logging → a capturing `ILogWriter`, never a spy on `Console`.
 
 ## Determinism comes from the pump
@@ -53,6 +61,18 @@
   string per event (`disconnected:4002:True`, `reconnecting:1:500`, `connected`) and
   assert the whole array. That is what pins "disconnected before stopped" and "the
   backoff reset on a successful connect".
+
+## The public surface is a gate, not a courtesy
+
+- `tests/Yingyeothon.PublicApi.Tests` is the one test project outside `packages/`: it
+  has to see all four assemblies at once and Unity must never import it. Reflection is
+  fine there and nowhere else — it is a test assembly, so IL2CPP never sees it and
+  `validate-packages.sh` only greps `packages/*/Runtime`.
+- It snapshots each assembly's public members to `Approved/<assembly>.approved.txt`
+  and fails on an unreviewed change, writing the actual surface next to it as
+  `.received.txt` (git-ignored) so approving is a rename. It also fails when a public
+  type is not named in that package's README — the drift it caught on its very first
+  run was six types.
 
 ## A test that cannot fail is not coverage
 
