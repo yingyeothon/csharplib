@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
+using NUnit.Framework;
 
 namespace Yingyeothon.PublicApi.Tests
 {
@@ -21,7 +23,26 @@ namespace Yingyeothon.PublicApi.Tests
         internal const BindingFlags DeclaredPublic =
             BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly;
 
+        /// <summary>Every shipped assembly with its UPM package: the axis each gate here runs along.</summary>
+        internal static IEnumerable<TestCaseData> Packages
+        {
+            get
+            {
+                yield return new TestCaseData("Yingyeothon.Codec", "com.yingyeothon.codec");
+                yield return new TestCaseData("Yingyeothon.Logger", "com.yingyeothon.logger");
+                yield return new TestCaseData("Yingyeothon.EventBroker", "com.yingyeothon.event-broker");
+                yield return new TestCaseData("Yingyeothon.Gamebase.Client", "com.yingyeothon.gamebase-client");
+            }
+        }
+
         internal static Assembly Load(string name) => Assembly.Load(new AssemblyName(name));
+
+        /// <summary>Writes what a gate actually saw, UTF-8 without a BOM so approving it is a plain rename.</summary>
+        internal static void WriteReceived(string path, string content)
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            File.WriteAllText(path, content, new UTF8Encoding(false));
+        }
 
         /// <summary>The exported types, ordered so a diff points at one symbol.</summary>
         internal static IEnumerable<Type> Types(Assembly assembly)

@@ -65,6 +65,36 @@
   path to `/` and not adding a port for `wss`. There is a test pinning the exact
   strings.
 
+## Finding duplication with `nose`
+
+- `nose` (`~/.cargo/bin/nose`; check `nose --version`, the numbers below are from
+  0.20.0) does not parse C#. Mirror the sources into a scratch tree **outside the
+  repo**, keeping every relative path and changing only the extension to `.java`,
+  then run it there. `Samples~` is in scope on purpose: a sample that duplicates a
+  test double is a finding too, even when the answer is to leave it.
+
+  ```bash
+  S=<scratch>/asjava; rm -rf "$S"
+  find packages tests -name '*.cs' -not -path '*/obj/*' -not -path '*/bin/*' \
+    | while read f; do install -D "$f" "$S/${f%.cs}.java"; done
+  nose stats "$S"                                   # IL lowering coverage; read the Raw ratio
+  nose query "$S" all sort=value 'scope!=test' full  # Runtime families with their skeletons
+  nose query "$S" all sort=value scope=test          # test families
+  ```
+
+  The Java grammar is close enough that the Raw ratio was **4.7%** at `229be4c`
+  (1698 of 36242 nodes, mostly `ERROR` on C#-only syntax). A run whose ratio is well
+  above that has a broken copy or a changed tool; read `top unhandled constructs`
+  before trusting any family it reports.
+- `nose query` groups copies into families, each with an id. When a task's goal is to
+  remove duplication, keep the ids it named, rebuild the scratch tree from the edited
+  sources before committing, and confirm those ids are gone (`nose query "$S" id=<id>`
+  prints no members).
+- `nose` finds; you judge. Do not refactor a family only because it was reported, and
+  do not restate here which ones were left alone — record that judgement, with its
+  reason, in the commit message of the change that ran the tool (`git log --grep=nose`
+  finds them).
+
 ## The `unity` CLI
 
 `~/.local/bin/unity` (v1.0.0-beta.5) drives the editors. It is worth using — `unity

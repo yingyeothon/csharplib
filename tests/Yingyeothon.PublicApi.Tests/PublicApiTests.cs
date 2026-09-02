@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Linq;
-using System.Text;
 using NUnit.Framework;
 
 namespace Yingyeothon.PublicApi.Tests
@@ -40,10 +39,7 @@ namespace Yingyeothon.PublicApi.Tests
             }
         }
 
-        [TestCase("Yingyeothon.Codec", "com.yingyeothon.codec")]
-        [TestCase("Yingyeothon.Logger", "com.yingyeothon.logger")]
-        [TestCase("Yingyeothon.EventBroker", "com.yingyeothon.event-broker")]
-        [TestCase("Yingyeothon.Gamebase.Client", "com.yingyeothon.gamebase-client")]
+        [TestCaseSource(typeof(ApiSurface), nameof(ApiSurface.Packages))]
         public void EveryPublicTypeIsNamedInThePackageReadme(string assembly, string package)
         {
             var readmePath = Path.Combine(ApiSurface.RepositoryRoot(), "packages", package, "README.md");
@@ -92,7 +88,7 @@ namespace Yingyeothon.PublicApi.Tests
         {
             var received = Path.Combine(
                 ApiSurface.RepositoryRoot(), "tests", "Yingyeothon.PublicApi.Tests", "Approved", assembly + ".received.txt");
-            File.WriteAllText(received, actual, new UTF8Encoding(false));
+            ApiSurface.WriteReceived(received, actual);
             return why + " for " + assembly + ". Review the change, update the package README's"
                 + " `## Public API` section, then approve it with:\n"
                 + "  mv " + received + " " + received.Replace(".received.txt", ".approved.txt");

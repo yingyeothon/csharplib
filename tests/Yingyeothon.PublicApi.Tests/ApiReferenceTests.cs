@@ -20,10 +20,7 @@ namespace Yingyeothon.PublicApi.Tests
     [TestFixture]
     public class ApiReferenceTests
     {
-        [TestCase("Yingyeothon.Codec", "com.yingyeothon.codec")]
-        [TestCase("Yingyeothon.Logger", "com.yingyeothon.logger")]
-        [TestCase("Yingyeothon.EventBroker", "com.yingyeothon.event-broker")]
-        [TestCase("Yingyeothon.Gamebase.Client", "com.yingyeothon.gamebase-client")]
+        [TestCaseSource(typeof(ApiSurface), nameof(ApiSurface.Packages))]
         public void TheGeneratedReferenceMatchesTheAssembly(string assembly, string package)
         {
             var actual = Render(assembly, package);
@@ -139,8 +136,7 @@ namespace Yingyeothon.PublicApi.Tests
         private static string WriteReceived(string path, string actual, string why)
         {
             var received = path.Replace(".md", ".received.md");
-            Directory.CreateDirectory(Path.GetDirectoryName(received)!);
-            File.WriteAllText(received, actual, new UTF8Encoding(false));
+            ApiSurface.WriteReceived(received, actual);
             return why + ". Review it, then approve with:\n  mv " + received + " " + path;
         }
     }
