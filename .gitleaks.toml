@@ -27,7 +27,8 @@ regexes = [
 [allowlist]
 description = "Config itself and the deliberately fake token fixture"
 paths = ['''\.gitleaks\.toml$''']
-# LobbyHarness/GameHarness use "eyJ.secret-token.sig": three dot-separated words that
-# look like a JWT to a human and are not one. The tests that assert the token never
-# reaches a log line need a literal to search for, so it has to be in the source.
+# GatewayHarness (the base of LobbyHarness and GameHarness) uses
+# "eyJ.secret-token.sig": three dot-separated words that look like a JWT to a human
+# and are not one. The tests that assert the token never reaches a log line need a
+# literal to search for, so it has to be in the source.
 regexes = ['''eyJ\.secret-token\.sig''']
