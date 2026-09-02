@@ -1,6 +1,4 @@
 using System;
-using System.Globalization;
-using System.Threading;
 using NUnit.Framework;
 
 namespace Yingyeothon.Codec.Tests
@@ -18,12 +16,6 @@ namespace Yingyeothon.Codec.Tests
     [TestFixture]
     public class JsonNumberTests
     {
-        private static JsonParseFailure Refused(string text)
-        {
-            Assert.That(Json.TryParse(text, out _, out var failure), Is.False);
-            return failure;
-        }
-
         [TestCase("+1")]
         [TestCase(".5")]
         [TestCase("-.5")]
@@ -33,13 +25,13 @@ namespace Yingyeothon.Codec.Tests
         [TestCase("-Infinity")]
         public void SomethingThatIsNotANumberIsNotAValue(string text)
         {
-            Assert.That(Refused(text).Error, Is.EqualTo(JsonParseError.ExpectedValue));
+            Assert.That(ParseAssert.Refused(text).Error, Is.EqualTo(JsonParseError.ExpectedValue));
         }
 
         [Test]
         public void ABareMinusSignRunsOutOfInput()
         {
-            var failure = Refused("-");
+            var failure = ParseAssert.Refused("-");
 
             Assert.That(failure.Error, Is.EqualTo(JsonParseError.UnexpectedEndOfInput));
             Assert.That(failure.Index, Is.EqualTo(1));
@@ -57,7 +49,7 @@ namespace Yingyeothon.Codec.Tests
         {
             // The number itself is legal as far as it goes; what refuses these is
             // the "nothing but whitespace after the value" rule.
-            Assert.That(Refused(text).Error, Is.EqualTo(JsonParseError.TrailingContent));
+            Assert.That(ParseAssert.Refused(text).Error, Is.EqualTo(JsonParseError.TrailingContent));
         }
 
         [TestCase("1.", 2)]
@@ -65,12 +57,7 @@ namespace Yingyeothon.Codec.Tests
         [TestCase("1.e5", 2)]
         [TestCase("-0.", 3)]
         public void ADecimalPointNeedsADigitAfterIt(string text, int index)
-        {
-            var failure = Refused(text);
-
-            Assert.That(failure.Error, Is.EqualTo(JsonParseError.ExpectedFractionDigit));
-            Assert.That(failure.Index, Is.EqualTo(index));
-        }
+            => ParseAssert.Refused(text, JsonParseError.ExpectedFractionDigit, index);
 
         [TestCase("1e", 2)]
         [TestCase("1E", 2)]
@@ -78,12 +65,7 @@ namespace Yingyeothon.Codec.Tests
         [TestCase("1e-", 3)]
         [TestCase("1.5E", 4)]
         public void AnExponentNeedsADigit(string text, int index)
-        {
-            var failure = Refused(text);
-
-            Assert.That(failure.Error, Is.EqualTo(JsonParseError.ExpectedExponentDigit));
-            Assert.That(failure.Index, Is.EqualTo(index));
-        }
+            => ParseAssert.Refused(text, JsonParseError.ExpectedExponentDigit, index);
 
         [TestCase("0", 0d)]
         [TestCase("0e0", 0d)]
@@ -105,18 +87,13 @@ namespace Yingyeothon.Codec.Tests
         [TestCase("-1e400")]
         [TestCase("1e999999")]
         public void ANumberTooLargeForADoubleIsRefusedRatherThanBecomingInfinity(string text)
-        {
-            var failure = Refused(text);
-
-            Assert.That(failure.Error, Is.EqualTo(JsonParseError.NumberOutOfRange));
-            Assert.That(failure.Index, Is.EqualTo(0));
-        }
+            => ParseAssert.Refused(text, JsonParseError.NumberOutOfRange, 0);
 
         [Test]
         public void AnAbsurdlyLongNumericLiteralIsRefusedRatherThanBecomingInfinity()
         {
-            Assert.That(Refused(new string('9', 10000)).Error, Is.EqualTo(JsonParseError.NumberOutOfRange));
-            Assert.That(Refused("1e" + new string('9', 10000)).Error, Is.EqualTo(JsonParseError.NumberOutOfRange));
+            Assert.That(ParseAssert.Refused(new string('9', 10000)).Error, Is.EqualTo(JsonParseError.NumberOutOfRange));
+            Assert.That(ParseAssert.Refused("1e" + new string('9', 10000)).Error, Is.EqualTo(JsonParseError.NumberOutOfRange));
         }
 
         [Test]
@@ -217,24 +194,14 @@ namespace Yingyeothon.Codec.Tests
         [TestCase("fr-FR")]
         public void EveryNumericConversionIgnoresTheCurrentCulture(string cultureName)
         {
-            var previous = CultureInfo.CurrentCulture;
-            try
-            {
-                CultureInfo.CurrentCulture = new CultureInfo(cultureName);
-                Thread.CurrentThread.CurrentCulture = new CultureInfo(cultureName);
+            using var culture = new CultureScope(cultureName);
 
-                Assert.That(Json.Stringify(JsonValue.Of(1.5)), Is.EqualTo("1.5"));
-                Assert.That(Json.Stringify(JsonValue.Of(-1234.5)), Is.EqualTo("-1234.5"));
-                Assert.That(Json.Stringify(JsonValue.Of(1e21)), Is.EqualTo("1E+21"));
-                Assert.That(Json.Parse("-1234.5").AsNumber(), Is.EqualTo(-1234.5));
-                Assert.That(Json.Parse("1e-7").AsNumber(), Is.EqualTo(1e-7));
-                Assert.That(Json.Parse("-2147483648").AsInt32(), Is.EqualTo(int.MinValue));
-            }
-            finally
-            {
-                CultureInfo.CurrentCulture = previous;
-                Thread.CurrentThread.CurrentCulture = previous;
-            }
+            Assert.That(Json.Stringify(JsonValue.Of(1.5)), Is.EqualTo("1.5"));
+            Assert.That(Json.Stringify(JsonValue.Of(-1234.5)), Is.EqualTo("-1234.5"));
+            Assert.That(Json.Stringify(JsonValue.Of(1e21)), Is.EqualTo("1E+21"));
+            Assert.That(Json.Parse("-1234.5").AsNumber(), Is.EqualTo(-1234.5));
+            Assert.That(Json.Parse("1e-7").AsNumber(), Is.EqualTo(1e-7));
+            Assert.That(Json.Parse("-2147483648").AsInt32(), Is.EqualTo(int.MinValue));
         }
 
         [TestCase(double.NaN)]

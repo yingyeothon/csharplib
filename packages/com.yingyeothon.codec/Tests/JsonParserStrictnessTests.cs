@@ -15,13 +15,6 @@ namespace Yingyeothon.Codec.Tests
     [TestFixture]
     public class JsonParserStrictnessTests
     {
-        private static JsonParseFailure Refused(string text)
-        {
-            Assert.That(Json.TryParse(text, out _, out var failure), Is.False, "expected '" + text.Length + "' chars of input to be refused");
-            Assert.That(failure.IsFailure, Is.True);
-            return failure;
-        }
-
         [TestCase("[", JsonParseError.UnexpectedEndOfInput, 1)]
         [TestCase("{", JsonParseError.ExpectedKey, 1)]
         [TestCase("]", JsonParseError.ExpectedValue, 0)]
@@ -46,12 +39,7 @@ namespace Yingyeothon.Codec.Tests
         [TestCase(",", JsonParseError.ExpectedValue, 0)]
         [TestCase(":", JsonParseError.ExpectedValue, 0)]
         public void AMalformedStructureIsRefusedWithItsReasonAndPosition(string text, JsonParseError error, int index)
-        {
-            var failure = Refused(text);
-
-            Assert.That(failure.Error, Is.EqualTo(error));
-            Assert.That(failure.Index, Is.EqualTo(index));
-        }
+            => ParseAssert.Refused(text, error, index);
 
         [TestCase("{1:2}")]
         [TestCase("{true:1}")]
@@ -59,7 +47,7 @@ namespace Yingyeothon.Codec.Tests
         [TestCase("{[]:1}")]
         public void AnObjectKeyMustBeAQuotedString(string text)
         {
-            Assert.That(Refused(text).Error, Is.EqualTo(JsonParseError.ExpectedKey));
+            Assert.That(ParseAssert.Refused(text).Error, Is.EqualTo(JsonParseError.ExpectedKey));
         }
 
         [TestCase("{} {}", 3)]
@@ -71,12 +59,7 @@ namespace Yingyeothon.Codec.Tests
         [TestCase("nullx", 4)]
         [TestCase("01", 1)]
         public void ContentAfterTheTopLevelValueIsRefused(string text, int index)
-        {
-            var failure = Refused(text);
-
-            Assert.That(failure.Error, Is.EqualTo(JsonParseError.TrailingContent));
-            Assert.That(failure.Index, Is.EqualTo(index));
-        }
+            => ParseAssert.Refused(text, JsonParseError.TrailingContent, index);
 
         [TestCase("tru")]
         [TestCase("nul")]
@@ -85,7 +68,7 @@ namespace Yingyeothon.Codec.Tests
         [TestCase("[fals]")]
         public void ATruncatedLiteralIsRefused(string text)
         {
-            Assert.That(Refused(text).Error, Is.EqualTo(JsonParseError.ExpectedLiteral));
+            Assert.That(ParseAssert.Refused(text).Error, Is.EqualTo(JsonParseError.ExpectedLiteral));
         }
 
         [TestCase("True")]
@@ -95,19 +78,14 @@ namespace Yingyeothon.Codec.Tests
         [TestCase("undefined")]
         public void ALiteralIsCaseSensitive(string text)
         {
-            Assert.That(Refused(text).Error, Is.EqualTo(JsonParseError.ExpectedValue));
+            Assert.That(ParseAssert.Refused(text).Error, Is.EqualTo(JsonParseError.ExpectedValue));
         }
 
         [TestCase("")]
         [TestCase(" ")]
         [TestCase("\t\r\n  ")]
         public void EmptyOrWhitespaceOnlyInputIsRefused(string text)
-        {
-            var failure = Refused(text);
-
-            Assert.That(failure.Error, Is.EqualTo(JsonParseError.UnexpectedEndOfInput));
-            Assert.That(failure.Index, Is.EqualTo(text.Length));
-        }
+            => ParseAssert.Refused(text, JsonParseError.UnexpectedEndOfInput, text.Length);
 
         [Test]
         public void AByteOrderMarkIsNotWhitespace()
@@ -115,8 +93,8 @@ namespace Yingyeothon.Codec.Tests
             // RFC 8259 does not allow a BOM and JSON.parse refuses one. A frame that
             // arrives with one is a bug on the sender's side, not something to
             // silently absorb.
-            Assert.That(Refused("\uFEFF").Error, Is.EqualTo(JsonParseError.ExpectedValue));
-            Assert.That(Refused("\uFEFF{}").Error, Is.EqualTo(JsonParseError.ExpectedValue));
+            Assert.That(ParseAssert.Refused("\uFEFF").Error, Is.EqualTo(JsonParseError.ExpectedValue));
+            Assert.That(ParseAssert.Refused("\uFEFF{}").Error, Is.EqualTo(JsonParseError.ExpectedValue));
         }
 
         [TestCase(0x0B, TestName = "VerticalTab")]
@@ -126,7 +104,7 @@ namespace Yingyeothon.Codec.Tests
         [TestCase(0xFEFF, TestName = "ByteOrderMark")]
         public void OnlyTheFourJsonWhitespaceCharactersAreWhitespace(int code)
         {
-            var failure = Refused("[" + (char)code + "1]");
+            var failure = ParseAssert.Refused("[" + (char)code + "1]");
 
             Assert.That(failure.Error, Is.EqualTo(JsonParseError.ExpectedValue));
             Assert.That(failure.Index, Is.EqualTo(1));
@@ -178,8 +156,8 @@ namespace Yingyeothon.Codec.Tests
         {
             // The reason has to name where the document stopped making sense, not
             // wherever the unwinding happened to end.
-            Assert.That(Refused("[1,\"\\x\",2e]").Error, Is.EqualTo(JsonParseError.UnknownEscape));
-            Assert.That(Refused("{\"a\" 1, \"b\"}").Error, Is.EqualTo(JsonParseError.ExpectedColon));
+            Assert.That(ParseAssert.Refused("[1,\"\\x\",2e]").Error, Is.EqualTo(JsonParseError.UnknownEscape));
+            Assert.That(ParseAssert.Refused("{\"a\" 1, \"b\"}").Error, Is.EqualTo(JsonParseError.ExpectedColon));
         }
 
         [Test]
@@ -188,25 +166,15 @@ namespace Yingyeothon.Codec.Tests
             // StringComparer.Ordinal, never the current culture: a Turkish locale
             // folds "i" and "I", and the gateway's keys are ASCII identifiers whose
             // identity must not depend on the player's device settings.
-            var previous = System.Globalization.CultureInfo.CurrentCulture;
-            try
-            {
-                System.Globalization.CultureInfo.CurrentCulture = new System.Globalization.CultureInfo("tr-TR");
-                System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("tr-TR");
+            using var culture = new CultureScope("tr-TR");
 
-                var value = Json.Parse("{\"id\":1,\"ID\":2,\"\u0130d\":3}");
+            var value = Json.Parse("{\"id\":1,\"ID\":2,\"\u0130d\":3}");
 
-                Assert.That(value.AsObject().Count, Is.EqualTo(3));
-                Assert.That(value.GetNumber("id"), Is.EqualTo(1d));
-                Assert.That(value.GetNumber("ID"), Is.EqualTo(2d));
-                Assert.That(value.GetNumber("\u0130d"), Is.EqualTo(3d));
-                Assert.That(Json.Parse("{\"id\":1}"), Is.Not.EqualTo(Json.Parse("{\"ID\":1}")));
-            }
-            finally
-            {
-                System.Globalization.CultureInfo.CurrentCulture = previous;
-                System.Threading.Thread.CurrentThread.CurrentCulture = previous;
-            }
+            Assert.That(value.AsObject().Count, Is.EqualTo(3));
+            Assert.That(value.GetNumber("id"), Is.EqualTo(1d));
+            Assert.That(value.GetNumber("ID"), Is.EqualTo(2d));
+            Assert.That(value.GetNumber("\u0130d"), Is.EqualTo(3d));
+            Assert.That(Json.Parse("{\"id\":1}"), Is.Not.EqualTo(Json.Parse("{\"ID\":1}")));
         }
 
         [Test]

@@ -1,6 +1,3 @@
-using System;
-using System.Globalization;
-using System.Threading;
 using NUnit.Framework;
 using Yingyeothon.Codec;
 
@@ -42,22 +39,12 @@ namespace Yingyeothon.Codec.Tests
         [TestCase("de-DE")]
         public void NumbersAreWrittenAndReadInvariantOfTheCurrentCulture(string cultureName)
         {
-            var previous = CultureInfo.CurrentCulture;
-            try
-            {
-                // A comma-decimal locale would put "1,5" on the wire, which the
-                // gateway drops as bad_message without telling the client.
-                CultureInfo.CurrentCulture = new CultureInfo(cultureName);
-                Thread.CurrentThread.CurrentCulture = new CultureInfo(cultureName);
+            // A comma-decimal locale would put "1,5" on the wire, which the
+            // gateway drops as bad_message without telling the client.
+            using var culture = new CultureScope(cultureName);
 
-                Assert.That(Json.Stringify(JsonValue.Of(1.5)), Is.EqualTo("1.5"));
-                Assert.That(Json.Parse("1.5").AsNumber(), Is.EqualTo(1.5));
-            }
-            finally
-            {
-                CultureInfo.CurrentCulture = previous;
-                Thread.CurrentThread.CurrentCulture = previous;
-            }
+            Assert.That(Json.Stringify(JsonValue.Of(1.5)), Is.EqualTo("1.5"));
+            Assert.That(Json.Parse("1.5").AsNumber(), Is.EqualTo(1.5));
         }
 
         [Test]

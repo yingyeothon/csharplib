@@ -170,11 +170,7 @@ namespace Yingyeothon.Codec.Tests
         [TestCase("\"\\ \"", TestName = "BackslashSpace")]
         [TestCase("\"\\0\"", TestName = "BackslashZero")]
         public void AnUnknownEscapeIsRefused(string text)
-        {
-            Assert.That(Json.TryParse(text, out _, out var failure), Is.False);
-            Assert.That(failure.Error, Is.EqualTo(JsonParseError.UnknownEscape));
-            Assert.That(failure.Index, Is.EqualTo(2));
-        }
+            => ParseAssert.Refused(text, JsonParseError.UnknownEscape, 2);
 
         [Test]
         public void AnEscapedNewlineIsRefused()
@@ -201,11 +197,7 @@ namespace Yingyeothon.Codec.Tests
         [TestCase("\"\\uD80O\"", 6)]
         [TestCase("\"\\u-123\"", 3)]
         public void InvalidHexInAUnicodeEscapeIsRefused(string text, int index)
-        {
-            Assert.That(Json.TryParse(text, out _, out var failure), Is.False);
-            Assert.That(failure.Error, Is.EqualTo(JsonParseError.InvalidUnicodeEscape));
-            Assert.That(failure.Index, Is.EqualTo(index));
-        }
+            => ParseAssert.Refused(text, JsonParseError.InvalidUnicodeEscape, index);
 
         [TestCase("\"abc", TestName = "AtTopLevel")]
         [TestCase("{\"a\":\"b", TestName = "AsAnObjectValue")]
@@ -213,11 +205,7 @@ namespace Yingyeothon.Codec.Tests
         [TestCase("[\"a", TestName = "AsAnArrayItem")]
         [TestCase("\"", TestName = "OnlyAnOpeningQuote")]
         public void AnUnterminatedStringIsRefused(string text)
-        {
-            Assert.That(Json.TryParse(text, out _, out var failure), Is.False);
-            Assert.That(failure.Error, Is.EqualTo(JsonParseError.UnterminatedString));
-            Assert.That(failure.Index, Is.EqualTo(text.Length));
-        }
+            => ParseAssert.Refused(text, JsonParseError.UnterminatedString, text.Length);
 
         [Test]
         public void ALongStringOfEscapesRoundTrips()
