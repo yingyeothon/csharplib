@@ -105,6 +105,55 @@ namespace Yingyeothon.Gamebase.Client.Tests
             return socket;
         }
 
+        /// <summary>
+        /// A socket that has finished its handshake: the server side, the sink, and
+        /// the client socket with its open event already consumed.
+        /// </summary>
+        private sealed class OpenSession : IDisposable
+        {
+            public OpenSession(CollectingSink sink, IWebSocket socket, HttpListenerWebSocketContext server)
+            {
+                Sink = sink;
+                Socket = socket;
+                Server = server;
+            }
+
+            public CollectingSink Sink { get; }
+
+            public IWebSocket Socket { get; }
+
+            public HttpListenerWebSocketContext Server { get; }
+
+            public void Dispose() => Socket.Dispose();
+        }
+
+        /// <summary>Connects with the bearer subprotocol and waits for the open event, so a test starts on a ready socket.</summary>
+        private async Task<OpenSession> OpenAsync()
+        {
+            var sink = new CollectingSink();
+            var accepting = AcceptAsync();
+            var socket = Connect(sink);
+            try
+            {
+                var server = await accepting;
+                await sink.NextAsync(Timeout);
+                return new OpenSession(sink, socket, server);
+            }
+            catch
+            {
+                // The `using var socket` this replaced disposed on the way out too.
+                socket.Dispose();
+                throw;
+            }
+        }
+
+        /// <summary>Sends one text frame from the server; <c>endOfMessage: false</c> leaves the message open for more frames.</summary>
+        private static Task SendTextAsync(WebSocket server, byte[] payload, bool endOfMessage = true)
+            => SendTextAsync(server, payload, 0, payload.Length, endOfMessage);
+
+        private static Task SendTextAsync(WebSocket server, byte[] payload, int offset, int count, bool endOfMessage = true)
+            => server.SendAsync(new ArraySegment<byte>(payload, offset, count), WebSocketMessageType.Text, endOfMessage, CancellationToken.None);
+
         /// <remarks>
         /// The server half of these tests, not the client half. Unity's Mono never
         /// implemented server-side WebSocket in HttpListener and throws
@@ -161,25 +210,16 @@ namespace Yingyeothon.Gamebase.Client.Tests
         [Test]
         public async Task ReassemblesAMessageSplitMidUtf8SequenceAcrossFrames()
         {
-            var sink = new CollectingSink();
-            var accepting = AcceptAsync();
-            using var socket = Connect(sink);
-            var server = await accepting;
-            await sink.NextAsync(Timeout);
+            using var session = await OpenAsync();
 
             // Split inside the three bytes of a Hangul syllable. Decoding per frame
             // would corrupt it; only whole-message decoding survives.
             var payload = Encoding.UTF8.GetBytes("{\"type\":\"say\",\"text\":\"한글 테스트\"}");
             var split = 12;
-            await server.WebSocket.SendAsync(
-                new ArraySegment<byte>(payload, 0, split), WebSocketMessageType.Text, false, CancellationToken.None);
-            await server.WebSocket.SendAsync(
-                new ArraySegment<byte>(payload, split, payload.Length - split),
-                WebSocketMessageType.Text,
-                true,
-                CancellationToken.None);
+            await SendTextAsync(session.Server.WebSocket, payload, 0, split, endOfMessage: false);
+            await SendTextAsync(session.Server.WebSocket, payload, split, payload.Length - split);
 
-            var message = await sink.NextAsync(Timeout);
+            var message = await session.Sink.NextAsync(Timeout);
 
             Assert.That(message.Kind, Is.EqualTo(SocketEventKind.Message));
             Assert.That(message.IsText, Is.True);
@@ -189,19 +229,15 @@ namespace Yingyeothon.Gamebase.Client.Tests
         [Test]
         public async Task ABinaryFrameIsReportedAsANonTextMessage()
         {
-            var sink = new CollectingSink();
-            var accepting = AcceptAsync();
-            using var socket = Connect(sink);
-            var server = await accepting;
-            await sink.NextAsync(Timeout);
+            using var session = await OpenAsync();
 
-            await server.WebSocket.SendAsync(
+            await session.Server.WebSocket.SendAsync(
                 new ArraySegment<byte>(new byte[] { 1, 2, 3 }),
                 WebSocketMessageType.Binary,
                 true,
                 CancellationToken.None);
 
-            var message = await sink.NextAsync(Timeout);
+            var message = await session.Sink.NextAsync(Timeout);
 
             Assert.That(message.Kind, Is.EqualTo(SocketEventKind.Message));
             Assert.That(message.IsText, Is.False);
@@ -233,16 +269,12 @@ namespace Yingyeothon.Gamebase.Client.Tests
         [Test]
         public async Task ASendReachesTheServer()
         {
-            var sink = new CollectingSink();
-            var accepting = AcceptAsync();
-            using var socket = Connect(sink);
-            var server = await accepting;
-            await sink.NextAsync(Timeout);
+            using var session = await OpenAsync();
 
-            socket.SendText("{\"type\":\"ping\"}");
+            session.Socket.SendText("{\"type\":\"ping\"}");
 
             var buffer = new byte[256];
-            var result = await server.WebSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+            var result = await session.Server.WebSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
 
             Assert.That(Encoding.UTF8.GetString(buffer, 0, result.Count), Is.EqualTo("{\"type\":\"ping\"}"));
         }
@@ -250,15 +282,11 @@ namespace Yingyeothon.Gamebase.Client.Tests
         [Test]
         public async Task AServerCloseIsReportedWithItsCode()
         {
-            var sink = new CollectingSink();
-            var accepting = AcceptAsync();
-            using var socket = Connect(sink);
-            var server = await accepting;
-            await sink.NextAsync(Timeout);
+            using var session = await OpenAsync();
 
-            await server.WebSocket.CloseAsync((WebSocketCloseStatus)4002, "idle", CancellationToken.None);
+            await session.Server.WebSocket.CloseAsync((WebSocketCloseStatus)4002, "idle", CancellationToken.None);
 
-            var closed = await sink.NextAsync(Timeout);
+            var closed = await session.Sink.NextAsync(Timeout);
 
             Assert.That(closed.Kind, Is.EqualTo(SocketEventKind.Closed));
             Assert.That(closed.Code, Is.EqualTo(4002));
@@ -269,15 +297,11 @@ namespace Yingyeothon.Gamebase.Client.Tests
         {
             // The state machine keys its decision on the code it requested, so the
             // adapter must not report whatever the peer echoed back instead.
-            var sink = new CollectingSink();
-            var accepting = AcceptAsync();
-            using var socket = Connect(sink);
-            var server = await accepting;
-            await sink.NextAsync(Timeout);
+            using var session = await OpenAsync();
 
-            socket.Close(GatewayCloseCode.Local, "unexpected subprotocol");
+            session.Socket.Close(GatewayCloseCode.Local, "unexpected subprotocol");
 
-            var closed = await sink.NextAsync(Timeout);
+            var closed = await session.Sink.NextAsync(Timeout);
 
             Assert.That(closed.Code, Is.EqualTo(GatewayCloseCode.Local));
             Assert.That(closed.Reason, Is.EqualTo("unexpected subprotocol"));
@@ -330,11 +354,7 @@ namespace Yingyeothon.Gamebase.Client.Tests
         [Test]
         public async Task AMessageOverTheSizeCapArrivesAsACloseInsteadOfGrowingForever()
         {
-            var sink = new CollectingSink();
-            var accepting = AcceptAsync();
-            using var socket = Connect(sink);
-            var server = await accepting;
-            await sink.NextAsync(Timeout);
+            using var session = await OpenAsync();
 
             // One message, streamed as continuation frames that never end.
             var chunk = new byte[16 * 1024];
@@ -347,8 +367,7 @@ namespace Yingyeothon.Gamebase.Client.Tests
             {
                 try
                 {
-                    await server.WebSocket.SendAsync(
-                        new ArraySegment<byte>(chunk), WebSocketMessageType.Text, false, CancellationToken.None);
+                    await SendTextAsync(session.Server.WebSocket, chunk, endOfMessage: false);
                 }
                 catch (WebSocketException)
                 {
@@ -357,7 +376,7 @@ namespace Yingyeothon.Gamebase.Client.Tests
                 }
             }
 
-            var closed = await sink.NextAsync(Timeout);
+            var closed = await session.Sink.NextAsync(Timeout);
 
             Assert.That(closed.Kind, Is.EqualTo(SocketEventKind.Closed));
             Assert.That(closed.Code, Is.EqualTo(1009));
@@ -376,20 +395,12 @@ namespace Yingyeothon.Gamebase.Client.Tests
         [Test]
         public async Task AMessageUnderTheSizeCapStillArrivesWhole()
         {
-            var sink = new CollectingSink();
-            var accepting = AcceptAsync();
-            using var socket = Connect(sink);
-            var server = await accepting;
-            await sink.NextAsync(Timeout);
+            using var session = await OpenAsync();
 
             var text = new string('y', 63 * 1024);
-            await server.WebSocket.SendAsync(
-                new ArraySegment<byte>(Encoding.UTF8.GetBytes(text)),
-                WebSocketMessageType.Text,
-                true,
-                CancellationToken.None);
+            await SendTextAsync(session.Server.WebSocket, Encoding.UTF8.GetBytes(text));
 
-            var message = await sink.NextAsync(Timeout);
+            var message = await session.Sink.NextAsync(Timeout);
 
             Assert.That(message.Kind, Is.EqualTo(SocketEventKind.Message));
             Assert.That(message.Text, Is.EqualTo(text));
@@ -423,20 +434,16 @@ namespace Yingyeothon.Gamebase.Client.Tests
         [Test]
         public async Task ACloseCodeAClientMayNotSendIsRefusedUpFront()
         {
-            var sink = new CollectingSink();
-            var accepting = AcceptAsync();
-            using var socket = Connect(sink);
-            await accepting;
-            await sink.NextAsync(Timeout);
+            using var session = await OpenAsync();
 
-            Assert.Throws<ArgumentOutOfRangeException>(() => socket.Close(0, "uninitialised"));
-            Assert.Throws<ArgumentOutOfRangeException>(() => socket.Close(1006, "abnormal"));
-            Assert.Throws<ArgumentOutOfRangeException>(() => socket.Close(999, "reserved"));
+            Assert.Throws<ArgumentOutOfRangeException>(() => session.Socket.Close(0, "uninitialised"));
+            Assert.Throws<ArgumentOutOfRangeException>(() => session.Socket.Close(1006, "abnormal"));
+            Assert.Throws<ArgumentOutOfRangeException>(() => session.Socket.Close(999, "reserved"));
 
             // Positive control: the codes a client may send are accepted.
-            Assert.DoesNotThrow(() => socket.Close(GatewayCloseCode.Local, "hello timeout"));
+            Assert.DoesNotThrow(() => session.Socket.Close(GatewayCloseCode.Local, "hello timeout"));
 
-            var closed = await sink.NextAsync(Timeout);
+            var closed = await session.Sink.NextAsync(Timeout);
 
             Assert.That(closed.Code, Is.EqualTo(GatewayCloseCode.Local));
         }
