@@ -398,10 +398,7 @@ namespace Yingyeothon.Codec
             }
             else if (_text[_at] >= '1' && _text[_at] <= '9')
             {
-                while (_at < _text.Length && _text[_at] >= '0' && _text[_at] <= '9')
-                {
-                    _at++;
-                }
+                ScanDigits();
             }
             else
             {
@@ -412,14 +409,7 @@ namespace Yingyeothon.Codec
             if (_at < _text.Length && _text[_at] == '.')
             {
                 _at++;
-                var digits = 0;
-                while (_at < _text.Length && _text[_at] >= '0' && _text[_at] <= '9')
-                {
-                    _at++;
-                    digits++;
-                }
-
-                if (digits == 0)
+                if (ScanDigits() == 0)
                 {
                     Fail(JsonParseError.ExpectedFractionDigit);
                     return false;
@@ -434,14 +424,7 @@ namespace Yingyeothon.Codec
                     _at++;
                 }
 
-                var digits = 0;
-                while (_at < _text.Length && _text[_at] >= '0' && _text[_at] <= '9')
-                {
-                    _at++;
-                    digits++;
-                }
-
-                if (digits == 0)
+                if (ScanDigits() == 0)
                 {
                     Fail(JsonParseError.ExpectedExponentDigit);
                     return false;
@@ -470,6 +453,19 @@ namespace Yingyeothon.Codec
             }
 
             return true;
+        }
+
+        /// <summary>Consumes a run of ASCII digits and reports how many there were.</summary>
+        private int ScanDigits()
+        {
+            var digits = 0;
+            while (_at < _text.Length && _text[_at] >= '0' && _text[_at] <= '9')
+            {
+                _at++;
+                digits++;
+            }
+
+            return digits;
         }
 
         private bool Expect(string literal)
