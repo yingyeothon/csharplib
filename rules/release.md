@@ -11,13 +11,13 @@ mechanism: no registry, no publish step, no staging window, nothing to yank.
   it exists only locally, so `git tag -d` and re-tag.
 - Nothing publishes to NuGet, and **no CI job holds a publish credential** — that is
   part of what keeps this repo safe to leave public ([security.md](security.md)).
-  `PackageId` on the four library `.csproj` files is preparation, not a pipeline;
+  `PackageId` on the library `.csproj` files is preparation, not a pipeline;
   every test and sample project sets `IsPackable=false`. tslib's npm rules
   (OIDC, provenance, dist-tags, deprecation) have no equivalent here; do not port them.
 
 ## Versioning
 
-- **One version across all four packages**, in **three places that must agree**:
+- **One version across every package**, in **three places that must agree**:
   `Directory.Build.props` `<Version>` (what the assembly carries),
   each `packages/*/package.json` `"version"` (what a Unity consumer sees), and each
   manifest's `"dependencies"` pins on its sibling packages.
@@ -62,13 +62,15 @@ anything is pushed, and the commit and the tag then go together or not at all.
 3. **[agent]** Bump the version in all three: `Directory.Build.props` `<Version>`, every
    `packages/*/package.json` `"version"`, and every `com.yingyeothon.*` pin under
    those manifests' `"dependencies"`. `./scripts/validate-packages.sh` proves it.
-4. **[agent]** Pin every install URL to `#vX.Y.Z` — there are fourteen, across `README.md`,
-   `docs/getting-started.md`, `docs/unity.md` and all four
-   `packages/*/README.md`. `./scripts/check-docs.sh` fails when a URL and the version
+4. **[agent]** Pin every install URL to `#vX.Y.Z` — across `README.md`,
+   `docs/getting-started.md`, `docs/unity.md`, `docs/kvstore.md` and every
+   `packages/*/README.md`; the summary line of a green `check-docs.sh` prints the
+   count, and while the URLs pin an uncut tag it prints nothing. `./scripts/check-docs.sh` fails when a URL and the version
    disagree in either direction, so run it rather than counting by hand.
 
    **Retract every pre-release claim in the same commit**, or a released repo keeps
-   asserting it has released nothing: the "no release has been tagged yet" sentences,
+   asserting it has released nothing: the "no release has been tagged yet" sentences
+   (`check-docs.sh` check 5 lists the files that carry one),
    `CONVENTIONS.md`'s *"Nothing has been released yet"* paragraph, and this file's own
    "no tag has been cut yet" clause. A rule file that states a fact a release
    invalidates has to be listed here, or it will not be found.

@@ -10,7 +10,9 @@ Three layers, and each owns something the others must not restate.
 
 The `service` repository owns the wire protocol, the auth endpoints and the console.
 Link to them; do not re-derive them. When this repository and `gateway/README.md`
-disagree, that document is right.
+disagree, that document is right; for the store it is `services/state/README.md`
+§ KV routes, and where that README and `services/state/src/kvstore.ts` disagree, the
+code wins ([architecture.md](architecture.md)).
 
 ## `docs/` — the guide
 
@@ -25,9 +27,11 @@ Current owners, so a new page does not take one over by accident:
 - `authentication.md` — the token: how to get one, what it contains, when it dies
 - `lobby.md` / `dungeon.md` — the two channel kinds, feature by feature
 - `connection-lifecycle.md` — `Poll`, threading, states, reconnect, shutdown
-- `errors.md` — every refusal code, close code and exception, and the caps the SDK does
-  **not** check
+- `errors.md` — every gateway refusal code, close code and exception, and the caps the
+  SDK does **not** check; the store's table lives in `kvstore.md`
 - `unity.md` — install, samples, IL2CPP, WebGL, the editor console
+- `kvstore.md` — the key-value store, console collections to refusals; the one page
+  that carries the store's error table
 - `troubleshooting.md` — symptom → the one check → the link. Not a second explanation
 
 ## Package READMEs

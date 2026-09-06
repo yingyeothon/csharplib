@@ -2,7 +2,7 @@
 
   <!--
     The one test project outside packages/. It is a cross-cutting gate rather than a
-    package's own unit tests: it needs to see all four assemblies at once, and Unity
+    package's own unit tests: it needs to see every runtime assembly at once, and Unity
     must never import it. Living here is also what keeps scripts/validate-packages.sh
     and scripts/check-coverage.sh — both of which walk packages/* — from picking it up.
   -->
@@ -25,6 +25,7 @@
     <ProjectReference Include="../../packages/com.yingyeothon.logger/Yingyeothon.Logger.csproj" />
     <ProjectReference Include="../../packages/com.yingyeothon.event-broker/Yingyeothon.EventBroker.csproj" />
     <ProjectReference Include="../../packages/com.yingyeothon.gamebase-client/Yingyeothon.Gamebase.Client.csproj" />
+    <ProjectReference Include="../../packages/com.yingyeothon.kvstore-client/Yingyeothon.KvStore.csproj" />
   </ItemGroup>
 
   <ItemGroup>

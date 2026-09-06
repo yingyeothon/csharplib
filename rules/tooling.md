@@ -49,6 +49,34 @@
   every sibling pin inside those manifests; `validate-packages.sh` fails when they
   disagree. Bumping it is a release act — see [release.md](release.md).
 
+## Adding a package
+
+A new UPM package touches more than `packages/<name>/`, and every one of these is a
+gate that will say so — but only after the build, one at a time. Do them together:
+
+- `Yingyeothon.sln` (`dotnet sln add --solution-folder packages`), both `.csproj`,
+  `package.json` with the sibling pins, one asmdef per `Runtime/` and `Tests/` with a
+  `csc.rsp` beside each, `Runtime/link.xml` for a client package — [unity.md](unity.md)
+  § IL2CPP says which and what it lists.
+- `tests/Yingyeothon.PublicApi.Tests`: `ApiSurface.Packages`, the `[TestCase]` list in
+  `PublicApiTests`, and a `ProjectReference` in its `.csproj`; then run it, and approve
+  the two files it writes by renaming them:
+  `tests/Yingyeothon.PublicApi.Tests/Approved/<asm>.received.txt` and
+  `docs/api/<asm>.received.md`. Rebuild before rerunning: the approved file is copied
+  to the output directory at build time.
+- `tests/Yingyeothon.Samples.Build`: the engine-free sample files and a
+  `ProjectReference`.
+- Root `README.md` (package table, mermaid graph, install list), `docs/README.md`
+  (routing table, reference list, README list), `docs/unity.md` (install list, samples
+  table), `docs/getting-started.md` if it is on the path, and `check-docs.sh` check 5's
+  file list when the new guide page carries an install URL.
+- Every stated count: `CLAUDE.md` and `README.md` ("five"), `.gitleaks.toml`'s comment,
+  [workflow.md](workflow.md) § Scope decisions, [unity.md](unity.md) § Nullable (sample
+  files with `#nullable enable`, `csc.rsp` files) and `docs/unity.md` § Installing's
+  matching sentence, `docs/unity.md` § IL2CPP's `link.xml` sentence, `docs/errors.md`'s
+  cross-link, and in [manual-verification.md](manual-verification.md) both the
+  `SampleImport` list and the factory list under *Build and run a player*.
+
 ## Gotchas already hit
 
 - `EnableDefaultCompileItems` is off repository-wide, so a **new** project that forgets

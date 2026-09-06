@@ -2,7 +2,7 @@
 
 ## Project Shape
 
-- `csharplib` holds four C# packages ported from
+- `csharplib` holds five C# packages ported from
   [tslib](https://github.com/yingyeothon/tslib) — the ones a **game client** can use.
   Each is a UPM package and a pair of `.csproj` files over the same sources.
 - Everything targets `netstandard2.0` + `netstandard2.1`, C# 9, with no third-party
@@ -17,7 +17,9 @@
     differences from its tslib original.
   - `rules/documentation.md` says which layer owns what. One fact, one owner.
 - The normative wire spec for `gamebase-client` is the gateway's own README and
-  `gateway/internal/lobby/protocol.go` in the `service` repository, not tslib.
+  `gateway/internal/lobby/protocol.go` in the `service` repository, not tslib; for
+  `kvstore-client` it is `services/state/src/kvstore.ts` there, with
+  `services/state/README.md` _KV routes_ and `docs/kvstore.md`, both in `service`.
 
 ## Required Rule Lookup
 

@@ -80,6 +80,10 @@ All of them are thrown **locally**, before anything reaches the wire.
 A capability check throws only on an explicit `false`. A `null` capability is
 unrestricted, so the send goes out and the gateway decides.
 
+The key-value store client is the exception to "thrown locally": its
+`KvStoreException` is the store's own answer. Its table, and the `ArgumentException`s
+it does throw locally, are in [Key-value store § Refusals](kvstore.md#6-refusals).
+
 ## Close codes
 
 ```csharp

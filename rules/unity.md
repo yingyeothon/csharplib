@@ -72,14 +72,14 @@ Four things about that file, each of which cost something to learn:
 
 A sample is **not** covered by any of this: `Samples~` is copied into the consumer's
 `Assets/`, out of reach of a package rsp, so a sample file that uses a nullable
-annotation carries its own `#nullable enable` — three of the eight sample `.cs` files
+annotation carries its own `#nullable enable` — four of the ten sample `.cs` files
 today, and the guard requires it of any sample that annotates, so a new one cannot
 regress silently. Note that the directive turns on the flow analysis
 (CS8600/8602/8618) as well as the annotations, not only the CS8632 it was reached for;
 these are clean under both.
 
 `scripts/validate-packages.sh`'s `rsp_line` is the **enforcing** copy of that string:
-change it there first, then the eight files, then this section and `docs/unity.md`. If
+change it there first, then every `csc.rsp` (ten today), then this section and `docs/unity.md`. If
 they ever disagree, the script is right.
 
 What a consumer needs to know about this is one section in
@@ -96,8 +96,10 @@ were invisible only because nothing had forced a clean recompile —
   `Reflection.Emit`, no attribute-driven serialization. The managed stripper removes
   what it cannot see being used and the failure appears at runtime, in a player
   build, months later. `scripts/validate-packages.sh` greps for this.
-- `Runtime/link.xml` preserves the three runtime assemblies wholesale, because they
-  are reached through interfaces and generic factories.
+- Each client package's `Runtime/link.xml` preserves its own assembly and the two it
+  depends on wholesale, because they are reached through interfaces and generic
+  factories. A package a consumer may install without the other client needs its own
+  copy, which is why `kvstore-client` does not rely on `gamebase-client`'s.
 - Wire types parse and build themselves by hand. It is more code and it is the point.
 
 ## WebGL
@@ -107,7 +109,9 @@ were invisible only because nothing had forced a clean recompile —
   purpose rather than failing quietly.
 - A WebGL build passes its own `WebSocketFactory` (over a `.jslib` socket) and
   `HttpFetcher` (over `UnityWebRequest`). Both are options on the client, so this is
-  configuration, not a fork.
+  configuration, not a fork. The store client ships its WebGL side —
+  `Runtime/Unity/UnityWebRequestTransport.cs` — because one `UnityWebRequest` adapter
+  is the whole of it; a consumer passes `UnityWebRequestTransport.Instance`.
 
 ## The Poll contract
 

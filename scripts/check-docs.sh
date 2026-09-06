@@ -91,8 +91,7 @@ done
 #
 # The tag is the release (rules/release.md), so an unpinned URL is honest only
 # while no tag exists and a URL pinned to a tag that is not cut is a 404 for every
-# consumer. There are fourteen of them across seven files and nothing else looks at
-# them: check 1 skips http(s) links on purpose.
+# consumer. Nothing else looks at them: check 1 skips http(s) links on purpose.
 version=$(sed 's/<!--.*-->//g' Directory.Build.props \
   | sed -n 's/.*<Version>\([^<]*\)<\/Version>.*/\1/p' | head -1)
 
@@ -121,9 +120,9 @@ done < <(grep -a -rho 'https://github.com/yingyeothon/csharplib\.git?path=[^ )`]
 # ---- 5. the pre-release prose agrees with the tag --------------------------
 #
 # Check 4 gates the URLs; without this a release could pin every one of them and
-# still ship seven files saying no release has been tagged.
+# still ship every listed file saying no release has been tagged.
 notice='No release has been tagged yet'
-for file in README.md docs/getting-started.md docs/unity.md packages/*/README.md; do
+for file in README.md docs/getting-started.md docs/unity.md docs/kvstore.md packages/*/README.md; do
   says=$(grep -a -c -F "$notice" "$file" 2>/dev/null || true)
   if [ -n "$tagged" ] && [ "${says:-0}" -gt 0 ]; then
     note "$file still says \"$notice\", but v$version is tagged"

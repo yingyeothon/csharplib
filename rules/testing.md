@@ -35,7 +35,14 @@
 - HTTP → a fake `IHttpFetcher`. `HttpFetcher.Default` itself has **no** test coverage;
   its bounds (timeout, size cap, redirect budget) are asserted only by reading them.
   Do not claim otherwise — that claim stood here while the real fetcher had no bound
-  of any kind.
+  of any kind. The store client's `HttpClientTransport` is the exception: it runs
+  against a local `HttpListener` (`[Category("Integration")]`), which is how "a
+  redirect is not followed" is a test rather than a comment.
+- The store client → `FakeTransport`, a queue of scripted replies with every call
+  recorded; the test asserts the method, the URL, the headers and the body of what was
+  sent. With no reply scripted it throws, which the client reports as a `network`
+  failure — so a test of a *scripted* refusal asserts `Status` or `Code`; a bare
+  `ThrowsAsync<KvStoreException>` passes on an empty script.
 - Logging → a capturing `ILogWriter`, never a spy on `Console`.
 
 ## Determinism comes from the pump
@@ -65,7 +72,7 @@
 ## The public surface is a gate, not a courtesy
 
 - `tests/Yingyeothon.PublicApi.Tests` is the one test project outside `packages/`: it
-  has to see all four assemblies at once and Unity must never import it. Reflection is
+  has to see every runtime assembly at once and Unity must never import it. Reflection is
   fine there and nowhere else — it is a test assembly, so IL2CPP never sees it and
   `validate-packages.sh` only greps `packages/*/Runtime`.
 - It snapshots each assembly's public members to `Approved/<assembly>.approved.txt`
@@ -115,6 +122,27 @@
   thread and the two `double` differences above. None of them is expressible as a
   dotnet-hosted test, so the editor run — not a new unit test — is their regression
   guard. Say so in the commit rather than inventing a test that cannot fail.
+- **`Assert.ThrowsAsync` and `Assert.That(async () => …)` block the calling thread**,
+  and inside the editor that thread is the main thread — the one every `await` in a
+  client posts its continuation back to through Unity's synchronization context. Over
+  a fake that completes synchronously the async method never yields and the assertion
+  works on both runtimes; over a path that really yields (a timer, a socket, a
+  `CancelAfter`) it deadlocks the whole EditMode run — the editor sits at 0 % CPU after
+  `Running tests for ExecutionSettings`, writes no result file and never exits, and
+  `dotnet test` is green. Found on the store client's timeout test. A test over a
+  yielding path is `async Task` and awaits a helper that catches the expected
+  exception (`Fails.WithKvStoreException` in the store tests; `Fails` is `internal`
+  and per package — copy `Tests/Fails.cs`, there is no shared test assembly). A path
+  yields when the fake returns an unsettled task (`FakeTransport.Hangs`, with a client
+  `Timeout` or a cancelled token — `KvFailureTests.ATransportThatNeverAnswersIsATimeout`)
+  or a real timer runs; every other `FakeTransport` reply settles inline, and the
+  blocking assertions are fine there. The same context is why a test must not read
+  `task.IsCanceled` or `IsCompleted` right after the call that settles it: under
+  dotnet the continuation ran inline, in the editor it was posted, and the assertion
+  is one frame early. Await the task instead.
+- The editor's NUnit has no `Count` constraint for an array behind `IReadOnlyList<T>`
+  (`Has.Count.EqualTo` fails with "Property Count was not found" there and passes under
+  dotnet). Assert `list.Count` with `Is.EqualTo` instead.
 - When a test cannot run on a runtime at all, `Assert.Ignore` with the reason. Eleven
   red tests nobody can act on teach people to ignore the suite; eleven ignores with a
   sentence teach them where the coverage actually comes from.

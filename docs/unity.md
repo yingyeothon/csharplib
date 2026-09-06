@@ -14,6 +14,7 @@ https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.code
 https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.logger
 https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.event-broker
 https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.gamebase-client
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.kvstore-client
 ```
 
 Add a package's dependencies before the package itself, or Package Manager reports them
@@ -26,8 +27,8 @@ against.
 Every runtime asmdef here is `autoReferenced`, so a script in Unity's default
 `Assembly-CSharp` needs no further step. **If your own scripts live in their own
 asmdef**, reference the assemblies you use by name: `Yingyeothon.Gamebase.Client`,
-`Yingyeothon.Codec` (needed for `JsonValue`, which is on the API), `Yingyeothon.Logger`
-(needed to set `Logger`), `Yingyeothon.EventBroker`.
+`Yingyeothon.KvStore`, `Yingyeothon.Codec` (needed for `JsonValue`, which is on both
+APIs), `Yingyeothon.Logger` (needed to set `Logger`), `Yingyeothon.EventBroker`.
 
 `.meta` files are not committed here; Unity generates them on import. If you vendor the
 packages into `Packages/` instead of using a git URL, **copy** the folders rather than
@@ -42,7 +43,7 @@ nothing warns you about either:
   into `Assets/` to patch, and an imported sample you extend, compile under *your*
   project's settings. If the file uses `string?` and your assembly has no nullable
   context, you get `CS8632` on every annotation. Adding `#nullable enable` at the top of
-  that file is the fix; the three samples that need it already have it.
+  that file is the fix; the four samples that need it already have it.
 - **Your own assembly is yours to configure.** Signatures copied out of the
   [API reference](README.md#reference) carry `?`, so an asmdef of your own that uses them
   wants the same one-line `csc.rsp` beside it, or `#nullable disable` and no
@@ -59,6 +60,7 @@ Import_. They land in `Assets/Samples/…` and are yours to edit.
 | gamebase-client | `Sign In` | exchanging a provider token for a channel JWT |
 | gamebase-client | `Dungeon Run` | entry API → `q` socket → `Finished` / `Aborted` |
 | gamebase-client | `WebGL Transport` | the `IWebSocketFactory` / `IHttpFetcher` adapters |
+| kvstore-client | `KvStore Quickstart` | announcements and a player's own record, from [Key-value store](kvstore.md) |
 | codec | `Json Basics` | building and reading frames |
 | logger | `Unity Logging` | routing the logger to the editor console |
 | event-broker | `Typed Events` | the type-keyed broker |
@@ -130,9 +132,9 @@ No reflection anywhere in a runtime assembly — no `Activator.CreateInstance`, 
 stripper removes what it cannot see being used and fails at runtime, in a shipped
 player, rather than at build time. Wire types parse and build themselves by hand.
 
-`Runtime/link.xml` in the gamebase-client package preserves the three runtime
-assemblies wholesale, since they are reached through interfaces and generic factories.
-It is picked up automatically. Managed stripping at **High** is verified before each
+`Runtime/link.xml` in each client package (gamebase-client, kvstore-client) preserves
+its own assembly plus `Yingyeothon.Codec` and `Yingyeothon.Logger` wholesale, since they
+are reached through interfaces and generic factories. It is picked up automatically. Managed stripping at **High** is verified before each
 release with a player that actually runs and touches every package.
 
 If you add your own reflection over these types, add your own `link.xml` entries.
@@ -183,6 +185,41 @@ What the seams require:
   redirect budget: the URL comes off the wire.
 
 The `WebGL Transport` sample is the skeleton for both.
+
+The key-value store client has the same seam and, unlike the gateway, ships the WebGL
+side of it — see [Key-value store](#key-value-store) below.
+
+## Key-value store
+
+`com.yingyeothon.kvstore-client` is plain HTTP and needs no `Poll()`: every call is one
+request, awaited, and the continuation lands back on Unity's main thread through its
+synchronization context. [Key-value store](kvstore.md) is the guide; two things are
+Unity's:
+
+- **The token** is the channel JWT your sign-in produced
+  ([Signing in](#signing-in)) — the same string `GatewayClientOptions.Token` takes.
+  Hand it to `KvStoreClientOptions.Token` and keep it nowhere else; the client puts
+  it in the `Authorization` header and never in a log line, an exception or a URL.
+- **WebGL.** `HttpClientTransport.Default` cannot send there. Pass
+  `UnityWebRequestTransport.Instance`, which lives in the package behind
+  `#if UNITY_5_3_OR_NEWER` and drives `UnityWebRequest` from the main thread. It works
+  on every Unity platform, so passing it unconditionally is fine too; the sample
+  selects it for WebGL only and keeps `HttpClient` elsewhere:
+
+  ```csharp
+  var kv = KvStoreClient.Create(new KvStoreClientOptions
+  {
+      BaseUrl = "https://doc.yyt.life",
+      Token = channelJwt,
+  #if UNITY_WEBGL && !UNITY_EDITOR
+      Transport = UnityWebRequestTransport.Instance,
+  #endif
+  });
+  ```
+
+  The store's CORS policy is already open to any origin with the `Authorization`,
+  `If-Match` and `If-None-Match` headers allowed and `ETag` exposed, so a browser
+  build needs nothing else.
 
 ## Numbers and culture
 

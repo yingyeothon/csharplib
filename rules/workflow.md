@@ -55,7 +55,8 @@
 2. Verify beyond the unit tests, at the **highest** level the change reaches — the
    levels are ordered, so a Runtime source change reaches the top and takes both of
    the first two ([manual-verification.md](manual-verification.md)):
-   1. runtime or wire behaviour → the live gateway;
+   1. runtime or wire behaviour → the live gateway, or the dev store for
+      `kvstore-client` ([manual-verification.md](manual-verification.md));
    2. anything Unity compiles — Runtime sources, `Samples~`, `package.json`,
       `link.xml`, an asmdef → the Unity scratch project;
    3. `docs/`, `rules/` and scripts → the green gate, **and if the change altered a
@@ -141,7 +142,7 @@ so in the same message.
 
 ## Scope decisions already made
 
-- Only the four client-usable tslib packages are ported. The rest are server
+- Only the five client-usable tslib packages are ported. The rest are server
   libraries; the root README says which and why. Do not add one without a reason that
   survives "can this run on a phone?".
 - The gateway wire protocol is owned by the `service` repository. When it changes,

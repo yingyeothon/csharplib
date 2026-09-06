@@ -1,0 +1,153 @@
+  HttpCall.Body : String get
+  HttpCall.Headers : IReadOnlyList<KeyValuePair<String, String>> get
+  HttpCall.Method : String get
+  HttpCall.Timeout : TimeSpan get
+  HttpCall.Url : Uri get
+  HttpCall.ctor(String, Uri, IReadOnlyList<KeyValuePair<String, String>>, String, TimeSpan)
+  HttpClientTransport.Create(HttpClient) : IHttpTransport
+  HttpClientTransport.Default : IHttpTransport get
+  HttpReply.Body : String get
+  HttpReply.Headers : IReadOnlyList<KeyValuePair<String, String>> get
+  HttpReply.Status : Int32 get
+  HttpReply.ctor(Int32, IReadOnlyList<KeyValuePair<String, String>>, String)
+  IHttpTransport.SendAsync(HttpCall, CancellationToken) : Task<HttpReply>
+  IKvCollection.InfoAsync(CancellationToken?) : Task<KvCollectionInfo>
+  IKvCollection.Mine : IKvNamespace get
+  IKvCollection.Owner(String) : IKvNamespace
+  IKvCollection.Ref : String get
+  IKvNamespace.DeleteAsync(String, KvDeleteOptions?, CancellationToken?) : Task
+  IKvNamespace.GetAsync(String, CancellationToken?) : Task<JsonValue>
+  IKvNamespace.GetEntryAsync(String, CancellationToken?) : Task<KvEntry>
+  IKvNamespace.IncrAsync(String, Int64, KvIncrOptions?, CancellationToken?) : Task<KvIncrResult>
+  IKvNamespace.ListAsync(KvListOptions?, CancellationToken?) : Task<KvPage>
+  IKvNamespace.PutAsync(String, JsonValue, KvPutOptions?, CancellationToken?) : Task<KvWriteResult>
+  IKvStoreClient.Collection(String) : IKvCollection
+  KvCollectionInfo.Encrypted : Boolean get
+  KvCollectionInfo.Id : String get
+  KvCollectionInfo.MaxEntries : Int32 get
+  KvCollectionInfo.MaxEntriesPerOwner : Int32 get
+  KvCollectionInfo.Name : String get
+  KvCollectionInfo.ReadScope : KvScope get
+  KvCollectionInfo.WriteScope : KvScope get
+  KvCollectionInfo.ctor(String, String, KvScope, KvScope, Boolean, Int32, Int32)
+  KvDeleteOptions.IfMatch : Nullable<Int64> get set
+  KvDeleteOptions.ctor()
+  KvEntry.ExpiresAt : Nullable<Int64> get
+  KvEntry.Value : JsonValue get
+  KvEntry.Version : Int64 get
+  KvEntry.ctor(JsonValue, Int64, Nullable<Int64>)
+  KvErrorCodes.BadBody : String
+  KvErrorCodes.BadRequest : String
+  KvErrorCodes.Conflict : String
+  KvErrorCodes.Forbidden : String
+  KvErrorCodes.Http : String
+  KvErrorCodes.Network : String
+  KvErrorCodes.NotFound : String
+  KvErrorCodes.PayloadTooLarge : String
+  KvErrorCodes.Timeout : String
+  KvErrorCodes.Unauthorized : String
+  KvErrorCodes.Unavailable : String
+  KvIncrOptions.Ttl : Nullable<Int32> get set
+  KvIncrOptions.ctor()
+  KvIncrResult.ExpiresAt : Nullable<Int64> get
+  KvIncrResult.Value : Int64 get
+  KvIncrResult.Version : Int64 get
+  KvIncrResult.ctor(Int64, Int64, Nullable<Int64>)
+  KvListEntry.Bytes : Int64 get
+  KvListEntry.ExpiresAt : Nullable<Int64> get
+  KvListEntry.Key : String get
+  KvListEntry.Owner : String get
+  KvListEntry.UpdatedAt : Int64 get
+  KvListEntry.Value : JsonValue get
+  KvListEntry.Version : Int64 get
+  KvListEntry.ctor(String, String, Int64, Int64, Nullable<Int64>, Int64, JsonValue)
+  KvListOptions.Cursor : String get set
+  KvListOptions.Limit : Nullable<Int32> get set
+  KvListOptions.Order : Nullable<KvOrder> get set
+  KvListOptions.Prefix : String get set
+  KvListOptions.Values : Boolean get set
+  KvListOptions.ctor()
+  KvOrder.Asc : KvOrder
+  KvOrder.Desc : KvOrder
+  KvOrder.value__ : Int32
+  KvPage.Entries : IReadOnlyList<KvListEntry> get
+  KvPage.NextCursor : String get
+  KvPage.ctor(IReadOnlyList<KvListEntry>, String)
+  KvPutOptions.IfMatch : Nullable<Int64> get set
+  KvPutOptions.IfNoneMatch : Boolean get set
+  KvPutOptions.Ttl : Nullable<Int32> get set
+  KvPutOptions.ctor()
+  KvReasons.CollectionFull : String
+  KvReasons.Encrypted : String
+  KvReasons.EncryptionNotConfigured : String
+  KvReasons.NotANumber : String
+  KvReasons.Overflow : String
+  KvReasons.OwnerFull : String
+  KvReasons.ValueUnreadable : String
+  KvReasons.WrongNamespace : String
+  KvRules.IsCollectionId(String) : Boolean
+  KvRules.IsCollectionRef(String) : Boolean
+  KvRules.IsKey(String) : Boolean
+  KvRules.IsOwnerId(String) : Boolean
+  KvRules.MaxCollectionNameLength : Int32
+  KvRules.MaxKeyLength : Int32
+  KvRules.MaxListLimit : Int32
+  KvRules.MaxSafeInteger : Int64
+  KvRules.MaxTtlSeconds : Int32
+  KvRules.MaxValueBytes : Int32
+  KvRules.Me : String
+  KvRules.MinListLimit : Int32
+  KvRules.MinTtlSeconds : Int32
+  KvScope.Project : KvScope
+  KvScope.Team : KvScope
+  KvScope.User : KvScope
+  KvScope.value__ : Int32
+  KvStoreClient.Create(KvStoreClientOptions) : IKvStoreClient
+  KvStoreClient.DefaultTimeout : TimeSpan
+  KvStoreClient.MaxTimeout : TimeSpan
+  KvStoreClientOptions.BaseUrl : String get set
+  KvStoreClientOptions.Logger : ILogger get set
+  KvStoreClientOptions.Timeout : Nullable<TimeSpan> get set
+  KvStoreClientOptions.Token : String get set
+  KvStoreClientOptions.Transport : IHttpTransport get set
+  KvStoreClientOptions.ctor()
+  KvStoreException.Code : String get
+  KvStoreException.CurrentVersion : Nullable<Int64> get
+  KvStoreException.HasCurrentVersion : Boolean get
+  KvStoreException.IsConflict : Boolean get
+  KvStoreException.IsForbidden : Boolean get
+  KvStoreException.IsFull : Boolean get
+  KvStoreException.IsUnauthorized : Boolean get
+  KvStoreException.Reason : String get
+  KvStoreException.Status : Int32 get
+  KvStoreException.ctor(Int32, String)
+  KvStoreException.ctor(Int32, String, String, Nullable<Int64>, Boolean, Exception)
+  KvWriteResult.Created : Nullable<Boolean> get
+  KvWriteResult.ExpiresAt : Nullable<Int64> get
+  KvWriteResult.Version : Nullable<Int64> get
+  KvWriteResult.ctor(Nullable<Boolean>, Nullable<Int64>, Nullable<Int64>)
+class HttpCall
+class HttpReply
+class KvCollectionInfo
+class KvDeleteOptions
+class KvEntry
+class KvIncrOptions
+class KvIncrResult
+class KvListEntry
+class KvListOptions
+class KvPage
+class KvPutOptions
+class KvStoreClientOptions
+class KvStoreException
+class KvWriteResult
+enum KvOrder
+enum KvScope
+interface IHttpTransport
+interface IKvCollection
+interface IKvNamespace
+interface IKvStoreClient
+static class HttpClientTransport
+static class KvErrorCodes
+static class KvReasons
+static class KvRules
+static class KvStoreClient

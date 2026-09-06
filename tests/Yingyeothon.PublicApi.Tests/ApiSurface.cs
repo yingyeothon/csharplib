@@ -32,6 +32,7 @@ namespace Yingyeothon.PublicApi.Tests
                 yield return new TestCaseData("Yingyeothon.Logger", "com.yingyeothon.logger");
                 yield return new TestCaseData("Yingyeothon.EventBroker", "com.yingyeothon.event-broker");
                 yield return new TestCaseData("Yingyeothon.Gamebase.Client", "com.yingyeothon.gamebase-client");
+                yield return new TestCaseData("Yingyeothon.KvStore", "com.yingyeothon.kvstore-client");
             }
         }
 

@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AssemblyName>Yingyeothon.KvStore</AssemblyName>
+    <RootNamespace>Yingyeothon.KvStore</RootNamespace>
+    <PackageId>Yingyeothon.KvStore</PackageId>
+    <Description>Client for the yyt key-value store: per-project collections of JSON values, read and written with the channel JWT a game already holds.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Runtime/**/*.cs" Exclude="Runtime/Unity/**/*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../com.yingyeothon.codec/Yingyeothon.Codec.csproj" />
+    <ProjectReference Include="../com.yingyeothon.logger/Yingyeothon.Logger.csproj" />
+  </ItemGroup>
+
+</Project>

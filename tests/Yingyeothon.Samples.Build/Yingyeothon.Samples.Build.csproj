@@ -32,6 +32,7 @@
     <Compile Include="../../packages/com.yingyeothon.gamebase-client/Samples~/LobbyQuickstart/LobbySession.cs" />
     <Compile Include="../../packages/com.yingyeothon.gamebase-client/Samples~/DungeonRun/*.cs" />
     <Compile Include="../../packages/com.yingyeothon.gamebase-client/Samples~/WebGLTransport/*.cs" />
+    <Compile Include="../../packages/com.yingyeothon.kvstore-client/Samples~/KvStoreQuickstart/KvStoreSession.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -39,6 +40,7 @@
     <ProjectReference Include="../../packages/com.yingyeothon.logger/Yingyeothon.Logger.csproj" />
     <ProjectReference Include="../../packages/com.yingyeothon.event-broker/Yingyeothon.EventBroker.csproj" />
     <ProjectReference Include="../../packages/com.yingyeothon.gamebase-client/Yingyeothon.Gamebase.Client.csproj" />
+    <ProjectReference Include="../../packages/com.yingyeothon.kvstore-client/Yingyeothon.KvStore.csproj" />
   </ItemGroup>
 
 </Project>

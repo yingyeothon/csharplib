@@ -175,4 +175,6 @@ reconnect actually restores.
 
 ## 6. Keep going
 
-[The index](README.md) routes by what you are building.
+[The index](README.md) routes by what you are building. The same token also opens the
+[key-value store](kvstore.md) — announcements the team publishes and a record of the
+player's own — through `com.yingyeothon.kvstore-client`, with no socket involved.

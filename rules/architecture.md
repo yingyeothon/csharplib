@@ -42,7 +42,11 @@ consequences and the decisions that are easy to undo by accident.
   no facing. Carrying the previous value forward left a peer facing a direction it had
   cleared, permanently, and made its facing depend on which frame it arrived in.
 - When checking a wire type, open `gateway/internal/lobby/protocol.go` in the service
-  repo, not only its README.
+  repo, not only its README. The same holds for the store: the route table in
+  `services/state/README.md` § KV routes gives `DELETE` one row, `204`; the bullet
+  under it and `deleteEntry` in `services/state/src/kvstore.ts` make that the
+  write-only case, and a reader gets `404`. `kvstore-client` folds both into done
+  (`IKvNamespace.DeleteAsync`). Read the code, not the table.
 
 ## Absent, null, and default
 

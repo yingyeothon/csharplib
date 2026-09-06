@@ -84,6 +84,14 @@ wrong.
 - The two "never writes the token" tests both drive `FakeWebSocketFactory` with a
   well-formed token, so neither can reach the real transport's validation. A test for
   that path has to use the real factory and a token that can actually fail it.
+- The store client has the same shape one seam over: `IHttpTransport.SendAsync` is
+  handed `HttpCall.Headers` with `Authorization: Bearer <token>` in it, and a WebGL
+  build implements one. The warning is on the seam's XML doc; keep it there. Its own
+  `UnityWebRequestTransport` throws a message naming `UnityWebRequest.result`, never
+  `.error`, because `.error` can quote the URL — and a kv URL carries a key.
+- A `KvStoreException` message is the template `"kv {code} ({status})"` and its tests
+  assert the exact string, so nothing derived from the input can satisfy them. `ArgumentException`s
+  for a bad key or an oversize value name the rule, never the input.
 
 ## Building what goes out
 

@@ -33,6 +33,7 @@ void Update() => lobby.Poll();          // or nothing happens
 | [Authentication](docs/authentication.md) | how a client gets its channel JWT |
 | [Lobby](docs/lobby.md) / [Dungeon](docs/dungeon.md) | the two channel kinds, feature by feature |
 | [Errors](docs/errors.md) / [Troubleshooting](docs/troubleshooting.md) | every refusal, close code and symptom |
+| [Key-value store](docs/kvstore.md) | announcements and a player's own record, with the same token |
 | [API reference](docs/api/) | generated from the assemblies, gated in CI |
 
 ## Packages
@@ -43,11 +44,14 @@ void Update() => lobby.Poll();          // or nothing happens
 | [com.yingyeothon.logger](packages/com.yingyeothon.logger) | `Yingyeothon.Logger` | Structured logger with a live severity threshold |
 | [com.yingyeothon.event-broker](packages/com.yingyeothon.event-broker) | `Yingyeothon.EventBroker` | Type-keyed asynchronous event broker |
 | [com.yingyeothon.gamebase-client](packages/com.yingyeothon.gamebase-client) | `Yingyeothon.Gamebase.Client` | Client SDK for the yyt realtime gateway (lobby + dungeon `q`) |
+| [com.yingyeothon.kvstore-client](packages/com.yingyeothon.kvstore-client) | `Yingyeothon.KvStore` | Client for the yyt key-value store (`doc.yyt.life/kv/*`) |
 
 ```mermaid
 graph LR
   gamebase-client --> codec
   gamebase-client --> logger
+  kvstore-client --> codec
+  kvstore-client --> logger
   logger --> codec
 ```
 
@@ -57,7 +61,7 @@ stripper would otherwise break.
 
 ## Ported from tslib
 
-These four are C# reimplementations of the
+These five are C# reimplementations of the
 [tslib](https://github.com/yingyeothon/tslib) packages a game client can use. tslib has
 twenty; most are AWS Lambda, Redis or Node-socket server code that cannot run on a
 client at all.
@@ -82,8 +86,16 @@ https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.logg
 https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.gamebase-client
 ```
 
-`com.yingyeothon.event-broker` is independent of the other three; add it the same way if
-you want it. **No release has been tagged yet**, so these URLs track `main`; append
+`com.yingyeothon.kvstore-client` sits on the same two dependencies and is independent of
+`gamebase-client`; `com.yingyeothon.event-broker` is independent of all of them. Add
+either the same way if you want it:
+
+```
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.kvstore-client
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.event-broker
+```
+
+**No release has been tagged yet**, so these URLs track `main`; append
 `#<tag>` to pin one as soon as there is one. Unity generates the `.meta` files on
 import; they are not committed here. Each package ships importable
 `Samples~`. [docs/unity.md](docs/unity.md) has the details.

@@ -30,6 +30,34 @@ never write to it from here ([workflow.md](workflow.md)).
 4. Force a reconnect (close the socket from the other side, or restart the gateway)
    and watch the backoff and the fresh `hello` arrive.
 
+## Against the dev store
+
+The key-value store client is plain HTTP, so its live check is a console app over the
+built `Yingyeothon.KvStore` with the **real** `HttpClientTransport.Default`, against
+`https://doc-dev.yyt.life`. Everything it needs already exists on dev; create nothing:
+
+1. The token is the same `POST /debug/token` recipe as above, on the auth channel of
+   the dev project that `service/local/todo-archive/33-kvstore.md` names for the store —
+   read the team, project and collection there, never copy them here
+   ([security.md](security.md): `service/local/**` is private). `yyt channels list
+   --team <team> --project <project> --json`, the `kind: auth` row, is the channel id.
+   **The `userId` you pass must match `KV_OWNER_ID` in
+   `packages/console-db/src/kvstore.ts`** — 32 lower-case hex is the easy form. The
+   debug hook accepts any string and puts it in `sub` verbatim, and the store's owner
+   grammar then answers every `/u/me` route `400`. Use a fresh id per run, so the
+   per-owner cap below is reachable from an empty namespace.
+2. The collection has `readScope: project`, `writeScope: user` and a small
+   `maxEntriesPerOwner` (three): `Mine` covers every operation, the collection itself
+   covers the every-owner list and the `wrong_namespace` 400, and the per-owner cap is
+   what makes `owner_full` reachable in one run. There is no shared-namespace
+   collection on dev; the shared path is exercised as its refusal.
+3. Print statuses, versions and codes only — the app prints no token, value or URL —
+   and delete every key it wrote. The reader's `404` on a delete of a missing key is
+   visible only in the `kv request` log line (status 404) or through
+   `HttpClientTransport.Default.SendAsync` directly; through `DeleteAsync` the same call
+   must complete without throwing. It is the fact the state README's route table
+   gets wrong ([architecture.md](architecture.md)).
+
 ## In Unity
 
 `dotnet build` proves nothing about the compiler Unity uses, about IL2CPP's stripper,
@@ -79,12 +107,12 @@ Unity 6 has neither: it bundles .NET 6 and a newer build backend.
 
 1. Build it **outside the repo**, in a scratch directory.
    `<editor>/Editor/Unity -batchmode -nographics -quit -createProject <path>`.
-2. **Copy** the four `packages/com.yingyeothon.*` folders into `<project>/Packages/`.
+2. **Copy** every `packages/com.yingyeothon.*` folder into `<project>/Packages/`.
    Do not use a `file:` UPM dependency and do not symlink: Unity writes `.meta` files
    into whatever it imports, and `.meta` files are deliberately not committed here, so
    either would dirty the working tree.
-3. In `Packages/manifest.json`, add `com.unity.test-framework` and list the four
-   package names under `testables` — the `Tests` asmdefs carry
+3. In `Packages/manifest.json`, add `com.unity.test-framework` and list every
+   package name under `testables` — the `Tests` asmdefs carry
    `defineConstraints: ["UNITY_INCLUDE_TESTS"]` and compile only for a testable.
    **1.4.6 works on both editors** and is what runs the `async Task` tests; the 1.1.x
    that 2021.3 would otherwise resolve does not.
@@ -115,7 +143,7 @@ Run this before any tag, from a bare clone so no uncommitted file can rescue it:
 git clone --bare <repo> /tmp/x.git          # the URL must end in .git or UPM rejects it
 # manifest.json: "com.yingyeothon.codec": "file:///tmp/x.git?path=/packages/com.yingyeothon.codec"
 <editor> -batchmode -nographics -quit -projectPath <project> -logFile <log>
-find <project>/Library -name 'Yingyeothon*.dll'          # must list all four
+find <project>/Library -name 'Yingyeothon*.dll'          # must list every package
 grep -c "immutable folder" <log>                         # must be 0
 ```
 
@@ -151,7 +179,8 @@ public static class SampleImport
     public static void ImportAll()
     {
         foreach (var package in new[] { "com.yingyeothon.codec", "com.yingyeothon.event-broker",
-                                        "com.yingyeothon.gamebase-client", "com.yingyeothon.logger" })
+                                        "com.yingyeothon.gamebase-client", "com.yingyeothon.kvstore-client",
+                                        "com.yingyeothon.logger" })
         {
             var samples = Sample.FindByPackage(package, string.Empty).ToList();
             Debug.Log($"[SAMPLES] {package} count={samples.Count}");
@@ -186,9 +215,9 @@ project's `Packages/` copy, never from this repository**, and re-copy afterwards
 
 A build that succeeds proves nothing about stripping — the player has to run. Put a
 `MonoBehaviour` in the scene that reaches every package through its factories
-(`GatewayLobbyClient.Create`, `GatewayGameClient.Create`, `EventBroker.Create` and its
-generic `On<T>`, `Json.Parse`/`Stringify`, `LogWriters.FromAction`, and
-`GamebaseRunner.CreatePersistent`), build with
+(`GatewayLobbyClient.Create`, `GatewayGameClient.Create`, `KvStoreClient.Create` and
+`UnityWebRequestTransport.Instance`, `EventBroker.Create` and its generic `On<T>`,
+`Json.Parse`/`Stringify`, `LogWriters.FromAction`, and `GamebaseRunner.CreatePersistent`), build with
 `ManagedStrippingLevel.High`, then run the player with `-batchmode -nographics
 -logFile` and grep the log for what it printed. That is what tests `Runtime/link.xml`.
 
@@ -228,6 +257,29 @@ the floor for a reason ([Which editor](#which-editor)).
 `NullableContextAttribute` and `EmbeddedAttribute` into the Unity-built assemblies. That
 is exactly the metadata `ManagedStrippingLevel.High` and `Runtime/link.xml` are tested
 against. A compiler flag is a build change even when no `.cs` moved.
+
+### The run that added `kvstore-client`
+
+**2026-09-06**, at the commit that adds `kvstore-client` (the child of `3714e39`; this
+sentence is the one line its verification did not cover), Unity Personal, Ubuntu
+24.04, same recipe. Unity 6 ran the full matrix; 2021.3 ran EditMode only, with the
+libssl and `bee_backend` workarounds above (the wrapper was put back and the file
+size checked).
+
+| Check | 2021.3.45f2 | 6000.0.25f1 |
+| --- | --- | --- |
+| EditMode, all five packages | **0 failed**; 661 / 650 / 11 ignored, the eleven above | **0 failed**; 661 / 649 / 11, then the one `KvStore` failure fixed and its 202 rerun alone with `--filter Yingyeothon.KvStore.Tests`: 202 / 202 / 0 |
+| Samples listed and imported | not run | one per `samples[]` entry: 1 / 1 / 4 / 1 / 1 |
+| Clean compile (`ScriptAssemblies` deleted) | not run | `CompileScripts` seen, 0 errors, 0 warnings |
+| `StandaloneLinux64` Mono, stripping **High** | not run | built; the player reached every package through its factories and `KvStoreClient` over `UnityWebRequestTransport.Instance` answered `kv unauthorized (401)` from `doc-dev` with a fake token, which is the round trip |
+| `StandaloneLinux64` IL2CPP, stripping **High** | not run | built, and the player printed the same |
+| WebGL | not run | compiled and linked; not opened in a browser |
+
+Two editor-only failures came out of it and neither is reachable from `dotnet test`:
+a blocking `Assert.ThrowsAsync` over a yielding path deadlocked the whole run, and
+`Has.Count` refused an array behind `IReadOnlyList` under the editor's NUnit
+([testing.md](testing.md)). The `HttpListener` transport tests run under Mono as
+plain HTTP; only the WebSocket half of the gateway's is ignored there.
 
 ### The install path is broken, and this run is what found it
 
