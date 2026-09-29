@@ -73,12 +73,13 @@ namespace Yingyeothon.Gamebase.Client
                 throw new ArgumentNullException(nameof(frame));
             }
 
+            _socket.RequireSendable();
             var type = frame.GetString("type");
             if (type != null && IsReserved(type))
             {
                 // The gateway synthesises these itself and uses them to decide which
                 // member a connection speaks for, so a client must never send one.
-                throw new InvalidOperationException("reserved_type: " + type + " is set by the gateway");
+                throw new GatewayClientException(GatewayErrorCode.ReservedType, type + " is set by the gateway");
             }
 
             _socket.Send(frame);

@@ -69,15 +69,15 @@ namespace Yingyeothon.Gamebase.Client.Tests
                 channelEvent: false));
             var client = harness.Client;
 
-            Assert.Throws<InvalidOperationException>(() => client.Pos("town", 1, 1));
-            Assert.Throws<InvalidOperationException>(() => client.Say(SayScope.Party, "hi"));
-            Assert.Throws<InvalidOperationException>(() => client.Event(SayScope.Zone, "x", null));
-            Assert.Throws<InvalidOperationException>(() => client.Party.Create());
-            Assert.Throws<InvalidOperationException>(() => client.Party.Invite("bob"));
-            Assert.Throws<InvalidOperationException>(() => client.Party.Accept("p"));
-            Assert.Throws<InvalidOperationException>(() => client.Party.Decline("p"));
-            Assert.Throws<InvalidOperationException>(() => client.Party.Leave());
-            Assert.Throws<InvalidOperationException>(() => client.Party.List());
+            Assert.Throws<GatewayClientException>(() => client.Pos("town", 1, 1));
+            Assert.Throws<GatewayClientException>(() => client.Say(SayScope.Party, "hi"));
+            Assert.Throws<GatewayClientException>(() => client.Event(SayScope.Zone, "x", null));
+            Assert.Throws<GatewayClientException>(() => client.Party.Create());
+            Assert.Throws<GatewayClientException>(() => client.Party.Invite("bob"));
+            Assert.Throws<GatewayClientException>(() => client.Party.Accept("p"));
+            Assert.Throws<GatewayClientException>(() => client.Party.Decline("p"));
+            Assert.Throws<GatewayClientException>(() => client.Party.Leave());
+            Assert.Throws<GatewayClientException>(() => client.Party.List());
 
             client.Say(SayScope.Zone, "allowed");
 
@@ -201,7 +201,7 @@ namespace Yingyeothon.Gamebase.Client.Tests
             Assert.That(harness.Socket.Sent[1].GetString("scope"), Is.EqualTo("user"));
 
             // Positive control: chat itself is still restricted to the one scope.
-            Assert.Throws<InvalidOperationException>(() => client.Say(SayScope.Party, "hi"));
+            Assert.Throws<GatewayClientException>(() => client.Say(SayScope.Party, "hi"));
         }
 
         /// <remarks>
@@ -216,14 +216,59 @@ namespace Yingyeothon.Gamebase.Client.Tests
             await harness.ConnectAsync(Frames.Hello(say: new string[0]));
             var client = harness.Client;
 
-            Assert.Throws<InvalidOperationException>(() => client.Say(SayScope.Zone, "hi"));
-            Assert.Throws<InvalidOperationException>(() => client.Say(SayScope.Party, "hi"));
-            Assert.Throws<InvalidOperationException>(() => client.Say(SayScope.User, "hi", "bob"));
+            Assert.Throws<GatewayClientException>(() => client.Say(SayScope.Zone, "hi"));
+            Assert.Throws<GatewayClientException>(() => client.Say(SayScope.Party, "hi"));
+            Assert.Throws<GatewayClientException>(() => client.Say(SayScope.User, "hi", "bob"));
 
             // Positive control: the channel is otherwise usable.
             client.Pos("town", 1, 1);
 
             Assert.That(harness.Socket.Sent, Has.Count.EqualTo(1));
+        }
+
+        [Test]
+        public async Task ALocalRefusalCarriesTheGatewaysCodeAndAFixedMessage()
+        {
+            var harness = new LobbyHarness();
+            await harness.ConnectAsync(Frames.Hello(say: new[] { "zone" }, party: false));
+
+            var party = Assert.Throws<GatewayClientException>(() => harness.Client.Party.Create());
+            var scope = Assert.Throws<GatewayClientException>(() => harness.Client.Say(SayScope.User, "secret text", "bob"));
+
+            Assert.That(party!.Code, Is.EqualTo(GatewayErrorCode.CapabilityOff));
+            Assert.That(party.Message, Is.EqualTo("capability_off: party is disabled on this channel"));
+            Assert.That(scope!.Code, Is.EqualTo(GatewayErrorCode.CapabilityOff));
+            Assert.That(scope.Message, Is.EqualTo("capability_off: say scope user is disabled on this channel"));
+            // Still an InvalidOperationException, which is what a caller caught before.
+            Assert.That(party, Is.InstanceOf<InvalidOperationException>());
+            Assert.That(harness.Socket.Sent, Is.Empty);
+        }
+
+        [Test]
+        public void NotBeingReadyIsNotARefusal()
+        {
+            var harness = new LobbyHarness();
+
+            // Exactly InvalidOperationException: a client that is not connected yet is a
+            // state problem the gateway never sees, not a refusal it would have sent.
+            var error = Assert.Throws<InvalidOperationException>(() => harness.Client.Ping());
+
+            Assert.That(error, Is.Not.InstanceOf<GatewayClientException>());
+        }
+
+        [Test]
+        public async Task WhileReconnectingNotReadyWinsOverAStaleCapability()
+        {
+            var harness = new LobbyHarness();
+            await harness.ConnectAsync(Frames.Hello(party: false));
+
+            harness.Socket.ServerClose(GatewayCloseCode.Idle);
+            harness.Poll();
+
+            // The last hello still says party is off, but the client is not connected:
+            // that is the fact the caller needs, and the next hello may say otherwise.
+            var error = Assert.Throws<InvalidOperationException>(() => harness.Client.Party.Create());
+            Assert.That(error, Is.Not.InstanceOf<GatewayClientException>());
         }
     }
 }

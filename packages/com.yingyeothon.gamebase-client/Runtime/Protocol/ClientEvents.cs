@@ -121,4 +121,31 @@ namespace Yingyeothon.Gamebase.Client
         {
         }
     }
+
+    /// <summary>
+    /// A sender refused a frame locally, before anything reached the wire, because the
+    /// gateway would refuse it too. The connection is unaffected.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="Code"/> is the <see cref="GatewayErrorCode"/> the gateway would have sent
+    /// for the same frame — <see cref="GatewayErrorCode.CapabilityOff"/> or
+    /// <see cref="GatewayErrorCode.ReservedType"/> — so one handler can treat a local and a
+    /// remote refusal alike. The message is <c>"{code}: {SDK-authored phrase}"</c> and never
+    /// quotes the frame. It derives from <see cref="InvalidOperationException"/>, which is
+    /// what it was before it had a type of its own; a client that is not ready yet is still
+    /// a plain <see cref="InvalidOperationException"/>, and a bad argument an
+    /// <see cref="ArgumentException"/>.
+    /// </remarks>
+    public sealed class GatewayClientException : InvalidOperationException
+    {
+        /// <summary>Creates the exception for a refusal code and a fixed explanation.</summary>
+        public GatewayClientException(string code, string detail)
+            : base((code ?? throw new ArgumentNullException(nameof(code))) + ": " + detail)
+        {
+            Code = code;
+        }
+
+        /// <summary>The gateway refusal code this stands in for.</summary>
+        public string Code { get; }
+    }
 }

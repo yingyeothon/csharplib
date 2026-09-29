@@ -24,6 +24,7 @@ your IDE shows. For what the package is *for*, read
 - [`FrameTypes`](#static-class-frametypes)
 - [`GameEndedEvent`](#struct-gameendedevent)
 - [`GatewayChannelKind`](#enum-gatewaychannelkind)
+- [`GatewayClientException`](#class-gatewayclientexception)
 - [`GatewayClientOptions`](#class-gatewayclientoptions)
 - [`GatewayClientState`](#enum-gatewayclientstate)
 - [`GatewayCloseCode`](#static-class-gatewayclosecode)
@@ -235,6 +236,15 @@ The two channel kinds the gateway terminates.
 
 - `Lobby` — Positions, chat, parties and game events.
 - `Q` — The dungeon bridge to a lambda-gamebase actor.
+
+## class GatewayClientException
+
+A sender refused a frame locally, before anything reached the wire, because the gateway would refuse it too. The connection is unaffected.
+
+| Member | Summary |
+| --- | --- |
+| `Code : String get` | The gateway refusal code this stands in for. |
+| `ctor(String, String)` | Creates the exception for a refusal code and a fixed explanation. |
 
 ## class GatewayClientOptions
 

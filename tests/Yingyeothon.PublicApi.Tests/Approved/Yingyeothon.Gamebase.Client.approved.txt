@@ -65,6 +65,8 @@
   GatewayChannelKind.Lobby : GatewayChannelKind
   GatewayChannelKind.Q : GatewayChannelKind
   GatewayChannelKind.value__ : Int32
+  GatewayClientException.Code : String get
+  GatewayClientException.ctor(String, String)
   GatewayClientOptions.Backoff : BackoffOptions get set
   GatewayClientOptions.ChannelId : String get set
   GatewayClientOptions.Clock : IClock get set
@@ -284,6 +286,7 @@ class Capabilities
 class EnterFrame
 class ErrorFrame
 class EventBroadcastFrame
+class GatewayClientException
 class GatewayClientOptions
 class GatewayGameClientOptions
 class GatewayLobbyClientOptions

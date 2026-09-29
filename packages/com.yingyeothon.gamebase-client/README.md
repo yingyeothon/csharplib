@@ -156,7 +156,8 @@ the peer map is empty until the game re-sends `Pos`.
   `Disconnected`, `Reconnecting`, `Stopped`, `Snapshot`, `PeerEnter`, `PeerLeave`,
   `PeerMove`, `Said`, `EventReceived`, `PartyChanged`, `PartyInvited`,
   `PartyDeclined`, `Pong`, `Refused`, `ProtocolError`, `Frame`. Senders throw locally
-  when `Capabilities` disables them or before `hello`.
+  when `Capabilities` disables them (`GatewayClientException`) or before `hello`
+  (`InvalidOperationException`).
 - `GatewayGameClient.Create(GatewayGameClientOptions)` → `IGatewayGameClient`:
   `ConnectAsync`, `Close`, `Poll`, `State`, `Send` (refuses the reserved
   `enter` / `leave` types), and `Connected`, `Frame`, `Refused`, `Disconnected`,
@@ -184,7 +185,9 @@ the peer map is empty until the game re-sends `Pos`.
   `IHttpFetcher`, `HttpFetchResult`, `HttpFetcher.Default`, `MapFetchException`.
 - Clock and pump: `IClock`, `SystemClock.Instance`, `IGatewayPollable`.
 - Events: `GatewayClientState`, `DisconnectedEvent`, `ReconnectingEvent`,
-  `StoppedEvent`, `ProtocolErrorEvent`, `GameEndedEvent`, `GatewayStoppedException`.
+  `StoppedEvent`, `ProtocolErrorEvent`, `GameEndedEvent`, `GatewayStoppedException`, and
+  `GatewayClientException` (`Code`), the local refusal a sender throws when the gateway
+  would refuse the frame too.
 - Unity only: `GamebaseRunner`.
 
 ## Unity WebGL

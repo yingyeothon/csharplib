@@ -156,6 +156,7 @@ namespace Yingyeothon.Gamebase.Client
 
         public void Pos(string zone, double x, double y, string? dir = null)
         {
+            _socket.RequireSendable();
             RequireCapability(Capabilities?.Pos, "pos");
             if (dir != null && LobbyFrameWriter.IsDirTooLong(dir))
             {
@@ -168,6 +169,7 @@ namespace Yingyeothon.Gamebase.Client
 
         public void Say(SayScope scope, string text, string? to = null)
         {
+            _socket.RequireSendable();
             RequireSayScope(scope);
             _socket.Send(LobbyFrameWriter.Say(scope, to, text));
         }
@@ -179,6 +181,7 @@ namespace Yingyeothon.Gamebase.Client
             // and it never calls AllowsSay. A channel that restricts chat to `zone`
             // still routes a party event, so guarding on the say list here refuses a
             // frame the gateway would have delivered.
+            _socket.RequireSendable();
             RequireCapability(Capabilities?.Event, "event");
             _socket.Send(LobbyFrameWriter.Event(scope, to, name, payload));
         }
@@ -189,36 +192,42 @@ namespace Yingyeothon.Gamebase.Client
 
         void IPartyCommands.Create()
         {
+            _socket.RequireSendable();
             RequireCapability(Capabilities?.Party, "party");
             _socket.Send(LobbyFrameWriter.TypeOnly(FrameTypes.PartyCreate));
         }
 
         void IPartyCommands.Invite(string userId)
         {
+            _socket.RequireSendable();
             RequireCapability(Capabilities?.Party, "party");
             _socket.Send(LobbyFrameWriter.PartyInvite(userId));
         }
 
         void IPartyCommands.Accept(string partyId)
         {
+            _socket.RequireSendable();
             RequireCapability(Capabilities?.Party, "party");
             _socket.Send(LobbyFrameWriter.PartyAccept(partyId));
         }
 
         void IPartyCommands.Decline(string partyId)
         {
+            _socket.RequireSendable();
             RequireCapability(Capabilities?.Party, "party");
             _socket.Send(LobbyFrameWriter.PartyDecline(partyId));
         }
 
         void IPartyCommands.Leave()
         {
+            _socket.RequireSendable();
             RequireCapability(Capabilities?.Party, "party");
             _socket.Send(LobbyFrameWriter.TypeOnly(FrameTypes.PartyLeave));
         }
 
         void IPartyCommands.List()
         {
+            _socket.RequireSendable();
             RequireCapability(Capabilities?.Party, "party");
             _socket.Send(LobbyFrameWriter.TypeOnly(FrameTypes.PartyList));
         }
@@ -232,7 +241,7 @@ namespace Yingyeothon.Gamebase.Client
         {
             if (enabled == false)
             {
-                throw new InvalidOperationException("capability_off: " + name + " is disabled on this channel");
+                throw new GatewayClientException(GatewayErrorCode.CapabilityOff, name + " is disabled on this channel");
             }
         }
 
@@ -245,8 +254,8 @@ namespace Yingyeothon.Gamebase.Client
             var capabilities = Capabilities;
             if (capabilities != null && !capabilities.AllowsScope(scope))
             {
-                throw new InvalidOperationException(
-                    "capability_off: say scope " + SayScopes.ToWire(scope) + " is disabled");
+                throw new GatewayClientException(
+                    GatewayErrorCode.CapabilityOff, "say scope " + SayScopes.ToWire(scope) + " is disabled on this channel");
             }
         }
 

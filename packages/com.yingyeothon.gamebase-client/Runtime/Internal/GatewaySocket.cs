@@ -268,6 +268,18 @@ namespace Yingyeothon.Gamebase.Client
 
         internal void Send(JsonValue frame)
         {
+            RequireSendable();
+            _socket!.SendText(JsonCodec.Encode(frame));
+        }
+
+        /// <summary>
+        /// The state half of <see cref="Send"/>: another thread inside <c>Poll()</c>, or a
+        /// socket that is not connected, is an <see cref="InvalidOperationException"/>. A
+        /// sender runs this before its own capability check, so a client that is not ready
+        /// says so rather than reporting a refusal from a <c>hello</c> it no longer stands on.
+        /// </summary>
+        internal void RequireSendable()
+        {
             RequireNotConcurrent();
             if (!_ready || _retired || _socket == null)
             {
@@ -275,8 +287,6 @@ namespace Yingyeothon.Gamebase.Client
                 // writing to it drops the frame silently.
                 throw new InvalidOperationException("cannot send in state " + State);
             }
-
-            _socket.SendText(JsonCodec.Encode(frame));
         }
 
         public void Dispose()

@@ -66,8 +66,8 @@ console. A `Warn` line `pos for an unknown peer` is something else — a gateway
 
 ## `Say` or `Party` throws instead of sending
 
-`InvalidOperationException` beginning `capability_off:` means the channel disables that
-command or that chat scope. Check what the channel actually enabled:
+`GatewayClientException` with `Code == GatewayErrorCode.CapabilityOff` means the channel
+disables that command or that chat scope. Check what the channel actually enabled:
 
 ```csharp
 lobby.Capabilities?.Party;                        // null = unrestricted, false = off

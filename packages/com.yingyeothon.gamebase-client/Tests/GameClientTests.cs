@@ -66,9 +66,9 @@ namespace Yingyeothon.Gamebase.Client.Tests
 
             // The gateway synthesises these and uses them to decide which member a
             // connection speaks for, so a client must never forge one.
-            Assert.Throws<InvalidOperationException>(
+            Assert.Throws<GatewayClientException>(
                 () => harness.Client.Send(Json.Object().Set("type", "enter").Build()));
-            Assert.Throws<InvalidOperationException>(
+            Assert.Throws<GatewayClientException>(
                 () => harness.Client.Send(Json.Object().Set("type", "leave").Build()));
             Assert.That(harness.Socket.Sent, Has.Count.EqualTo(1));
         }
@@ -332,6 +332,19 @@ namespace Yingyeothon.Gamebase.Client.Tests
             Assert.That(caught, Is.Null);
             Assert.That(states, Is.EqualTo(new[] { GatewayClientState.Connected }));
             Assert.That(harness.Socket.Sent, Has.Count.EqualTo(1));
+        }
+
+        [Test]
+        public async Task AReservedTypeIsRefusedWithTheGatewaysCode()
+        {
+            var harness = new GameHarness();
+            await harness.ConnectAsync();
+
+            var error = Assert.Throws<GatewayClientException>(
+                () => harness.Client.Send(Json.Object().Set("type", "enter").Set("secret", "x").Build()));
+
+            Assert.That(error!.Code, Is.EqualTo(GatewayErrorCode.ReservedType));
+            Assert.That(error.Message, Is.EqualTo("reserved_type: enter is set by the gateway"));
         }
     }
 }

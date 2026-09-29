@@ -91,7 +91,7 @@ they never throw on a frame you did not expect. The
 
 Outbound, the gateway requires a JSON **object** with a string `type`, and refuses
 `enter` and `leave` — those are its own bookkeeping, deciding which member a connection
-speaks for. This SDK refuses them locally with `InvalidOperationException` before they
+speaks for. This SDK refuses them locally with `GatewayClientException` (`Code` is `reserved_type`) before they
 reach the wire; removing that check is a regression, not a simplification.
 
 The gateway also overwrites `connectionId` with its own and strips any client-supplied

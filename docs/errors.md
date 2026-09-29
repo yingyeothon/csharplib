@@ -71,8 +71,8 @@ All of them are thrown **locally**, before anything reaches the wire.
 | `InvalidOperationException` | `Poll` | called re-entrantly, or while another thread is inside it |
 | `ArgumentNullException` | `Create`, `IGatewayGameClient.Send` | a null options object or frame |
 | `ArgumentException` | `Pos` | `dir` is over 16 bytes |
-| `InvalidOperationException` | `Pos`, `Say`, `Event`, `Party.*` | the channel disables that capability, or that chat scope — message begins `capability_off:` |
-| `InvalidOperationException` | `IGatewayGameClient.Send` | the frame's `type` is `enter` or `leave` — message begins `reserved_type:` |
+| `GatewayClientException` | `Pos`, `Say`, `Event`, `Party.*` | the channel disables that capability, or that chat scope. `Code` is `capability_off` |
+| `GatewayClientException` | `IGatewayGameClient.Send` | the frame's `type` is `enter` or `leave`. `Code` is `reserved_type` |
 | `InvalidOperationException` | `MapAsync` | called before `hello` arrived |
 | `GatewayStoppedException` | `await ConnectAsync()` | the connection ended before it became usable |
 | `MapFetchException` | `await MapAsync()` | the map URL answered a non-2xx status, which it carries |
@@ -82,6 +82,25 @@ All of them are thrown **locally**, before anything reaches the wire.
 
 A capability check throws only on an explicit `false`. A `null` capability is
 unrestricted, so the send goes out and the gateway decides.
+
+`GatewayClientException` is a local refusal: `Code` is the `GatewayErrorCode` the gateway
+would have sent for the same frame, so one handler can treat both alike, and the
+connection is unaffected. It derives from `InvalidOperationException`, so a
+`catch (InvalidOperationException)` still sees it — but a test that asserts the exact
+type (`Assert.Throws<InvalidOperationException>`) no longer matches. The state checks come
+first: a client that is not connected, is reconnecting, or is being polled on another
+thread throws a plain `InvalidOperationException` even when the last `hello` had the
+capability off.
+
+Checking `lobby.Capabilities` before you offer the action is the better habit
+([Lobby § hello and capabilities](lobby.md#hello-and-capabilities)); the exception is for
+the send that slipped through:
+
+```csharp
+try { lobby.Party.Create(); }
+catch (GatewayClientException e) when (e.Code == GatewayErrorCode.CapabilityOff) { HidePartyUi(); }
+catch (InvalidOperationException) { ShowReconnecting(); }   // not connected right now
+```
 
 The key-value store client is the exception to "thrown locally": its
 `KvStoreException` is the store's own answer. Its table, and the `ArgumentException`s
