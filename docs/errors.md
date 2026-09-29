@@ -2,7 +2,9 @@
 
 Three things can go wrong, and they arrive by three different routes: the gateway
 **refuses** a frame you sent (`Refused`), the gateway **closes** the socket (a close
-code), or this SDK **throws** before anything reaches the wire.
+code), or this SDK **throws** before anything reaches the wire. `Refused` also carries
+the one `error` that is not a refusal: `frame_too_large`, a frame meant *for you* that
+the gateway dropped.
 
 ## Refusals — the `Refused` event
 
@@ -32,6 +34,7 @@ gracefully.
 | `too_long` | a field is over its byte cap | `text` > 1024 B, or `payload` > 8 KB |
 | `reserved_type` | a `q` frame used `enter` or `leave` | those are the gateway's own |
 | `unavailable` | the gateway could not serve it right now | transient; retry once. Not a client bug |
+| `frame_too_large` | a frame meant **for you** was over the gateway's 32 KB outbound cap and was dropped | not something you sent, so nothing to retry. On a lobby the peer map stays right — a refused `snapshot` is re-sent as `enter`s — and a dropped `pos` batch is overtaken by the next tick. On a `q` channel a game frame is gone: resync your state from the actor |
 
 **Fifty refusals on one socket close it with `4003`.** One refusal is cheap — a single
 oversized message costs exactly one, and nothing else. A stream of them is a client bug
@@ -98,6 +101,7 @@ CloseDisposition d = CloseCodes.Classify(code, GatewayChannelKind.Lobby);
 | `4002` | `GatewayCloseCode.Idle` | no pong within 75 seconds | `Reconnect` | `Reconnect` |
 | `4003` | `GatewayCloseCode.Policy` | fifty refused messages on one socket | `ClientBug` | `ClientBug` |
 | `4004` | `GatewayCloseCode.ChannelGone` | the channel expired or was disabled | `Stop` | `Stop` |
+| `4005` | `GatewayCloseCode.TooSlow` | the client did not drain its socket, and the gateway's outbound queue filled with frames it may not drop | `Reconnect` | `Reconnect` |
 | `4900` | `GatewayCloseCode.Local` | this SDK closed the socket itself | — | — |
 | `1000` | — | closed normally | `Stop` | **`Finished`** |
 | `1001` | — | the gateway is restarting | `Reconnect` | `Reconnect` |
@@ -116,6 +120,15 @@ gateway refuses anything the client **sends** over 16 KB. What it **sends back**
 at 32 KB. This SDK reassembles at most 64 KB — double the gateway's outbound cap, so a
 legitimate frame never reaches it — and an over-size message stops rather than
 reconnects, because a reconnect would meet the same flood.
+
+`4005` means the gateway closed the socket rather than drop a control frame, and the
+reconnect is the whole remedy: on a lobby its fresh `snapshot` replaces a peer map that
+had gone stale. It says the connection could not carry what the gateway had to send — a
+slow network, or a socket that stopped reading, such as a suspended mobile app or a
+WebGL tab whose main thread is blocked. A frozen `Update()` alone is not the cause with
+the default transport, which reads on its own loop whether or not `Poll()` runs and
+queues what arrives until `Poll()` delivers it (so a long freeze costs memory instead).
+It is not `1009`, which is about a frame *you* sent or one too large to reassemble.
 
 `4004` follows a channel expiring — channels live 7 days and `yyt channels extend` adds
 seven more, capped at 28 days. Live sockets close within about a minute of expiry.

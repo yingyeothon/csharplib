@@ -117,6 +117,7 @@ namespace Yingyeothon.Gamebase.Client.Tests
 
         [TestCase(1011)]
         [TestCase(4002)]
+        [TestCase(4005)]
         [TestCase(1001)]
         public async Task ReconnectsAndCanSendAgain(int code)
         {

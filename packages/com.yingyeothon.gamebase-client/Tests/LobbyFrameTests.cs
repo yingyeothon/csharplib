@@ -246,5 +246,18 @@ namespace Yingyeothon.Gamebase.Client.Tests
 
             Assert.That(seen, Is.EqualTo(new[] { "first", "first", "late" }));
         }
+
+        [Test]
+        public async Task TheClientsPeerMapReportsViewInvariantBreaksThroughItsLogger()
+        {
+            var harness = new LobbyHarness();
+            await harness.ConnectAsync();
+
+            harness.Socket.ServerSend(Frames.Snapshot("town", Frames.Peer("bob", 1, 1)));
+            harness.Socket.ServerSend(Frames.Leave("town", "mallory"));
+            harness.Poll();
+
+            Assert.That(harness.Log.Text, Does.Contain("leave for an unknown peer"));
+        }
     }
 }

@@ -133,7 +133,16 @@ wrong.
 - **A peer-chosen string is not a safe diagnostic.** A frame's `type` is whatever the
   peer put there, and `"expected hello, got " + type` reached a consumer's log writer
   unbounded and with its control characters intact — a log-volume and log-injection
-  vector. Cap it and strip the control characters (`Normalize.Diagnostic`).
+  vector. Cap it and replace every character that can break or reorder a line
+  (`Normalize.Diagnostic`): C0 **and** C1 controls, format characters (bidi overrides,
+  zero-width), U+2028/2029 and surrogates. `JsonWriter` escapes only C0 and lone
+  surrogates, so a console or `Debug.Log` line shows the rest raw.
+- **Bound how often a peer can make you log, not only how long the line is.** A log line
+  per entry of a peer's frame is an amplifier: a `pos` batch holds up to 256 entries, five
+  a second, and a 64 KB hostile frame thousands. The peer map is the pattern to copy:
+  each unknown peer is reported once per zone, the set of reported keys is capped (256),
+  one line says when the cap is reached, and the key stored is the **bounded** diagnostic
+  form — a raw peer string as a set key pins up to a frame of memory per entry.
 - A URL the server named is not automatically safe to log either: `mapUrl` is public
   today, but a pre-signed one would put its signature in a persistent writer. Log the
   length.

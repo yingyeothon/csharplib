@@ -55,6 +55,8 @@ hello.Tick;          // the channel's flushIntervalMs: how often positions broad
 hello.MapUrl;        // an immutable public asset, or empty
 hello.PartyId;       // set when the gateway already knows this player's party,
                      // which is how a reconnect finds it again
+hello.Aoi;           // the view rule: Aoi.MaxPeers (1-256), Aoi.Range only for a
+                     // box; the whole object is null from a gateway older than it
 hello.Capabilities;  // what this channel enables
 hello.Raw;           // the frame as received, for a field this SDK does not model
 ```
@@ -124,7 +126,7 @@ var everyone = lobby.Peers.All();
 var zone = lobby.Peers.Zone;                // null before the first snapshot
 ```
 
-Four behaviours worth knowing, all of them deliberate:
+Five behaviours worth knowing, all of them deliberate:
 
 - **Your own entry is filtered out** of every frame. The wire `pos` batch includes you;
   the map does not.
@@ -132,8 +134,17 @@ Four behaviours worth knowing, all of them deliberate:
   starts, and it is checked before the zone filter below.
 - **`enter`, `leave` and `pos` for another zone are ignored**, so a late `pos` from the
   zone you left cannot resurrect a peer that already left.
-- **A `pos` for a peer the map does not know is dropped**, not treated as an arrival —
-  a coalesced batch from before a `leave` must not bring the ghost back.
+- **A `pos` or `leave` for a peer the map does not know is dropped**, not treated as an
+  arrival. The gateway promises it never sends one — every `pos` entry comes after the
+  `snapshot` or `enter` that introduced the peer and before its `leave` — so the map
+  also logs it at `Warn` with the peer's id and the zone, once per peer per zone,
+  through the client's `Logger`. Seeing that line means a gateway bug worth reporting,
+  not a game bug.
+- **Your view is capped.** You see at most `hello.Aoi?.MaxPeers` peers of the zone (the
+  nearest), and with `hello.Aoi?.Range` only those inside that box around your last
+  `Pos`; a peer walking out of it gets a `leave` although it never left the zone. The
+  peer map needs nothing for this — the cut arrives as ordinary `enter` and `leave` —
+  but zone chat follows the same view (below).
 
 A reconnect resets the map, and what refills it is the gateway's decision, not yours.
 Retained positions and party membership survive a disconnect for 30 minutes, and if the
@@ -150,12 +161,16 @@ already committed to the player's current zone. `Reset()` empties it.
 ## Chat
 
 ```csharp
-lobby.Say(SayScope.Zone, "hello");                 // everyone in this zone
+lobby.Say(SayScope.Zone, "hello");                 // everyone in this zone who has you in view
 lobby.Say(SayScope.Party, "on my way");            // the player's party
 lobby.Say(SayScope.User, "hi", to: otherUserId);   // a whisper, across zones
 
 lobby.Said += frame => Show(frame.From, frame.Scope, frame.To, frame.Text);
 ```
+
+**Zone chat follows the view, not the zone.** A zone `say` or `event` reaches the peers
+who have *you* in view, plus yourself — the same `maxPeers` and `range` cut as the peer
+map. Views can be asymmetric: in a crowd, someone you can see may not hear you.
 
 The receiving event is `Said` rather than `Say`, because C# forbids a method and an
 event sharing a name — the same collision renames `EventReceived` and `PartyChanged`.
@@ -260,7 +275,7 @@ lobby.State;                                  // Idle | Connecting | Connected |
 lobby.Hello;                                  // the latest hello, cached
 lobby.Send(Json.Object().Set("type", "something-new").Build());
 lobby.Frame += frame => Inspect(frame);       // every frame after hello, pre-handling
-lobby.Refused += error => Log(error.Code);    // the gateway refused what you sent
+lobby.Refused += error => Log(error.Code);    // a refusal, or frame_too_large
 lobby.ProtocolError += e => Log(e.Message);   // a frame this SDK could not read
 
 lobby.Ping();                                 // application-level; the transport already

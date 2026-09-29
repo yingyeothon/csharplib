@@ -23,10 +23,14 @@ never write to it from here ([workflow.md](workflow.md)).
    `scripts/smoke/gateway.mjs`: `POST {authBase}/debug/token` with an
    `x-debug-key` header. On dev that is
    `https://auth-dev.yyt.life/debug/token`, the key is
-   `service/local/deploy/debug-key.dev`, and
-   `service/local/deploy/morpg-channels.dev.json` names a live `authChannelId`,
-   `lobbyChannelId` and `mapUrl`. `yyt channels list --scope all` confirms the
-   channel is still active. Never print the token or commit it.
+   `service/local/deploy/debug-key.dev`, and the channel comes from the CLI's **dev**
+   profile — pass `--profile dev` every time, because the default profile may be prod.
+   `yyt --profile dev channels list --scope all --json` lists the channels; the `id` of
+   an `active` row of `kind: lobby` is the `lobbyChannelId`. `yyt --profile dev channels
+   get <id> --json` gives its `config.authChannelId` (the channel to mint on),
+   `config.mapUrl` and the rest of its settings. If no lobby is active, **ask; never
+   create one** — dev channels are shared. (A `morpg-channels.dev.json` this step used to
+   name is gone; the CLI is the source.) Never print the token or commit it.
 4. Force a reconnect (close the socket from the other side, or restart the gateway)
    and watch the backoff and the fresh `hello` arrive.
 

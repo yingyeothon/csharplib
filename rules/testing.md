@@ -87,6 +87,9 @@
   failures" needs its pair — "a successful session resets the counter" — or it passes
   under an implementation that never resets.
 - Do not write an assertion whose expected value is computed from the actual one.
+- **A `[TestCase]` string cannot carry a lone surrogate.** Attribute arguments are stored
+  as UTF-8, so `"a\uD800b"` reaches the test with replacement characters (U+FFFD) where
+  the surrogate was, and tests something else — observed as a failure, not assumed. Build such a string at run time (`"a" + (char)0xD800 + "b"`).
 
 ## Parsers and codecs
 

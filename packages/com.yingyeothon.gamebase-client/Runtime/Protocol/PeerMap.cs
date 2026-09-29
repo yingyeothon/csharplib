@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using Yingyeothon.Codec;
+using Yingyeothon.Logger;
 
 namespace Yingyeothon.Gamebase.Client
 {
@@ -45,6 +47,16 @@ namespace Yingyeothon.Gamebase.Client
     {
         /// <summary>The receiver's own userId; its entry in <c>pos</c> broadcasts is dropped.</summary>
         public string SelfUserId { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Receives a <c>Warn</c> for a view-invariant break: a <c>pos</c> or <c>leave</c> for
+        /// a peer this map never saw enter. The gateway promises that cannot happen, so it
+        /// is a gateway bug, not a client one, and silence is what would let it stay a
+        /// rendering oddity nobody can trace. Each peer is reported once per zone, with its
+        /// id and the zone only. Null is <c>NullLogger.Instance</c>. The lobby client passes
+        /// its own.
+        /// </summary>
+        public ILogger? Logger { get; set; }
     }
 
     /// <summary>The set of peers visible in the current zone.</summary>
@@ -73,7 +85,9 @@ namespace Yingyeothon.Gamebase.Client
     /// <remarks>
     /// A snapshot replaces everything — that is how a zone change starts — and frames
     /// for any other zone are ignored, so a late <c>pos</c> from the old zone cannot
-    /// resurrect a peer that already left.
+    /// resurrect a peer that already left. A frame for the current zone naming a peer the
+    /// map never saw is different: the gateway's view invariant says it cannot happen, so
+    /// it is ignored for rendering <b>and</b> logged through <see cref="PeerMapOptions.Logger"/>.
     /// </remarks>
     public static class PeerMap
     {
@@ -85,7 +99,7 @@ namespace Yingyeothon.Gamebase.Client
                 throw new ArgumentNullException(nameof(options));
             }
 
-            return new PeerMapImpl(options.SelfUserId ?? string.Empty);
+            return new PeerMapImpl(options.SelfUserId ?? string.Empty, options.Logger ?? NullLogger.Instance);
         }
 
         private static readonly IReadOnlyList<Peer> NoPeers = new Peer[0];
@@ -93,12 +107,23 @@ namespace Yingyeothon.Gamebase.Client
         private sealed class PeerMapImpl : IPeerMap
         {
             private readonly string _selfUserId;
+            private readonly ILogger _logger;
             private readonly Dictionary<string, Peer> _peers = new Dictionary<string, Peer>(StringComparer.Ordinal);
             private readonly List<string> _order = new List<string>();
 
-            internal PeerMapImpl(string selfUserId)
+            // The ids already reported in this zone. A gateway bug repeats every tick —
+            // up to 256 entries a batch, five batches a second — and a log line per entry
+            // per batch would be the amplifier, so each id is reported once per zone and
+            // the set itself is capped. The key is the bounded diagnostic form, never the
+            // raw id: a hostile id can be as long as a frame.
+            private readonly HashSet<string> _reported = new HashSet<string>(StringComparer.Ordinal);
+            private bool _reportCapHit;
+            private const int MaxReported = 256;
+
+            internal PeerMapImpl(string selfUserId, ILogger logger)
             {
                 _selfUserId = selfUserId;
+                _logger = logger;
             }
 
             public string? Zone { get; private set; }
@@ -136,6 +161,8 @@ namespace Yingyeothon.Gamebase.Client
                 Zone = snapshot.Zone;
                 _peers.Clear();
                 _order.Clear();
+                _reported.Clear();
+                _reportCapHit = false;
                 foreach (var peer in snapshot.Peers)
                 {
                     if (!string.Equals(peer.UserId, _selfUserId, StringComparison.Ordinal))
@@ -160,8 +187,16 @@ namespace Yingyeothon.Gamebase.Client
 
             private PeerChange? ApplyLeave(LeaveFrame leave)
             {
+                if (string.Equals(leave.UserId, _selfUserId, StringComparison.Ordinal))
+                {
+                    return null;
+                }
+
                 if (!_peers.Remove(leave.UserId))
                 {
+                    // Ignored for rendering, but said: the gateway promises a `leave`
+                    // only for a peer it introduced first.
+                    WarnUnknown("leave for an unknown peer", leave.UserId, leave.Zone);
                     return null;
                 }
 
@@ -179,10 +214,11 @@ namespace Yingyeothon.Gamebase.Client
                         continue;
                     }
 
-                    // A peer the map does not know is not resurrected: it left, and a
-                    // coalesced pos from before that must not bring the ghost back.
+                    // A peer the map does not know is not resurrected. The gateway sends
+                    // `pos` only for a peer in view, so this is its bug: say so.
                     if (!_peers.TryGetValue(update.UserId, out var existing))
                     {
+                        WarnUnknown("pos for an unknown peer", update.UserId, pos.Zone);
                         continue;
                     }
 
@@ -213,7 +249,43 @@ namespace Yingyeothon.Gamebase.Client
             {
                 _peers.Clear();
                 _order.Clear();
+                _reported.Clear();
+                _reportCapHit = false;
                 Zone = null;
+            }
+
+            /// <summary>
+            /// Once per peer per zone. The ids are routing facts, never the frame, and are
+            /// capped and stripped anyway: a zone name is chosen by whichever player
+            /// announced it, and a hostile gateway chooses both.
+            /// </summary>
+            private void WarnUnknown(string message, string userId, string zone)
+            {
+                var id = Normalize.Diagnostic(userId);
+                if (_reported.Count >= MaxReported)
+                {
+                    if (!_reportCapHit && !_reported.Contains(id))
+                    {
+                        _reportCapHit = true;
+                        _logger.Warn(
+                            "unknown peers past the report cap are not logged in this zone",
+                            Json.Object().Set("zone", Normalize.Diagnostic(zone)).Set("reported", (double)MaxReported).Build());
+                    }
+
+                    return;
+                }
+
+                if (!_reported.Add(id))
+                {
+                    return;
+                }
+
+                _logger.Warn(
+                    message,
+                    Json.Object()
+                        .Set("userId", id)
+                        .Set("zone", Normalize.Diagnostic(zone))
+                        .Build());
             }
 
             private void Put(Peer peer)

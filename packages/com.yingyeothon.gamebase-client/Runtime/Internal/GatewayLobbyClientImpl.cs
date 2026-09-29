@@ -21,7 +21,7 @@ namespace Yingyeothon.Gamebase.Client
         {
             _options = options;
             _logger = options.Logger ?? NullLogger.Instance;
-            _peers = PeerMap.Create(new PeerMapOptions { SelfUserId = string.Empty });
+            _peers = PeerMap.Create(new PeerMapOptions { SelfUserId = string.Empty, Logger = _logger });
 
             _socket = new GatewaySocket(new GatewaySocketOptions
             {
@@ -319,7 +319,7 @@ namespace Yingyeothon.Gamebase.Client
             // A roster from before the outage may be stale; the gateway re-sends
             // `party` after `hello` whenever it still knows the party.
             Roster = null;
-            _peers = PeerMap.Create(new PeerMapOptions { SelfUserId = hello.UserId });
+            _peers = PeerMap.Create(new PeerMapOptions { SelfUserId = hello.UserId, Logger = _logger });
 
             _logger.Info(
                 "lobby connected",

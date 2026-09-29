@@ -35,7 +35,8 @@ namespace Yingyeothon.Gamebase.Client.Tests
             bool? pos = true,
             bool? party = true,
             bool? channelEvent = true,
-            string zone = "town")
+            string zone = "town",
+            JsonValue? aoi = null)
         {
             var capabilities = Json.Object()
                 .Set("pos", pos)
@@ -52,6 +53,7 @@ namespace Yingyeothon.Gamebase.Client.Tests
                 .Set("mapUrl", "https://cdn/map/v1.json")
                 .Set("zone", zone)
                 .Set("partyId", partyId)
+                .Set("aoi", aoi)
                 .Set("capabilities", capabilities)
                 .Build();
         }

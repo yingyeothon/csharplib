@@ -44,7 +44,10 @@ namespace Yingyeothon.Gamebase.Client
         /// <summary>Every game-defined frame, verbatim.</summary>
         event Action<JsonValue> Frame;
 
-        /// <summary>A gateway refusal.</summary>
+        /// <summary>
+        /// An <c>error</c> frame: a gateway refusal of something this client sent, or —
+        /// <c>frame_too_large</c> — a game frame meant for it that was over 32 KB and dropped.
+        /// </summary>
         event Action<ErrorFrame> Refused;
 
         /// <summary>The connection dropped. Fires before every reconnect and before every stop.</summary>

@@ -15,6 +15,7 @@ namespace Yingyeothon.Gamebase.Client
             string mapUrl,
             string zone,
             string? partyId,
+            AreaOfInterest? aoi,
             Capabilities capabilities,
             JsonValue raw)
         {
@@ -24,6 +25,7 @@ namespace Yingyeothon.Gamebase.Client
             MapUrl = mapUrl;
             Zone = zone;
             PartyId = partyId;
+            Aoi = aoi;
             Capabilities = capabilities;
             Raw = raw;
         }
@@ -46,6 +48,12 @@ namespace Yingyeothon.Gamebase.Client
         /// <summary>Set when the gateway already knows this player's party; null otherwise.</summary>
         public string? PartyId { get; }
 
+        /// <summary>
+        /// The view rule this channel applies, or null when the gateway predates the field.
+        /// A client that renders every peer it is told about needs nothing from it.
+        /// </summary>
+        public AreaOfInterest? Aoi { get; }
+
         /// <summary>What the channel enables. A null field means unrestricted, not disabled.</summary>
         public Capabilities Capabilities { get; }
 
@@ -61,6 +69,7 @@ namespace Yingyeothon.Gamebase.Client
                 frame.GetString("mapUrl") ?? string.Empty,
                 frame.GetString("zone") ?? string.Empty,
                 Normalize.OptionalId(frame.GetString("partyId")),
+                AreaOfInterest.FromJson(frame.GetMemberOrNull("aoi")),
                 Capabilities.FromJson(frame.GetMemberOrNull("capabilities")),
                 frame);
         }

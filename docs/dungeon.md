@@ -100,7 +100,9 @@ invent one.
 
 A refusal arrives as `Refused` with an `ErrorFrame`. On a `q` channel it is recognised
 by `type == "error"` plus a string `code` — the `message` is not required, because the
-gateway marks it `omitempty`.
+gateway marks it `omitempty`. One `code` is not a refusal: `frame_too_large` says a game
+frame meant for you was over the gateway's 32 KB outbound cap and was dropped, so the
+game state it carried is missing until your actor sends it again.
 
 ## Finished, aborted, and the difference
 

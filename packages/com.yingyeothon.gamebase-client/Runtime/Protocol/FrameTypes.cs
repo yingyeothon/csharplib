@@ -84,6 +84,8 @@ namespace Yingyeothon.Gamebase.Client
         public const string ReservedType = "reserved_type";
         /// <summary>The gateway could not serve the request right now.</summary>
         public const string Unavailable = "unavailable";
+        /// <summary>A frame meant for you exceeded the gateway's 32 KB outbound cap and was dropped; the message says how large. You missed something.</summary>
+        public const string FrameTooLarge = "frame_too_large";
     }
 
     /// <summary>Where a <c>say</c> or <c>event</c> is routed.</summary>

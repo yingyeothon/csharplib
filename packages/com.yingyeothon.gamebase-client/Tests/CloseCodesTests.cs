@@ -10,6 +10,7 @@ namespace Yingyeothon.Gamebase.Client.Tests
         [TestCase(4002, CloseDispositionKind.Reconnect, CloseDispositionKind.Reconnect)]
         [TestCase(4003, CloseDispositionKind.ClientBug, CloseDispositionKind.ClientBug)]
         [TestCase(4004, CloseDispositionKind.Stop, CloseDispositionKind.Stop)]
+        [TestCase(4005, CloseDispositionKind.Reconnect, CloseDispositionKind.Reconnect)]
         [TestCase(1000, CloseDispositionKind.Stop, CloseDispositionKind.Finished)]
         [TestCase(1001, CloseDispositionKind.Reconnect, CloseDispositionKind.Reconnect)]
         [TestCase(1003, CloseDispositionKind.ClientBug, CloseDispositionKind.ClientBug)]
@@ -31,6 +32,15 @@ namespace Yingyeothon.Gamebase.Client.Tests
         }
 
         [Test]
+        public void TooSlowNamesItsCauseRatherThanALostConnection()
+        {
+            // A generic "connection lost" would hide a client that is not keeping up.
+            Assert.That(
+                CloseCodes.Classify(GatewayCloseCode.TooSlow, GatewayChannelKind.Lobby).Reason,
+                Is.EqualTo("too slow; the outbound queue filled"));
+        }
+
+        [Test]
         public void AnUnknownCodeNamesItselfInTheReason()
         {
             Assert.That(CloseCodes.Classify(4321, GatewayChannelKind.Lobby).Reason, Is.EqualTo("connection lost (4321)"));
@@ -44,6 +54,7 @@ namespace Yingyeothon.Gamebase.Client.Tests
             Assert.That(GatewayCloseCode.Idle, Is.EqualTo(4002));
             Assert.That(GatewayCloseCode.Policy, Is.EqualTo(4003));
             Assert.That(GatewayCloseCode.ChannelGone, Is.EqualTo(4004));
+            Assert.That(GatewayCloseCode.TooSlow, Is.EqualTo(4005));
             Assert.That(GatewayCloseCode.Local, Is.EqualTo(4900));
         }
     }

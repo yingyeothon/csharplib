@@ -112,12 +112,16 @@ continuation and may land anywhere — marshal back before touching the client.
 | `4002` idle            | reconnect                | reconnect                        |
 | `4003` policy          | `Stopped` (client bug)   | `Stopped` (client bug)           |
 | `4004` channel gone    | `Stopped`                | `Stopped`                        |
+| `4005` too slow        | reconnect                | reconnect                        |
 | `1000` normal          | `Stopped`                | `Finished`                       |
 | `1001` gateway restart | reconnect                | reconnect                        |
 | `1003` binary frame    | `Stopped` (client bug)   | `Stopped` (client bug)           |
 | `1009` frame too large | `Stopped` (client bug)   | `Stopped` (client bug)           |
 | `1011` enter failed    | reconnect                | reconnect                        |
 | anything else          | reconnect                | reconnect                        |
+
+Close `1009` is not the `frame_too_large` error code: that one arrives on `Refused`,
+says a frame meant for you was dropped, and closes nothing.
 
 Reconnects use exponential backoff (500 ms, ×2, cap 15 s, ±20 % jitter) until
 `Backoff.MaxAttempts` is exhausted, which ends in `Stopped`. A refused handshake
@@ -159,13 +163,15 @@ the peer map is empty until the game re-sends `Pos`.
   `Reconnecting`, `Aborted`, `Finished`, `Stopped`, `ProtocolError`.
 - `PeerMap.Create(PeerMapOptions)` → `IPeerMap`: the reducer behind `Peers` —
   `Apply`, `Get`, `All`, `Zone`, `Reset` — returning a `PeerChange` (`PeerChangeKind`)
-  for each frame it accepted, or null for one it ignored.
+  for each frame it accepted, or null for one it ignored. `PeerMapOptions.Logger`
+  hears a `Warn` for a `pos` or `leave` naming a peer it never saw.
 - `Backoff.Create(BackoffOptions)` → `IBackoff`: `Next`, `Reset`, `Attempts`.
 - `CloseCodes.Classify(code, kind)`, `GatewayCloseCode`, `CloseDisposition`,
   `CloseDispositionKind`, `GatewayChannelKind`.
 - `GatewayUrl.Build(url, channelId, gameId?)`, `FrameTypes`, `GatewayErrorCode`,
   `SayScope`, `SayScopes`.
-- `LobbyFrames.Read(JsonValue)` and the frame types `Hello`, `Capabilities`, `Peer`,
+- `LobbyFrames.Read(JsonValue)` and the frame types `Hello` (with `AreaOfInterest`),
+  `Capabilities`, `Peer`,
   `SnapshotFrame`, `EnterFrame`, `LeaveFrame`, `PosBroadcastFrame`,
   `SayBroadcastFrame`, `EventBroadcastFrame`, `PartyFrame`, `PartyMember`,
   `PartyInviteFrame`, `PartyDeclinedFrame`, `PongFrame`, `ErrorFrame`,

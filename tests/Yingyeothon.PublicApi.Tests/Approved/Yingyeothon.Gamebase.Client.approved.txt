@@ -1,3 +1,6 @@
+  AreaOfInterest.MaxPeers : Int32 get
+  AreaOfInterest.Range : Nullable<Double> get
+  AreaOfInterest.ctor(Nullable<Double>, Int32)
   Backoff.Create() : IBackoff
   Backoff.Create(BackoffOptions) : IBackoff
   BackoffOptions.Factor : Double get set
@@ -82,11 +85,13 @@
   GatewayCloseCode.Local : Int32
   GatewayCloseCode.Policy : Int32
   GatewayCloseCode.Replaced : Int32
+  GatewayCloseCode.TooSlow : Int32
   GatewayErrorCode.AlreadyInParty : String
   GatewayErrorCode.BadMessage : String
   GatewayErrorCode.BadScope : String
   GatewayErrorCode.BadZone : String
   GatewayErrorCode.CapabilityOff : String
+  GatewayErrorCode.FrameTooLarge : String
   GatewayErrorCode.MoveTooFar : String
   GatewayErrorCode.NoParty : String
   GatewayErrorCode.NotInvited : String
@@ -107,6 +112,7 @@
   GatewayLobbyClientOptions.ctor()
   GatewayStoppedException.ctor(String)
   GatewayUrl.Build(String, String, String?) : String
+  Hello.Aoi : AreaOfInterest get
   Hello.Capabilities : Capabilities get
   Hello.ConnectionId : String get
   Hello.MapUrl : String get
@@ -115,7 +121,7 @@
   Hello.Tick : Int32 get
   Hello.UserId : String get
   Hello.Zone : String get
-  Hello.ctor(String, String, Int32, String, String, String, Capabilities, JsonValue)
+  Hello.ctor(String, String, Int32, String, String, String, AreaOfInterest, Capabilities, JsonValue)
   HttpFetchResult.Ok : Boolean get
   HttpFetchResult.Status : Int32 get
   HttpFetchResult.Text : String get
@@ -221,6 +227,7 @@
   PeerChangeKind.Snapshot : PeerChangeKind
   PeerChangeKind.value__ : Int32
   PeerMap.Create(PeerMapOptions) : IPeerMap
+  PeerMapOptions.Logger : ILogger get set
   PeerMapOptions.SelfUserId : String get set
   PeerMapOptions.ctor()
   PosBroadcastFrame.Peers : IReadOnlyList<Peer> get
@@ -271,6 +278,7 @@
   WebSocketCreateContext.Url : String get
   WebSocketCreateContext.ctor(String, IReadOnlyList<String>, IWebSocketEventSink)
   WebSocketTransport.Default : IWebSocketFactory get
+class AreaOfInterest
 class BackoffOptions
 class Capabilities
 class EnterFrame

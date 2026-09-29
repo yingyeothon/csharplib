@@ -463,5 +463,71 @@ namespace Yingyeothon.Gamebase.Client.Tests
 
             Assert.That(harness.Socket.DisposeCount, Is.EqualTo(1));
         }
+
+        [Test]
+        public async Task HelloCarriesTheAreaOfInterestWithAndWithoutARange()
+        {
+            var boxed = new LobbyHarness();
+            var hello = await boxed.ConnectAsync(Frames.Hello(aoi: Json.Object().Set("range", 10.5).Set("maxPeers", 64d).Build()));
+
+            Assert.That(hello.Aoi!.Range, Is.EqualTo(10.5));
+            Assert.That(hello.Aoi.MaxPeers, Is.EqualTo(64));
+
+            // A channel without a box sends maxPeers alone, and the absent range is
+            // "the whole zone", not zero.
+            var open = new LobbyHarness();
+            hello = await open.ConnectAsync(Frames.Hello(aoi: Json.Object().Set("maxPeers", 32d).Build()));
+
+            Assert.That(hello.Aoi!.Range, Is.Null);
+            Assert.That(hello.Aoi.MaxPeers, Is.EqualTo(32));
+        }
+
+        [Test]
+        public async Task AHelloFromAGatewayOlderThanAoiHasNone()
+        {
+            var harness = new LobbyHarness();
+
+            var hello = await harness.ConnectAsync(Frames.Hello());
+
+            Assert.That(hello.Aoi, Is.Null);
+        }
+
+        [Test]
+        public async Task AnAoiThatIsNotAnObjectIsNone()
+        {
+            var harness = new LobbyHarness();
+
+            var hello = await harness.ConnectAsync(Frames.Hello(aoi: JsonValue.Of(64d)));
+
+            Assert.That(hello.Aoi, Is.Null);
+        }
+
+        [TestCase("{\"range\":0,\"maxPeers\":64}", null, 64)]
+        [TestCase("{\"range\":-3,\"maxPeers\":64}", null, 64)]
+        [TestCase("{\"range\":5}", 5d, 64)]
+        [TestCase("{\"maxPeers\":1e300}", null, 256)]
+        [TestCase("{\"maxPeers\":-5}", null, 64)]
+        [TestCase("{\"maxPeers\":0}", null, 64)]
+        [TestCase("{\"maxPeers\":12.9}", null, 12)]
+        [TestCase("{\"maxPeers\":\"many\"}", null, 64)]
+        public async Task AnAoiOutsideTheGatewaysRangeIsReadIntoIt(string aoi, double? range, int maxPeers)
+        {
+            var harness = new LobbyHarness();
+
+            var hello = await harness.ConnectAsync(Frames.Hello(aoi: Json.Parse(aoi)));
+
+            Assert.That(hello.Aoi!.Range, Is.EqualTo(range));
+            Assert.That(hello.Aoi.MaxPeers, Is.EqualTo(maxPeers));
+        }
+
+        [Test]
+        public async Task ANullAoiIsNone()
+        {
+            var harness = new LobbyHarness();
+
+            var hello = await harness.ConnectAsync(Frames.Hello(aoi: JsonValue.Null));
+
+            Assert.That(hello.Aoi, Is.Null);
+        }
     }
 }

@@ -168,7 +168,10 @@ namespace Yingyeothon.Gamebase.Client
         /// <summary>The gateway answered a ping.</summary>
         event Action Pong;
 
-        /// <summary>The gateway refused something this client sent.</summary>
+        /// <summary>
+        /// An <c>error</c> frame: the gateway refused something this client sent, or —
+        /// <c>frame_too_large</c> — dropped a frame meant for it. Log the code, never the message.
+        /// </summary>
         event Action<ErrorFrame> Refused;
 
         /// <summary>A frame arrived that this SDK could not read.</summary>

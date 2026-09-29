@@ -55,6 +55,15 @@ Raise the logger to `Debug` and read the close codes; they are in [Errors](error
 - **`move_too_far`.** A jump larger than the channel's `maxMoveDelta` (4 by default) is
   refused. A real teleport should be a zone change, or the channel's limit should rise.
 
+## A player in my zone is not shown
+
+The gateway sends each socket a **view**, not the whole zone: at most
+`hello.Aoi?.MaxPeers` peers (the nearest), and with `hello.Aoi?.Range` only those within
+that many tiles of your last `Pos`. A peer outside it gets a `leave` although it is still
+in the zone, and comes back with an `enter`. Both numbers are channel settings in the
+console. A `Warn` line `pos for an unknown peer` is something else — a gateway bug; see
+[Lobby § The peer map](lobby.md#the-peer-map).
+
 ## `Say` or `Party` throws instead of sending
 
 `InvalidOperationException` beginning `capability_off:` means the channel disables that

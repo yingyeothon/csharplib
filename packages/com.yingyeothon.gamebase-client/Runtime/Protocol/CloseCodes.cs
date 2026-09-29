@@ -54,6 +54,10 @@ namespace Yingyeothon.Gamebase.Client
                     return new CloseDisposition(CloseDispositionKind.ClientBug, "too many refused messages");
                 case GatewayCloseCode.ChannelGone:
                     return new CloseDisposition(CloseDispositionKind.Stop, "channel expired or disabled");
+                case GatewayCloseCode.TooSlow:
+                    // Reconnecting is the whole remedy: on a lobby the fresh `snapshot`
+                    // replaces a peer map that has been missing control frames.
+                    return new CloseDisposition(CloseDispositionKind.Reconnect, "too slow; the outbound queue filled");
                 case 1000:
                     return kind == GatewayChannelKind.Q
                         ? new CloseDisposition(CloseDispositionKind.Finished, "the game dropped the connection")

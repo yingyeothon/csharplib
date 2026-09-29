@@ -10,6 +10,7 @@ your IDE shows. For what the package is *for*, read
 
 ## Contents
 
+- [`AreaOfInterest`](#class-areaofinterest)
 - [`Backoff`](#static-class-backoff)
 - [`BackoffOptions`](#class-backoffoptions)
 - [`Capabilities`](#class-capabilities)
@@ -75,6 +76,16 @@ your IDE shows. For what the package is *for*, read
 - [`UnknownServerFrame`](#class-unknownserverframe)
 - [`WebSocketCreateContext`](#class-websocketcreatecontext)
 - [`WebSocketTransport`](#static-class-websockettransport)
+
+## class AreaOfInterest
+
+The channel's view rule, as `hello` carries it once the gateway has applied its defaults. `maxPeers` is always present; `range` only when the channel defines an area-of-interest box, so a channel without one sends `{ "maxPeers": 64 }` alone.
+
+| Member | Summary |
+| --- | --- |
+| `MaxPeers : Int32 get` | The hard cap on peers in view; beyond it the gateway sends a `leave` for the farthest. The console allows 1 to 256. A missing, non-numeric or non-positive value reads as the gateway's own default, 64, and anything above 256 as 256, so a hostile value cannot size an array in the game. |
+| `Range : Nullable<Double> get` | Half-width of the box in tiles, measured as Chebyshev distance from your last `pos` . Null means the whole zone: the gateway omits a zero range, and a non-positive one reads as null too. |
+| `ctor(Nullable<Double>, Int32)` |  |
 
 ## static class Backoff
 
@@ -252,7 +263,7 @@ Where a client's connection currently is.
 
 ## static class GatewayCloseCode
 
-Application close codes the gateway uses.
+Application close codes the gateway uses (4000-4005), and the one this SDK uses itself.
 
 | Member | Summary |
 | --- | --- |
@@ -262,6 +273,7 @@ Application close codes the gateway uses.
 | `Local : Int32` | The code this SDK closes with when it ends a socket itself. A client may only send 1000 or 3000-4999, and this one is not used by the gateway. |
 | `Policy : Int32` | Too many refused messages on one socket; a client bug. |
 | `Replaced : Int32` | A newer socket of the same user replaced this one. Do not reconnect. |
+| `TooSlow : Int32` | Too slow: the outbound queue filled with frames the gateway may not drop, so it closed the socket rather than silently lose one. Reconnect: on a lobby the fresh `snapshot` replaces a peer map that missed control frames; on either channel whatever was still queued for this socket was discarded with it. |
 
 ## static class GatewayErrorCode
 
@@ -274,6 +286,7 @@ Documented gateway refusal codes. The set is open; do not close it into an enum.
 | `BadScope : String` | The scope is not one this channel allows. |
 | `BadZone : String` | The zone name is malformed or over 64 bytes. |
 | `CapabilityOff : String` | The channel disables that command. |
+| `FrameTooLarge : String` | A frame meant for you exceeded the gateway's 32 KB outbound cap and was dropped; the message says how large. You missed something. |
 | `MoveTooFar : String` | The position moved further in one frame than the channel's `maxMoveDelta` . |
 | `NoParty : String` | The command needs a party and the sender is in none. |
 | `NotInvited : String` | Accepting a party the sender was not invited to. |
@@ -343,6 +356,7 @@ The first frame on a lobby channel; nothing is "connected" before it. The client
 
 | Member | Summary |
 | --- | --- |
+| `Aoi : AreaOfInterest get` | The view rule this channel applies, or null when the gateway predates the field. A client that renders every peer it is told about needs nothing from it. |
 | `Capabilities : Capabilities get` | What the channel enables. A null field means unrestricted, not disabled. |
 | `ConnectionId : String get` | This socket. A reconnect gets a new one, and only the gateway may set it. |
 | `MapUrl : String get` | Immutable, public map asset. A new map version is a new URL. |
@@ -351,7 +365,7 @@ The first frame on a lobby channel; nothing is "connected" before it. The client
 | `Tick : Int32 get` | Position flush interval in milliseconds (the channel's `flushIntervalMs` ). |
 | `UserId : String get` | This player's identity, the same value as the token's `sub` . |
 | `Zone : String get` | The zone the game should start in; the player has no zone until the first `pos` . |
-| `ctor(String, String, Int32, String, String, String, Capabilities, JsonValue)` |  |
+| `ctor(String, String, Int32, String, String, String, AreaOfInterest, Capabilities, JsonValue)` |  |
 
 ## struct HttpFetchResult
 
@@ -407,7 +421,7 @@ A client for the gateway's dungeon ( `q` ) channel.
 | `event Frame : Action<JsonValue>` | Every game-defined frame, verbatim. |
 | `event ProtocolError : Action<ProtocolErrorEvent>` | A frame arrived that this SDK could not read. |
 | `event Reconnecting : Action<ReconnectingEvent>` | A retry is scheduled, with its attempt number and delay. |
-| `event Refused : Action<ErrorFrame>` | A gateway refusal. |
+| `event Refused : Action<ErrorFrame>` | An `error` frame: a gateway refusal of something this client sent, or — `frame_too_large` — a game frame meant for it that was over 32 KB and dropped. |
 | `event Stopped : Action<StoppedEvent>` | Any other terminal close. |
 
 ## interface IGatewayLobbyClient
@@ -444,7 +458,7 @@ A client for the gateway's lobby channel.
 | `event Pong : Action` | The gateway answered a ping. |
 | `event ProtocolError : Action<ProtocolErrorEvent>` | A frame arrived that this SDK could not read. |
 | `event Reconnecting : Action<ReconnectingEvent>` | A retry is scheduled, with its attempt number and delay. |
-| `event Refused : Action<ErrorFrame>` | The gateway refused something this client sent. |
+| `event Refused : Action<ErrorFrame>` | An `error` frame: the gateway refused something this client sent, or — `frame_too_large` — dropped a frame meant for it. Log the code, never the message. |
 | `event Said : Action<SayBroadcastFrame>` | Chat arrived. Named `Said` because `Say` is the sender. |
 | `event Snapshot : Action<SnapshotFrame>` | The zone was replaced wholesale, which is how a zone change starts. |
 | `event Stopped : Action<StoppedEvent>` | Terminal: no further attempt will be made. |
@@ -636,6 +650,7 @@ Options for `Create` .
 
 | Member | Summary |
 | --- | --- |
+| `Logger : ILogger get set` | Receives a `Warn` for a view-invariant break: a `pos` or `leave` for a peer this map never saw enter. The gateway promises that cannot happen, so it is a gateway bug, not a client one, and silence is what would let it stay a rendering oddity nobody can trace. Each peer is reported once per zone, with its id and the zone only. Null is `NullLogger.Instance` . The lobby client passes its own. |
 | `SelfUserId : String get set` | The receiver's own userId; its entry in `pos` broadcasts is dropped. |
 | `ctor()` |  |
 

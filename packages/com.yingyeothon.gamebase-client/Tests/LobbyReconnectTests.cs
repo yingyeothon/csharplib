@@ -11,6 +11,7 @@ namespace Yingyeothon.Gamebase.Client.Tests
     public class LobbyReconnectTests
     {
         [TestCase(4002)]
+        [TestCase(4005)]
         [TestCase(1001)]
         [TestCase(1006)]
         [TestCase(1011)]
