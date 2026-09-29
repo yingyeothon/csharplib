@@ -92,7 +92,7 @@ channel that starts using it does not arrive as an unknown field.
 | `Factor` | `double` | `2` | Multiplier per attempt. |
 | `Jitter` | `double` | `0.2` | Fraction randomised on both sides, so a gateway restart does not stampede. |
 | `MaxAttempts` | `int?` | `null` | Unbounded by default; exhausting it ends in `Stopped`. |
-| `Random` | `Func<double>?` | system random | Source in `[0, 1)`. A test pins the jitter with it. |
+| `Random` | `Func<double>?` | a random per schedule, seeded from a `Guid` | Source in `[0, 1)`. A test pins the jitter with it. |
 
 ### `PeerMapOptions`
 

@@ -100,5 +100,21 @@ namespace Yingyeothon.Gamebase.Client.Tests
 
             Assert.That(same, Is.LessThan(20));
         }
+
+        [Test]
+        public void SchedulesCreatedTogetherDoNotShareASequence()
+        {
+            // On .NET the parameterless Random is already seeded per instance, so this
+            // passes there either way. On Mono, which seeds it from the tick count, a
+            // hundred schedules made in one tight loop used to agree — this is the case
+            // the Unity EditMode run exists to catch (rules/testing.md).
+            var firsts = new HashSet<double?>();
+            for (var i = 0; i < 100; i++)
+            {
+                firsts.Add(Backoff.Create(new BackoffOptions { InitialMs = 1000, Jitter = 0.2 }).Next());
+            }
+
+            Assert.That(firsts.Count, Is.GreaterThan(50));
+        }
     }
 }

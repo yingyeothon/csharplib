@@ -77,8 +77,13 @@ namespace Yingyeothon.Gamebase.Client
                 else
                 {
                     // Per instance, never a shared static: two clients reconnecting
-                    // after the same gateway restart must not pick the same delay.
-                    var random = new Random();
+                    // after the same gateway restart must not pick the same delay. And
+                    // seeded explicitly: Unity's class libraries (Mono and IL2CPP alike)
+                    // seed `new Random()` from Environment.TickCount, which on Windows moves
+                    // only every ~15.6 ms, so two clients built together — a lobby and a q
+                    // client, say — would share one sequence and reconnect in lock-step. A
+                    // Guid is drawn from the runtime's random source, not the clock.
+                    var random = new Random(Guid.NewGuid().GetHashCode());
                     _random = () => random.NextDouble();
                 }
             }
