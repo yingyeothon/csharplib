@@ -55,8 +55,9 @@
 2. Verify beyond the unit tests, at the **highest** level the change reaches — the
    levels are ordered, so a Runtime source change reaches the top and takes both of
    the first two ([manual-verification.md](manual-verification.md)):
-   1. runtime or wire behaviour → the live gateway, or the dev store for
-      `kvstore-client` ([manual-verification.md](manual-verification.md));
+   1. runtime or wire behaviour → the live gateway, the dev store for
+      `kvstore-client`, or the dev auth service for `auth-client`
+      ([manual-verification.md](manual-verification.md));
    2. anything Unity compiles — Runtime sources, `Samples~`, `package.json`,
       `link.xml`, an asmdef → the Unity scratch project;
    3. `docs/`, `rules/` and scripts → the green gate, **and if the change altered a
@@ -89,7 +90,8 @@
 
    Two angles are fixed — **correctness against the sources** (every claim, signature
    and constant cited against the C# sources, the approved snapshots, the tests, and
-   the gateway's Go source for anything on the wire, plus a list of what could not be
+   for anything on the wire the package's normative spec as `CLAUDE.md` names it — the
+   gateway's Go source, the store's or the auth service's code — plus a list of what could not be
    verified at all) and **the consumer's experience** (walk it as the game developer:
    does it compile, is anything missing, what will they misread). The third is chosen
    for the change, most-expensive-defect first: *security* if it touches the wire, the
@@ -145,5 +147,15 @@ so in the same message.
 - Only the five client-usable tslib packages are ported. The rest are server
   libraries; the root README says which and why. Do not add one without a reason that
   survives "can this run on a phone?".
+- A package that is not a tslib port is added when the user asks for it and it passes
+  one test: **every call it makes carries a credential the player holds, or none — never
+  a server credential**, because whatever a game ships, players have. (`auth-client`'s
+  `/token` carries the player's provider token; that passes.) Model it on flutterlib's
+  counterpart when one exists (`../flutterlib/packages/`) and port its vocabulary; when
+  none does, ask the user for the shape before designing one. Record it here with the
+  date. So far: `auth-client` (flutterlib's
+  `yingyeothon_auth_client`, 2026-09-30). The worked counter-example is the doc store
+  (`/s/*`): its writes take the channel's doc apiKey, so it fails the test and has **no
+  client** — `docs/kvstore.md` § 7 says what a game uses instead.
 - The gateway wire protocol is owned by the `service` repository. When it changes,
   this SDK follows it — never the other way round.

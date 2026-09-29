@@ -22,38 +22,74 @@ Base URL: `https://auth.yyt.life` (dev: `https://auth-dev.yyt.life`).
 `startUrl`, `redirectAllowlist` and `expiresAt`. Read it at startup and you hard-code
 only a base URL and a channel id.
 
+## The client
+
+`com.yingyeothon.auth-client` is this page in code — its
+[README](../packages/com.yingyeothon.auth-client/README.md) has the install URL, every
+call and every error code. One client per auth channel:
+
+```csharp
+using Yingyeothon.Auth;
+
+var auth = AuthClient.Create(new AuthClientOptions
+{
+    BaseUrl = "https://auth.yyt.life",       // https://auth-dev.yyt.life on dev
+    ChannelId = "auth_0123456789abcdef",
+    // Transport = AuthUnityWebRequestTransport.Instance,   // on WebGL
+});
+
+AuthChannelConfig config = await auth.FetchConfigAsync();   // the nine fields above
+```
+
 ## Exchanging a provider credential
 
 The shape a native Unity client wants, because it is one request and no browser:
 
-```
-POST https://auth.yyt.life/c/{authChannelId}/token
-{ "provider": "github", "accessToken": "<the provider's access token>" }
-
-200 { "jwt": "…", "userId": "8d0f…", "exp": 1767225600 }
+```csharp
+ChannelToken token = await auth.ExchangeAccessTokenAsync("github", gitHubAccessToken);
+ChannelToken other = await auth.ExchangeIdTokenAsync("google", googleIdToken);
 ```
 
-**Google requires `idToken`** rather than `accessToken`, and GitHub requires
-`accessToken`; sending the wrong one is a `400`. The `SignIn` sample is this request,
-with the bounds and the never-log-the-body rule already in it.
+On the wire that is `POST /c/{authChannelId}/token` with
+`{ "provider": "github", "accessToken": "…" }`, answered `{ "jwt", "userId", "exp" }`.
+**Google requires `idToken`** and GitHub `accessToken`; the wrong one is a `400`, which
+is why they are two calls.
 
 ## The browser redirect flow
 
 When the player has no provider token yet, `GET /c/{ch}/start?provider=…&redirect=…`
 sends them through the provider and finally redirects to **your** URL with the result in
-the fragment: `{yourUrl}#token=…&userId=…&exp=…`. `redirect` must be on the channel's
-allowlist or the request is refused with `403`, and
+the fragment: `{yourUrl}#token=…&userId=…&exp=…`.
+
+```csharp
+string nonce = AuthClient.NewNonce();          // keep it until the browser comes back
+Uri start = auth.BuildStartUrl("github", new Uri("https://game.example/signin"), nonce);
+Application.OpenURL(start.AbsoluteUri);        // on WebGL, navigate the same tab instead
+
+// ... once your build has received the URL the browser returned to:
+ChannelToken token = auth.ParseRedirect(returned, nonce);
+```
+
+`redirect` must be on the channel's allowlist — matched on origin and path prefix, so the
+nonce query `BuildStartUrl` adds is admitted — or the request is refused with `403`, and
 `yyt channels update <auth> --redirect …` **replaces the whole list**, so pass every URL
-each time.
+each time. It must be `https`, or `http` only for `localhost`, `127.0.0.1` and `[::1]`,
+with no userinfo or fragment — `BuildStartUrl` refuses those itself.
+`/start` is a browser route: a refusal there is an error page in the browser, not a
+status your game can read.
 
-Two things a client must get right, and neither is optional:
+Two things a client must get right, and `ParseRedirect` does the first:
 
-- **Put a nonce of your own in the redirect and check it comes back.** Without it, a
-  link someone else constructed completes a sign-in in your client, as them.
-- **Discard the fragment** once read. It is a credential.
+- **The nonce.** `BuildStartUrl` puts it in the redirect's query and `ParseRedirect`
+  checks it in constant time. Without it, a link someone else constructed completes a
+  sign-in in your client, as them.
+- **Discard the returned URL** once read. Its fragment is a credential.
 
-[Unity § Signing in](unity.md#signing-in) has the two ways a Unity build can be the
-destination of that redirect.
+**Receiving the redirect is your build's job** — an app link on a phone, the page
+itself on WebGL, a loopback page on desktop. On WebGL this flow is also the only one that
+works today: the exchange, `VerifyAsync` and the config fetch are cross-origin calls the
+auth service does not yet allow. [Unity § Signing in](unity.md#signing-in)
+has each of them and what goes on the allowlist.
 
 ## What the token contains
 
@@ -87,14 +123,16 @@ Storing the token is your call, and it is a credential: it grants a player's ide
 for as long as the channel's TTL says — a day by default. Prefer re-running the flow at launch over persisting it, and never
 write it to a log — this SDK never does, at any severity.
 
-## Checking a token by hand
+## Checking a token
 
-```
-GET https://auth.yyt.life/c/{authChannelId}/verify
-Authorization: Bearer <jwt>
+```csharp
+ChannelToken? stillValid = await auth.VerifyAsync(kept.Jwt);   // null on 401
 ```
 
-Answers `{ userId, exp, channelId }`, or `401`. This is the fastest way to tell a bad
-token from a bad channel id when a connection will not open —
+That is `GET /c/{authChannelId}/verify` with `Authorization: Bearer <jwt>`, answered
+`{ userId, exp, channelId }` or `401`; by hand it is one `curl`. A `404` is an unknown
+channel id and a `410` an expired or disabled channel — `VerifyAsync` throws those as
+`AuthException` (`http`) rather than returning null. This is the fastest way
+to tell a bad token from a bad channel id when a connection will not open —
 [Troubleshooting](troubleshooting.md#it-connects-then-immediately-stops) uses it as the
 first check.

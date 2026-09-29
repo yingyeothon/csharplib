@@ -30,7 +30,7 @@ void Update() => lobby.Poll();          // or nothing happens
 | --- | --- |
 | [Getting started](docs/getting-started.md) | empty Unity project to a connected, moving client |
 | [Console and options](docs/console-and-options.md) | what the console hands you, and every option |
-| [Authentication](docs/authentication.md) | how a client gets its channel JWT |
+| [Authentication](docs/authentication.md) | how a client gets its channel JWT, with `auth-client` |
 | [Lobby](docs/lobby.md) / [Dungeon](docs/dungeon.md) | the two channel kinds, feature by feature |
 | [Errors](docs/errors.md) / [Troubleshooting](docs/troubleshooting.md) | every refusal, close code and symptom |
 | [Key-value store](docs/kvstore.md) | announcements and a player's own record, with the same token |
@@ -45,6 +45,7 @@ void Update() => lobby.Poll();          // or nothing happens
 | [com.yingyeothon.event-broker](packages/com.yingyeothon.event-broker) | `Yingyeothon.EventBroker` | Type-keyed asynchronous event broker |
 | [com.yingyeothon.gamebase-client](packages/com.yingyeothon.gamebase-client) | `Yingyeothon.Gamebase.Client` | Client SDK for the yyt realtime gateway (lobby + dungeon `q`) |
 | [com.yingyeothon.kvstore-client](packages/com.yingyeothon.kvstore-client) | `Yingyeothon.KvStore` | Client for the yyt key-value store (`doc.yyt.life/kv/*`) |
+| [com.yingyeothon.auth-client](packages/com.yingyeothon.auth-client) | `Yingyeothon.Auth` | Client for a yyt auth channel: sign-in URL, redirect, exchange, verify |
 
 ```mermaid
 graph LR
@@ -52,6 +53,8 @@ graph LR
   gamebase-client --> logger
   kvstore-client --> codec
   kvstore-client --> logger
+  auth-client --> codec
+  auth-client --> logger
   logger --> codec
 ```
 
@@ -61,10 +64,15 @@ stripper would otherwise break.
 
 ## Ported from tslib
 
-These five are C# reimplementations of the
+Five of them are C# reimplementations of the
 [tslib](https://github.com/yingyeothon/tslib) packages a game client can use. tslib has
 twenty; most are AWS Lambda, Redis or Node-socket server code that cannot run on a
-client at all.
+client at all. `auth-client` has no tslib counterpart — tslib's authorizers are the
+server half — and follows flutterlib's `yingyeothon_auth_client` instead.
+
+There is deliberately no client for the per-player document store (`/s/*`): its writes
+take the auth channel's doc apiKey, which a game must never hold. State a player writes
+itself goes in a `user`-scoped [key-value](docs/kvstore.md) collection.
 
 ## Not ported, and why
 
@@ -86,12 +94,14 @@ https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.logg
 https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.gamebase-client
 ```
 
-`com.yingyeothon.kvstore-client` sits on the same two dependencies and is independent of
-`gamebase-client`; `com.yingyeothon.event-broker` is independent of all of them. Add
-either the same way if you want it:
+`com.yingyeothon.kvstore-client` and `com.yingyeothon.auth-client` sit on the same two
+dependencies and are independent of `gamebase-client` and of each other;
+`com.yingyeothon.event-broker` is independent of all of them. Add any of them the same
+way if you want it:
 
 ```
 https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.kvstore-client
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.auth-client
 https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.event-broker
 ```
 

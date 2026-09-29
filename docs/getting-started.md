@@ -5,15 +5,17 @@ frame and a handful of strings, every one of which comes from the yyt console.
 
 ## 1. Install the packages
 
-Add three git URLs in _Package Manager → + → Add package from git URL_:
+Add four git URLs in _Package Manager → + → Add package from git URL_ — the first three
+are the gateway client and what it depends on, the fourth is what §3 signs in with:
 
 ```
 https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.codec
 https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.logger
 https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.gamebase-client
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.auth-client
 ```
 
-A git-URL package cannot resolve its own dependencies, so all three must be present;
+A git-URL package cannot resolve its own dependencies, so all four must be present;
 adding them in this order avoids Package Manager reporting a missing one in between. The
 minimum editor is **Unity 2021.3**.
 
@@ -53,25 +55,26 @@ Every socket carries a **channel JWT** issued by your auth channel. It identifie
 player, so it is not something you can hard-code.
 
 If your game already signs players in through a launcher or a provider SDK, one request
-converts what you hold. The `SignIn` sample is that request
-(_Package Manager → Yingyeothon Gamebase Client → Samples → Import_):
+converts what you hold:
 
 ```csharp
-using Yingyeothon.Gamebase.Client.Samples;   // the sample's own namespace
+using Yingyeothon.Auth;
 
-ChannelToken token = await ChannelSignIn.ExchangeAsync(
-    authBaseUrl:   "https://auth.yyt.life",
-    authChannelId: "auth_0123456789abcdef",
-    provider:      "github",
-    credential:    providerAccessToken);
+var auth = AuthClient.Create(new AuthClientOptions
+{
+    BaseUrl = "https://auth.yyt.life",
+    ChannelId = "auth_0123456789abcdef",
+});
 
+ChannelToken token = await auth.ExchangeAccessTokenAsync("github", providerAccessToken);
 string channelJwt = token.Jwt;
 ```
 
-**Google is the other argument.** GitHub sends the provider's *access* token, Google its
-*id* token, and the auth service refuses the wrong one with a `400` whose message names
-which it wanted. For Google, pass the id token and say so:
-`credentialIsIdToken: true`.
+**Google is the other call.** GitHub sends the provider's *access* token, Google its *id*
+token (`ExchangeIdTokenAsync("google", idToken)`), and the auth service refuses the wrong
+one with a `400`. The `Sign In` sample wraps both calls and the browser flow
+(_Package Manager → Yingyeothon Auth Client → Samples → Import_), and
+[Authentication](authentication.md) explains the browser flow.
 
 The token is good for the channel's `tokenTtlSec` (24 hours by default), it works for
 the lobby socket and the dungeon socket alike, and **there is no refresh endpoint** —

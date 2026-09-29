@@ -24,11 +24,6 @@
       "path": "Samples~/LobbyQuickstart"
     },
     {
-      "displayName": "Sign In",
-      "description": "Exchanges a provider credential for the channel JWT every socket needs.",
-      "path": "Samples~/SignIn"
-    },
-    {
       "displayName": "Dungeon Run",
       "description": "A q-channel run, and telling a finished one from an aborted one.",
       "path": "Samples~/DungeonRun"

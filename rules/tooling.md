@@ -73,9 +73,20 @@ gate that will say so — but only after the build, one at a time. Do them toget
   (routing table, reference list, README list), `docs/unity.md` (install list, samples
   table), `docs/getting-started.md` if it is on the path, and `check-docs.sh` check 5's
   file list when the new guide page carries an install URL.
-- Every stated count: `CLAUDE.md` and `README.md` ("five"), `.gitleaks.toml`'s comment,
+- `docs/README.md`: its count sentence, the "three that talk to the platform" paragraph,
+  and the paragraph naming the `#if UNITY_5_3_OR_NEWER` types absent from `docs/api`
+  and where each is documented. [unity.md](unity.md) § IL2CPP's `link.xml` bullet when
+  the package has a `link.xml`. The normative-spec lines in `CLAUDE.md` and
+  [documentation.md](documentation.md) for a package that talks to the platform.
+- **Moving a sample between packages** is its own list: the old `package.json`
+  `samples` entry, the `Samples.Build` `Compile` path, `docs/unity.md`'s samples table,
+  the old package README's sample count, and every doc that named the sample's
+  namespace.
+- Every stated count: `CLAUDE.md` and `README.md` (how many packages, and which are
+  ports), `.gitleaks.toml`'s comment,
   [workflow.md](workflow.md) § Scope decisions, [unity.md](unity.md) § Nullable (sample
-  files with `#nullable enable`, `csc.rsp` files) and `docs/unity.md` § Installing's
+  files with `#nullable enable` — `grep -l '^#nullable' packages/*/Samples~/*/*.cs` —
+  and `csc.rsp` files — `find packages -name csc.rsp`) and `docs/unity.md` § Installing's
   matching sentence, `docs/unity.md` § IL2CPP's `link.xml` sentence, `docs/errors.md`'s
   cross-link, and in [manual-verification.md](manual-verification.md) both the
   `SampleImport` list and the factory list under *Build and run a player*.

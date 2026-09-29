@@ -1,0 +1,12 @@
+{
+  "name": "Yingyeothon.Auth.Tests",
+  "rootNamespace": "Yingyeothon.Auth.Tests",
+  "references": ["Yingyeothon.Auth", "Yingyeothon.Codec", "Yingyeothon.Logger"],
+  "includePlatforms": ["Editor"],
+  "excludePlatforms": [],
+  "overrideReferences": true,
+  "precompiledReferences": ["nunit.framework.dll"],
+  "defineConstraints": ["UNITY_INCLUDE_TESTS"],
+  "autoReferenced": false,
+  "noEngineReferences": false
+}

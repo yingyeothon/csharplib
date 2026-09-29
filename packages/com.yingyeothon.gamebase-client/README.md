@@ -23,7 +23,7 @@ https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.game
 pin one as soon as there is one.
 
 Add `com.yingyeothon.codec` and `com.yingyeothon.logger` as well; a git-URL package
-cannot resolve its own dependencies. Four importable samples ship with it — see
+cannot resolve its own dependencies. Three importable samples ship with it — see
 [docs/unity.md](../../docs/unity.md#samples).
 
 ## Usage

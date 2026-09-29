@@ -1,0 +1,11 @@
+{
+  "name": "Yingyeothon.Auth",
+  "rootNamespace": "Yingyeothon.Auth",
+  "references": ["Yingyeothon.Codec", "Yingyeothon.Logger"],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "autoReferenced": true,
+  "noEngineReferences": false
+}

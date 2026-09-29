@@ -15,6 +15,7 @@ https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.logg
 https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.event-broker
 https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.gamebase-client
 https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.kvstore-client
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.auth-client
 ```
 
 Add a package's dependencies before the package itself, or Package Manager reports them
@@ -27,8 +28,9 @@ against.
 Every runtime asmdef here is `autoReferenced`, so a script in Unity's default
 `Assembly-CSharp` needs no further step. **If your own scripts live in their own
 asmdef**, reference the assemblies you use by name: `Yingyeothon.Gamebase.Client`,
-`Yingyeothon.KvStore`, `Yingyeothon.Codec` (needed for `JsonValue`, which is on both
-APIs), `Yingyeothon.Logger` (needed to set `Logger`), `Yingyeothon.EventBroker`.
+`Yingyeothon.KvStore`, `Yingyeothon.Auth`, `Yingyeothon.Codec` (needed for `JsonValue`,
+which is on every client's API), `Yingyeothon.Logger` (needed to set `Logger`),
+`Yingyeothon.EventBroker`.
 
 Every asset ships with its `.meta`, so a given version has the same GUIDs in every
 project that installs it. If you vendor the packages into `Packages/` instead of using a
@@ -44,7 +46,7 @@ nothing warns you about either:
   into `Assets/` to patch, and an imported sample you extend, compile under *your*
   project's settings. If the file uses `string?` and your assembly has no nullable
   context, you get `CS8632` on every annotation. Adding `#nullable enable` at the top of
-  that file is the fix; the four samples that need it already have it.
+  that file is the fix; the five samples that need it already have it.
 - **Your own assembly is yours to configure.** Signatures copied out of the
   [API reference](README.md#reference) carry `?`, so an asmdef of your own that uses them
   wants the same one-line `csc.rsp` beside it, or `#nullable disable` and no
@@ -58,9 +60,9 @@ Import_. They land in `Assets/Samples/…` and are yours to edit.
 | Package | Sample | What it shows |
 | --- | --- | --- |
 | gamebase-client | `Lobby Quickstart` | the `MonoBehaviour` from [Getting started](getting-started.md) |
-| gamebase-client | `Sign In` | exchanging a provider token for a channel JWT |
 | gamebase-client | `Dungeon Run` | entry API → `q` socket → `Finished` / `Aborted` |
 | gamebase-client | `WebGL Transport` | the `IWebSocketFactory` / `IHttpFetcher` adapters |
+| auth-client | `Sign In` | both ways to get a channel JWT, and checking a kept one |
 | kvstore-client | `KvStore Quickstart` | announcements and a player's own record, from [Key-value store](kvstore.md) |
 | codec | `Json Basics` | building and reading frames |
 | logger | `Unity Logging` | routing the logger to the editor console |
@@ -112,19 +114,53 @@ persist forever, and `Debug` is not an exemption.
 
 ## Signing in
 
-The [browser redirect flow](authentication.md#the-browser-redirect-flow) hands the token
-back on a URL you nominate. A Unity build can be that destination two ways:
+`com.yingyeothon.auth-client` builds the sign-in URL and reads the URL the browser
+returns to; [Authentication](authentication.md) is the guide. **Receiving that return is
+your build's job**, and the token arrives in the URL's **fragment**, which a browser never
+sends to a server — only script in the page, or the app a link opens, sees it. The
+service accepts a `redirect` only over `https`, or `http` for `localhost`, `127.0.0.1`
+and `[::1]`, so a custom scheme (`mygame://`) is refused.
 
-- **A loopback listener.** Start an `HttpListener` on `http://127.0.0.1:<port>/`, open
-  the system browser at the start URL with that as `redirect`, and read the result. The
-  token arrives in the URL **fragment**, which a browser does not send to a server, so
-  the page you serve has to post it back with one line of script. Allowlist the exact
-  loopback URL — it is the one case the service accepts over `http`.
-- **A custom-scheme deep link.** Register `mygame://auth` for your build and allowlist
-  it. Simpler on mobile, and the only option where no local port is available.
+| Build | How the URL comes back | `redirect` on the allowlist |
+| --- | --- | --- |
+| Android, iOS | a *verified* app link or universal link — an `https` URL your app claims — delivered by `Application.deepLinkActivated` and, after a cold start, `Application.absoluteURL` | that URL |
+| WebGL | navigate the **same tab** to the start URL (a `.jslib` `window.location.assign`; `Application.OpenURL` opens a new window, which a browser blocks outside a click and which would boot a second copy of the game). The return reloads the build: read `Application.absoluteURL` at startup | your page |
+| Windows, macOS, Linux | a loopback page: bind `HttpListener` to `http://127.0.0.1:<port>/`, serve a page whose script posts its whole `location.href` — query and fragment together — back to the listener, which refuses any `Origin` but its own, accepts once and closes; or have the player paste the address bar back | that loopback URL |
 
-Whichever you use, put a nonce of your own in the redirect and check it comes back;
-without it a link someone else built can sign a player in as themselves.
+Whichever you use:
+
+- **Keep the nonce across the trip.** WebGL reloads the build and a phone may kill the
+  app while the browser is in front. Keep the nonce from `AuthClient.NewNonce()` until
+  `ParseRedirect` has checked it, then delete it: on a phone or desktop in `PlayerPrefs`,
+  calling `PlayerPrefs.Save()` before opening the browser (Unity otherwise writes them
+  only at a clean quit); on WebGL in the browser's `sessionStorage` through a `.jslib`,
+  because there `PlayerPrefs.Save()` reaches IndexedDB asynchronously and the navigation
+  can outrun it.
+- **Drop the returned URL** once `ParseRedirect` has read it. It is a credential for
+  the channel's `tokenTtlSec`, and there is no revocation.
+- **On WebGL, take the fragment before anything else sees it.** The build loads seconds
+  after the page does, and an analytics or error tag in your page template records
+  `location.href`, fragment and all. Have an inline script at the top of the template
+  store the whole `location.href` — the query carries the nonce, the fragment the token —
+  in `sessionStorage` and `history.replaceState` the page to its path alone; hand that
+  stored URL to `ParseRedirect` instead of `Application.absoluteURL`.
+- **Allowlist the narrowest path**, and serve nothing at it that redirects elsewhere: a
+  browser carries the fragment across a redirect, so an open redirect under an allowed
+  prefix hands the token to whatever page it names.
+- **An app link reached through a redirect may not open the app.** Some mobile browsers
+  hand a *tapped* link to the app that claims it but load a *redirect* to it as a page.
+  Serve a page at that URL with no third-party script that strips the fragment and
+  offers a button back into the app, and prefer the provider's own SDK plus
+  `ExchangeAccessTokenAsync` / `ExchangeIdTokenAsync` on a phone when you can.
+- A loopback listener must bind `127.0.0.1` only, on a **fixed** port registered on the
+  allowlist — the service matches the exact origin, port included — that nothing else on
+  the machine serves: whatever answers there receives the nonce and could read the
+  fragment. The whole-URL
+  post and the `Origin` check are what stop another page in the player's browser from
+  racing a token of its own into the listener.
+- **On WebGL the service calls cannot be made yet.** `FetchConfigAsync`, the exchanges
+  and `VerifyAsync` are cross-origin, and the auth service sends no CORS headers, so the
+  browser blocks them; the browser flow above needs none of them.
 
 ## IL2CPP
 
@@ -133,7 +169,7 @@ No reflection anywhere in a runtime assembly — no `Activator.CreateInstance`, 
 stripper removes what it cannot see being used and fails at runtime, in a shipped
 player, rather than at build time. Wire types parse and build themselves by hand.
 
-`Runtime/link.xml` in each client package (gamebase-client, kvstore-client) preserves
+`Runtime/link.xml` in each client package (gamebase-client, kvstore-client, auth-client) preserves
 its own assembly plus `Yingyeothon.Codec` and `Yingyeothon.Logger` wholesale, since they
 are reached through interfaces and generic factories. It is picked up automatically. Managed stripping at **High** is verified before each
 release with a player that actually runs and touches every package.
@@ -188,7 +224,9 @@ What the seams require:
 The `WebGL Transport` sample is the skeleton for both.
 
 The key-value store client has the same seam and, unlike the gateway, ships the WebGL
-side of it — see [Key-value store](#key-value-store) below.
+side of it — see [Key-value store](#key-value-store) below. So does the auth client,
+`AuthUnityWebRequestTransport.Instance`, although on WebGL its requests are blocked for
+now: see [Signing in](#signing-in).
 
 ## Key-value store
 

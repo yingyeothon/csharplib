@@ -185,7 +185,7 @@ public static class SampleImport
     {
         foreach (var package in new[] { "com.yingyeothon.codec", "com.yingyeothon.event-broker",
                                         "com.yingyeothon.gamebase-client", "com.yingyeothon.kvstore-client",
-                                        "com.yingyeothon.logger" })
+                                        "com.yingyeothon.auth-client", "com.yingyeothon.logger" })
         {
             var samples = Sample.FindByPackage(package, string.Empty).ToList();
             Debug.Log($"[SAMPLES] {package} count={samples.Count}");
@@ -221,7 +221,8 @@ project's `Packages/` copy, never from this repository**, and re-copy afterwards
 A build that succeeds proves nothing about stripping — the player has to run. Put a
 `MonoBehaviour` in the scene that reaches every package through its factories
 (`GatewayLobbyClient.Create`, `GatewayGameClient.Create`, `KvStoreClient.Create` and
-`UnityWebRequestTransport.Instance`, `EventBroker.Create` and its generic `On<T>`,
+`UnityWebRequestTransport.Instance`, `AuthClient.Create` and
+`AuthUnityWebRequestTransport.Instance`, `EventBroker.Create` and its generic `On<T>`,
 `Json.Parse`/`Stringify`, `LogWriters.FromAction`, and `GamebaseRunner.CreatePersistent`), build with
 `ManagedStrippingLevel.High`, then run the player with `-batchmode -nographics
 -logFile` and grep the log for what it printed. That is what tests `Runtime/link.xml`.
@@ -374,6 +375,17 @@ Read from the source rather than observed, and marked so on purpose:
 
 Not covered, and each is a real gap rather than a formality:
 
+- **`auth-client` in Unity, at all.** It was added (2026-09-30) after the last editor
+  run, so its EditMode tests, its `Sign In` sample import and
+  `AuthUnityWebRequestTransport` — which no `dotnet` build compiles — are owed by the
+  next run. Its wire half was checked against `auth-dev` with the real
+  `AuthHttpClientTransport` as committed (2026-09-30): config, verify (a live token and a forged one), a fake
+  provider token (`401`), the wrong credential kind (`400`), and `/start` for a
+  redirect off the allowlist (`403`) and on it with the nonce query (`302` to the
+  provider).
+- **`auth-client` on WebGL.** The auth service sends no CORS headers (dev, 2026-09-30),
+  so from a browser only the redirect flow can work; the service calls fail as
+  `network` until the service changes. Neither half has been run in a browser.
 - The provider exchange with a **real** GitHub access token. There is no provider
   credential here, so only its refusal path was exercised.
 - **The gateway actually sending `4002`.** Not reachable from a client for the reason

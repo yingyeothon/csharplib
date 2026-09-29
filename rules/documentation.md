@@ -12,7 +12,8 @@ The `service` repository owns the wire protocol, the auth endpoints and the cons
 Link to them; do not re-derive them. When this repository and `gateway/README.md`
 disagree, that document is right; for the store it is `services/state/README.md`
 § KV routes, and where that README and `services/state/src/kvstore.ts` disagree, the
-code wins ([architecture.md](architecture.md)).
+code wins ([architecture.md](architecture.md)); for sign-in it is
+`services/auth/README.md`, and again the code (`services/auth/src/app.ts`) over it.
 
 ## `docs/` — the guide
 
@@ -24,12 +25,14 @@ Current owners, so a new page does not take one over by accident:
 
 - `getting-started.md` — the ordered path, and nothing that is not on it
 - `console-and-options.md` — every option, its default, and the console setting behind it
-- `authentication.md` — the token: how to get one, what it contains, when it dies
+- `authentication.md` — the token: how to get one (the `auth-client` guide), what it
+  contains, when it dies
 - `lobby.md` / `dungeon.md` — the two channel kinds, feature by feature
 - `connection-lifecycle.md` — `Poll`, threading, states, reconnect, shutdown
 - `errors.md` — every gateway refusal code, close code and exception, and the caps the
   SDK does **not** check; the store's table lives in `kvstore.md`
-- `unity.md` — install, samples, IL2CPP, WebGL, the editor console
+- `unity.md` — install, samples, signing in (how each kind of build receives the
+  redirect), IL2CPP, WebGL, the editor console
 - `kvstore.md` — the key-value store, console collections to refusals; the one page
   that carries the store's error table
 - `troubleshooting.md` — symptom → the one check → the link. Not a second explanation
@@ -45,7 +48,8 @@ Same sections, in this order:
    `## Reconnect policy`, `## Wire details worth knowing`).
 5. `## Public API` — the *actual* public surface of the assembly.
 6. `## Differences from @yingyeothon/<name>` — every deliberate divergence, with the
-   reason. This is the most valuable part of the file: it is what stops a future reader
+   reason; a package with no tslib original names its model instead (`auth-client`:
+   flutterlib's package). This is the most valuable part of the file: it is what stops a future reader
    from "fixing" the port back into a bug.
 
 ## Keeping docs true

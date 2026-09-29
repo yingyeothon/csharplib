@@ -1,7 +1,7 @@
 # gitleaks config (v8 syntax). Default rules plus the credential-assignment rule the
 # sibling `service` repo uses, so a leak is caught the same way in both places.
 #
-# This repository has no infrastructure and needs no credentials: it is five client
+# This repository has no infrastructure and needs no credentials: it is six client
 # libraries and their tests. So the rule here is not "redact the secrets we keep" — it
 # is "nothing of that shape should ever exist", and every allowlist entry below is a
 # test fixture that is obviously not a credential.

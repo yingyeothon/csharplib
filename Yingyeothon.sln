@@ -31,6 +31,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Yingyeothon.KvStore", "pack
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Yingyeothon.KvStore.Tests", "packages\com.yingyeothon.kvstore-client\Yingyeothon.KvStore.Tests.csproj", "{E2A80605-6DDC-4592-8EB7-FBA1DC5F2D32}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Yingyeothon.Auth", "packages\com.yingyeothon.auth-client\Yingyeothon.Auth.csproj", "{09EFD546-E87C-4274-822A-E0D665E6A18C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Yingyeothon.Auth.Tests", "packages\com.yingyeothon.auth-client\Yingyeothon.Auth.Tests.csproj", "{91E827C9-04A6-4F2C-88C2-4D89E2198928}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -88,6 +92,14 @@ Global
 		{E2A80605-6DDC-4592-8EB7-FBA1DC5F2D32}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E2A80605-6DDC-4592-8EB7-FBA1DC5F2D32}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E2A80605-6DDC-4592-8EB7-FBA1DC5F2D32}.Release|Any CPU.Build.0 = Release|Any CPU
+		{09EFD546-E87C-4274-822A-E0D665E6A18C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{09EFD546-E87C-4274-822A-E0D665E6A18C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{09EFD546-E87C-4274-822A-E0D665E6A18C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{09EFD546-E87C-4274-822A-E0D665E6A18C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{91E827C9-04A6-4F2C-88C2-4D89E2198928}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{91E827C9-04A6-4F2C-88C2-4D89E2198928}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{91E827C9-04A6-4F2C-88C2-4D89E2198928}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{91E827C9-04A6-4F2C-88C2-4D89E2198928}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{ECEBF373-1DB4-417D-8A85-ED456AF0553B} = {DFCDE053-853B-4525-BE43-40B53E2DB5A5}
@@ -102,5 +114,7 @@ Global
 		{2942F1FB-BF09-448B-8FB4-663DF9833449} = {2E826855-6F24-4AEE-9451-9041E174DA85}
 		{2961949A-E970-4E73-8B7F-62BFA0C1410A} = {DFCDE053-853B-4525-BE43-40B53E2DB5A5}
 		{E2A80605-6DDC-4592-8EB7-FBA1DC5F2D32} = {DFCDE053-853B-4525-BE43-40B53E2DB5A5}
+		{09EFD546-E87C-4274-822A-E0D665E6A18C} = {DFCDE053-853B-4525-BE43-40B53E2DB5A5}
+		{91E827C9-04A6-4F2C-88C2-4D89E2198928} = {DFCDE053-853B-4525-BE43-40B53E2DB5A5}
 	EndGlobalSection
 EndGlobal

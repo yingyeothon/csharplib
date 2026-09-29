@@ -103,8 +103,11 @@ catch (InvalidOperationException) { ShowReconnecting(); }   // not connected rig
 ```
 
 The key-value store client is the exception to "thrown locally": its
-`KvStoreException` is the store's own answer. Its table, and the `ArgumentException`s
-it does throw locally, are in [Key-value store § Refusals](kvstore.md#6-refusals).
+`KvStoreException` is the store's own answer, and its table, with the
+`ArgumentException`s it throws locally, is in
+[Key-value store § Refusals](kvstore.md#6-refusals). The auth client's `AuthException`
+is mostly the auth service's answer too; its codes are in the
+[auth-client README](../packages/com.yingyeothon.auth-client/README.md#failures).
 
 ## Close codes
 

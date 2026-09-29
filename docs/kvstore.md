@@ -45,9 +45,8 @@ namespace or `Mine` before it guesses wrong.
 
 `KvStoreClientOptions.Token` is the channel JWT from [Authentication](authentication.md)
 — the same one `GatewayLobbyClient` takes — and it names the player that `Mine` means.
-The `Sign In` sample that makes that one request ships with `gamebase-client`; a game
-that installs only this package makes the same `POST` itself, and the page above has
-the request.
+`com.yingyeothon.auth-client` makes that request; it depends on neither this package
+nor `gamebase-client`.
 On a server, the channel's doc apiKey (`yds.…`) works in the same field and may name
 any owner through `Owner(id)`. The client puts the token in the `Authorization` header
 and nowhere else; a new token is a new client.
@@ -163,3 +162,11 @@ one `InfoAsync` to tell them apart.
 No collection admin (the console and `yyt kv` own that), no cache (every reply is
 `no-store`, and a ttl would outlive one), no retry (a `KvStoreException` is yours to
 act on), and no persistence of the token.
+
+**No client for the per-player document store either, and none is planned.** The same
+host serves `/s/{ownerId}` — one versioned blob per player — but every write there takes
+the auth channel's doc apiKey, a server credential a game must never ship; a player can
+only `GET` its own row. For state a player writes itself, use a `user`-scoped
+collection: its own entries, versioned, with `IfMatch` for a compare-and-set. **A
+player-writable collection is not the place for state the server must vouch for**
+(currency, inventory) — a game server writes that to `/s/*` directly.

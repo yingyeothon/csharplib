@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AssemblyName>Yingyeothon.Auth</AssemblyName>
+    <RootNamespace>Yingyeothon.Auth</RootNamespace>
+    <PackageId>Yingyeothon.Auth</PackageId>
+    <Description>Client for a yyt auth channel: its public config, the browser sign-in URL and the redirect it returns to, a provider-credential exchange, and a token check.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Runtime/**/*.cs" Exclude="Runtime/Unity/**/*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../com.yingyeothon.codec/Yingyeothon.Codec.csproj" />
+    <ProjectReference Include="../com.yingyeothon.logger/Yingyeothon.Logger.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,67 @@
+  AuthChannelConfig.Audience : String get
+  AuthChannelConfig.CallbackUrls : IReadOnlyDictionary<String, String> get
+  AuthChannelConfig.ChannelId : String get
+  AuthChannelConfig.ExpiresAt : Nullable<Int64> get
+  AuthChannelConfig.Issuer : String get
+  AuthChannelConfig.Providers : IReadOnlyList<String> get
+  AuthChannelConfig.Raw : JsonValue get
+  AuthChannelConfig.RedirectAllowlist : IReadOnlyList<String> get
+  AuthChannelConfig.StartUrl : String get
+  AuthChannelConfig.TokenTtlSec : Int64 get
+  AuthChannelConfig.ctor(String, String, String, Int64, IReadOnlyList<String>, IReadOnlyDictionary<String, String>, String, IReadOnlyList<String>, Nullable<Int64>, JsonValue)
+  AuthClient.Create(AuthClientOptions) : IAuthClient
+  AuthClient.DefaultTimeout : TimeSpan
+  AuthClient.MaxTimeout : TimeSpan
+  AuthClient.NewNonce() : String
+  AuthClientOptions.BaseUrl : String get set
+  AuthClientOptions.ChannelId : String get set
+  AuthClientOptions.Logger : ILogger get set
+  AuthClientOptions.NonceParameter : String get set
+  AuthClientOptions.Timeout : Nullable<TimeSpan> get set
+  AuthClientOptions.Transport : IAuthTransport get set
+  AuthClientOptions.ctor()
+  AuthErrorCodes.Http : String
+  AuthErrorCodes.MissingField : String
+  AuthErrorCodes.MissingFragment : String
+  AuthErrorCodes.Network : String
+  AuthErrorCodes.NonceMismatch : String
+  AuthErrorCodes.NotJson : String
+  AuthException.Code : String get
+  AuthException.Status : Int32 get
+  AuthException.ctor(String, Int32)
+  AuthException.ctor(String, Int32, Exception)
+  AuthHttpClientTransport.Create(HttpClient) : IAuthTransport
+  AuthHttpClientTransport.Default : IAuthTransport get
+  AuthHttpRequest.Body : String get
+  AuthHttpRequest.Headers : IReadOnlyList<KeyValuePair<String, String>> get
+  AuthHttpRequest.Method : String get
+  AuthHttpRequest.Timeout : TimeSpan get
+  AuthHttpRequest.Url : Uri get
+  AuthHttpRequest.ctor(String, Uri, IReadOnlyList<KeyValuePair<String, String>>, String, TimeSpan)
+  AuthHttpResponse.Body : String get
+  AuthHttpResponse.Status : Int32 get
+  AuthHttpResponse.ctor(Int32, String)
+  ChannelToken.ExpiresAt : Int64 get
+  ChannelToken.IsExpired(DateTimeOffset) : Boolean
+  ChannelToken.Jwt : String get
+  ChannelToken.ToString() : String
+  ChannelToken.UserId : String get
+  ChannelToken.ctor(String, String, Int64)
+  IAuthClient.BuildStartUrl(String, Uri, String) : Uri
+  IAuthClient.ExchangeAccessTokenAsync(String, String, CancellationToken?) : Task<ChannelToken>
+  IAuthClient.ExchangeIdTokenAsync(String, String, CancellationToken?) : Task<ChannelToken>
+  IAuthClient.FetchConfigAsync(CancellationToken?) : Task<AuthChannelConfig>
+  IAuthClient.ParseRedirect(Uri, String) : ChannelToken
+  IAuthClient.VerifyAsync(String, CancellationToken?) : Task<ChannelToken>
+  IAuthTransport.SendAsync(AuthHttpRequest, CancellationToken) : Task<AuthHttpResponse>
+class AuthChannelConfig
+class AuthClientOptions
+class AuthException
+class AuthHttpRequest
+class AuthHttpResponse
+class ChannelToken
+interface IAuthClient
+interface IAuthTransport
+static class AuthClient
+static class AuthErrorCodes
+static class AuthHttpClientTransport

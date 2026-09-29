@@ -2,9 +2,10 @@
 
 ## Project Shape
 
-- `csharplib` holds five C# packages ported from
-  [tslib](https://github.com/yingyeothon/tslib) — the ones a **game client** can use.
-  Each is a UPM package and a pair of `.csproj` files over the same sources.
+- `csharplib` holds the C# client packages of the yyt platform: five ported from
+  [tslib](https://github.com/yingyeothon/tslib) — the ones a **game client** can use —
+  plus `auth-client`, modelled on flutterlib's. Each is a UPM package and a pair of
+  `.csproj` files over the same sources.
 - Everything targets `netstandard2.0` + `netstandard2.1`, C# 9, with no third-party
   dependencies and no engine references in any Runtime assembly, so Unity's Mono and
   IL2CPP backends both compile it.
@@ -19,7 +20,9 @@
 - The normative wire spec for `gamebase-client` is the gateway's own README and
   `gateway/internal/lobby/protocol.go` in the `service` repository, not tslib; for
   `kvstore-client` it is `services/state/src/kvstore.ts` there, with
-  `services/state/README.md` _KV routes_ and `docs/kvstore.md`, both in `service`.
+  `services/state/README.md` _KV routes_ and `docs/kvstore.md`, both in `service`; for
+  `auth-client` it is `services/auth/src/` there (`app.ts`, `redirect.ts`), with
+  `services/auth/README.md` and `docs/auth-game-contract.md`.
 
 ## Required Rule Lookup
 

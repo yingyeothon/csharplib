@@ -26,6 +26,7 @@
     <ProjectReference Include="../../packages/com.yingyeothon.event-broker/Yingyeothon.EventBroker.csproj" />
     <ProjectReference Include="../../packages/com.yingyeothon.gamebase-client/Yingyeothon.Gamebase.Client.csproj" />
     <ProjectReference Include="../../packages/com.yingyeothon.kvstore-client/Yingyeothon.KvStore.csproj" />
+    <ProjectReference Include="../../packages/com.yingyeothon.auth-client/Yingyeothon.Auth.csproj" />
   </ItemGroup>
 
   <ItemGroup>
