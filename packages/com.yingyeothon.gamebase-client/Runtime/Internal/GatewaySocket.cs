@@ -225,11 +225,18 @@ namespace Yingyeothon.Gamebase.Client
             // ConnectAsync()` resume somewhere Send() is not allowed.
             var pending = new TaskCompletionSource<bool>();
             _pending = pending;
-            Open();
+            try
+            {
+                Open();
+            }
+            finally
+            {
+                // Open() can fail outright — a factory that refuses the URL — and that is
+                // a decided outcome, not something to wait for the next Poll to report;
+                // in a finally so a throwing Stopped handler cannot strand it either.
+                FlushSettlement();
+            }
 
-            // Open() can fail outright — a factory that refuses the URL — and that is
-            // a decided outcome, not something to wait for the next Poll to report.
-            FlushSettlement();
             return pending.Task;
         }
 
@@ -244,6 +251,9 @@ namespace Yingyeothon.Gamebase.Client
             _closedByUser = true;
             _helloDeadline = null;
             _reconnectDeadline = null;
+            _logger.Debug(
+                "gateway closed by client",
+                Json.Object().Set("channelId", _options.ChannelId).Set("gameId", _options.GameId).Build());
 
             var current = _socket;
             _socket = null;
@@ -258,12 +268,20 @@ namespace Yingyeothon.Gamebase.Client
             }
 
             ScheduleFailure(new GatewayStoppedException("closed before the connection became ready"));
-            if (wasReady || current != null)
+            try
             {
-                Disconnected?.Invoke(new DisconnectedEvent(1000, "client closed", false));
+                if (wasReady || current != null)
+                {
+                    Disconnected?.Invoke(new DisconnectedEvent(1000, "client closed", false));
+                }
             }
-
-            FlushSettlement();
+            finally
+            {
+                // Close() runs outside Poll() — Dispose from OnDestroy is the usual caller —
+                // so no later pass is guaranteed to flush a settlement a throwing handler
+                // skipped, and the pending ConnectAsync would never complete.
+                FlushSettlement();
+            }
         }
 
         internal void Send(JsonValue frame)
@@ -399,8 +417,10 @@ namespace Yingyeothon.Gamebase.Client
                 return;
             }
 
-            Opened?.Invoke(protocol);
+            // Armed before raising: a throwing handler must not leave a gateway that never
+            // says hello holding the client in Connecting with no deadline.
             _helloDeadline = _clock.NowMillis + _options.HelloTimeoutMillis;
+            Opened?.Invoke(protocol);
         }
 
         private void HandleMessage(SocketEvent socketEvent)
@@ -537,15 +557,11 @@ namespace Yingyeothon.Gamebase.Client
             }
 
             State = GatewayClientState.Reconnecting;
-            Disconnected?.Invoke(new DisconnectedEvent(code, disposition.Reason, true));
-            if (_closedByUser)
-            {
-                // "The connection dropped, tear it down" is the obvious reaction, and
-                // Close() already cleared the deadline. Announcing a reconnect after
-                // it would show a reconnecting UI for a session the game just ended.
-                return;
-            }
-
+            // Schedule and log before raising, for the reason Stop() does: a handler that
+            // throws would otherwise unwind past the deadline and leave the client
+            // Reconnecting forever — never reopening, and refusing ConnectAsync because it
+            // is not Idle. A handler that calls Close() clears the deadline again.
+            _reconnectDeadline = _clock.NowMillis + delay.Value;
             _logger.Info(
                 "gateway reconnecting",
                 Json.Object()
@@ -555,8 +571,16 @@ namespace Yingyeothon.Gamebase.Client
                     .Set("attempt", (double)_backoff.Attempts)
                     .Set("delayMs", delay.Value)
                     .Build());
+            Disconnected?.Invoke(new DisconnectedEvent(code, disposition.Reason, true));
+            if (_closedByUser)
+            {
+                // "The connection dropped, tear it down" is the obvious reaction, and
+                // Close() already cleared the deadline. Announcing a reconnect after
+                // it would show a reconnecting UI for a session the game just ended.
+                return;
+            }
+
             Reconnecting?.Invoke(new ReconnectingEvent(_backoff.Attempts, delay.Value));
-            _reconnectDeadline = _clock.NowMillis + delay.Value;
         }
 
         private void Stop(int code, CloseDisposition disposition)

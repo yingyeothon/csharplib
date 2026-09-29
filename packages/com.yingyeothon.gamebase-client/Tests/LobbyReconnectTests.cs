@@ -338,5 +338,85 @@ namespace Yingyeothon.Gamebase.Client.Tests
 
             Assert.That(harness.Factory.Sockets, Has.Count.EqualTo(1));
         }
+
+        /// <remarks>
+        /// ScheduleReconnect used to raise Disconnected and Reconnecting before setting
+        /// the deadline, so a handler that threw left the client Reconnecting with no
+        /// reconnect ever due. A send from a Disconnected handler is the ordinary way to
+        /// hit it: the client is not ready, so the send throws.
+        /// </remarks>
+        [Test]
+        public async Task AThrowingDisconnectedHandlerStillReconnects()
+        {
+            var harness = new LobbyHarness();
+            await harness.ConnectAsync();
+            harness.Client.Disconnected += _ => harness.Client.Party.Leave();
+
+            harness.Socket.ServerClose(GatewayCloseCode.Idle);
+            Assert.Throws<InvalidOperationException>(() => harness.Poll());
+            Assert.That(harness.Client.State, Is.EqualTo(GatewayClientState.Reconnecting));
+
+            harness.Advance(500);
+            Assert.That(harness.Factory.Sockets, Has.Count.EqualTo(2));
+
+            harness.Socket.ServerOpen();
+            harness.Socket.ServerSend(Frames.Hello());
+            harness.Poll();
+            Assert.That(harness.Client.State, Is.EqualTo(GatewayClientState.Connected));
+        }
+
+        [Test]
+        public void AThrowingDisconnectedHandlerDuringTheFirstConnectStillSettlesItOnTheReconnect()
+        {
+            var harness = new LobbyHarness();
+            harness.Client.Disconnected += _ => throw new InvalidOperationException("game bug");
+            var pending = harness.Client.ConnectAsync();
+            harness.Socket.ServerOpen();
+            harness.Socket.ServerClose(GatewayCloseCode.Idle);
+
+            Assert.Throws<InvalidOperationException>(() => harness.Poll());
+            Assert.That(pending.IsCompleted, Is.False);
+
+            harness.Advance(500);
+            harness.Socket.ServerOpen();
+            harness.Socket.ServerSend(Frames.Hello());
+            harness.Poll();
+
+            Assert.That(pending.IsCompleted, Is.True);
+            Assert.That(pending.Result.UserId, Is.EqualTo("alice"));
+        }
+
+        [Test]
+        public async Task AThrowingReconnectingHandlerStillReconnects()
+        {
+            var harness = new LobbyHarness();
+            await harness.ConnectAsync();
+            harness.Client.Reconnecting += _ => throw new InvalidOperationException("game bug");
+
+            harness.Socket.ServerClose(GatewayCloseCode.Idle);
+            Assert.Throws<InvalidOperationException>(() => harness.Poll());
+
+            harness.Advance(500);
+            Assert.That(harness.Factory.Sockets, Has.Count.EqualTo(2));
+        }
+
+        /// <remarks>
+        /// Close() runs outside Poll() — Dispose from OnDestroy — so a settlement a
+        /// throwing handler skipped had no later pass to flush it.
+        /// </remarks>
+        [Test]
+        public void CloseOutsidePollWithAThrowingHandlerStillFailsThePendingConnect()
+        {
+            var harness = new LobbyHarness();
+            var pending = harness.Client.ConnectAsync();
+            harness.Socket.ServerOpen();
+            harness.Poll();
+            harness.Client.Disconnected += _ => throw new InvalidOperationException("destroyed GameObject");
+
+            Assert.Throws<InvalidOperationException>(() => harness.Client.Close());
+
+            Assert.That(pending.IsCompleted, Is.True);
+            Assert.That(pending.IsFaulted, Is.True);
+        }
     }
 }

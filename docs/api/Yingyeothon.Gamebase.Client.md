@@ -426,11 +426,11 @@ A client for the gateway's dungeon ( `q` ) channel.
 | `State : GatewayClientState get` | Where this client's connection currently is. |
 | `event Aborted : Action<GameEndedEvent>` | Close 4001: the actor died. Retry only with a new `GameId` . |
 | `event Connected : Action` | The socket is open and the gateway has pushed `enter` to the actor. Fires again after a reconnect; the game answers with its own snapshot. |
-| `event Disconnected : Action<DisconnectedEvent>` | The connection dropped. Fires before every reconnect and before every stop. |
+| `event Disconnected : Action<DisconnectedEvent>` | The connection dropped. Fires before every reconnect and before every stop; when `WillReconnect` is set the retry is already scheduled. |
 | `event Finished : Action<GameEndedEvent>` | Close 1000: the game dropped this connection after ending normally. |
 | `event Frame : Action<JsonValue>` | Every game-defined frame, verbatim. |
 | `event ProtocolError : Action<ProtocolErrorEvent>` | A frame arrived that this SDK could not read. |
-| `event Reconnecting : Action<ReconnectingEvent>` | A retry is scheduled, with its attempt number and delay. |
+| `event Reconnecting : Action<ReconnectingEvent>` | A retry is scheduled, with its attempt number and delay. Raised after `Disconnected` ; not raised when a `Disconnected` handler threw or closed. |
 | `event Refused : Action<ErrorFrame>` | An `error` frame: a gateway refusal of something this client sent, or — `frame_too_large` — a game frame meant for it that was over 32 KB and dropped. |
 | `event Stopped : Action<StoppedEvent>` | Any other terminal close. |
 
@@ -456,7 +456,7 @@ A client for the gateway's lobby channel.
 | `Send(JsonValue) : Void` | Escape hatch for a frame the helpers do not cover. |
 | `State : GatewayClientState get` | Where this client's connection currently is. |
 | `event Connected : Action<Hello>` | `hello` arrived; fires again after every successful reconnect. |
-| `event Disconnected : Action<DisconnectedEvent>` | The connection dropped. Fires before every reconnect and before every stop. |
+| `event Disconnected : Action<DisconnectedEvent>` | The connection dropped. Fires before every reconnect and before every stop; when `WillReconnect` is set the retry is already scheduled. |
 | `event EventReceived : Action<EventBroadcastFrame>` | A game event arrived. Named for the same reason as `Said` . |
 | `event Frame : Action<LobbyServerFrame>` | Every frame after `hello` , before any SDK handling. Rosters are already normalised. |
 | `event PartyChanged : Action<PartyFrame>` | A roster snapshot arrived. |
@@ -467,7 +467,7 @@ A client for the gateway's lobby channel.
 | `event PeerMove : Action<IReadOnlyList<Peer>>` | Known peers moved. The receiver's own entry is already filtered out. |
 | `event Pong : Action` | The gateway answered a ping. |
 | `event ProtocolError : Action<ProtocolErrorEvent>` | A frame arrived that this SDK could not read. |
-| `event Reconnecting : Action<ReconnectingEvent>` | A retry is scheduled, with its attempt number and delay. |
+| `event Reconnecting : Action<ReconnectingEvent>` | A retry is scheduled, with its attempt number and delay. Raised after `Disconnected` ; not raised when a `Disconnected` handler threw or closed. |
 | `event Refused : Action<ErrorFrame>` | An `error` frame: the gateway refused something this client sent, or — `frame_too_large` — dropped a frame meant for it. Log the code, never the message. |
 | `event Said : Action<SayBroadcastFrame>` | Chat arrived. Named `Said` because `Say` is the sender. |
 | `event Snapshot : Action<SnapshotFrame>` | The zone was replaced wholesale, which is how a zone change starts. |

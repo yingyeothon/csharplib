@@ -129,10 +129,16 @@ namespace Yingyeothon.Gamebase.Client
         /// <summary><c>hello</c> arrived; fires again after every successful reconnect.</summary>
         event Action<Hello> Connected;
 
-        /// <summary>The connection dropped. Fires before every reconnect and before every stop.</summary>
+        /// <summary>
+        /// The connection dropped. Fires before every reconnect and before every stop; when
+        /// <c>WillReconnect</c> is set the retry is already scheduled.
+        /// </summary>
         event Action<DisconnectedEvent> Disconnected;
 
-        /// <summary>A retry is scheduled, with its attempt number and delay.</summary>
+        /// <summary>
+        /// A retry is scheduled, with its attempt number and delay. Raised after
+        /// <c>Disconnected</c>; not raised when a <c>Disconnected</c> handler threw or closed.
+        /// </summary>
         event Action<ReconnectingEvent> Reconnecting;
 
         /// <summary>Terminal: no further attempt will be made.</summary>

@@ -42,7 +42,9 @@ while it is held every other entry point refuses — **including `Poll()` itself
 is not re-entrant and must never be called from inside a handler. What is *not* enforced
 is thread identity: any thread may pump, as long as only one does at a time.
 
-- Sending from inside a handler is fine. That is the normal way to answer an event.
+- Sending from inside a handler is fine. That is the normal way to answer an event —
+  except from `Disconnected`, `Reconnecting` and `Stopped`, where the client is by
+  definition not connected and every sender throws.
 - `await ConnectAsync()` resumes on the pump thread by design, so `Send` is legal
   straight after it.
 - `await MapAsync()` is an ordinary task continuation and **may resume anywhere**.
@@ -72,8 +74,12 @@ token is the usual reason to reach `Closed`. Create a new client.
 | `ProtocolError` | ✓ | ✓ | `Message` — a frame this SDK could not read |
 
 `Disconnected` fires **before** every reconnect or stop, with `WillReconnect` telling
-you which is coming. `Reconnecting` then names the attempt and the delay; `Stopped`
-means no further attempt will be made.
+you which is coming — by the time it runs the reconnect is already scheduled.
+`Reconnecting` then names the attempt and the delay; `Stopped` means no further attempt
+will be made. Both follow `Disconnected` in the same pass, so a `Disconnected` handler
+that throws means neither is raised for that drop, and one that calls `Close()`
+suppresses `Reconnecting` (a stop still raises `Stopped`). Drive a reconnecting UI from
+`Disconnected` with `WillReconnect` if it must never miss one.
 
 On the lobby, a successful reconnect fires `Connected` again with a **new** `Hello` and
 a new `ConnectionId`, and the peer map is reset. What refills it depends on whether the
@@ -124,7 +130,13 @@ client.Dispose();   // releases the socket and its receive loop
 internally, but an undisposed *client* keeps a receive task and a cancellation source
 alive for the rest of the session.
 
-A handler that throws unwinds through the pump, skipping whatever came after it in your
-own code. `ConnectAsync` is settled before events are raised so a throwing handler
-cannot strand the await — but guard handlers that touch scene objects; a destroyed
-`GameObject` is the common case.
+A handler that throws unwinds out of `Poll()` (or out of `Close()`/`Dispose()`), and
+skips everything raised after it in that pass: the other subscribers to the same event,
+and the SDK's later events (`Reconnecting` or `Stopped` after `Disconnected`). What the
+SDK itself must do is done before it raises anything — `ConnectAsync` is settled, a
+reconnect is scheduled, a hello deadline armed — so a throwing handler cannot strand the
+await or the connection. The one deliberate exception is `Frame`, which runs before the
+SDK handles that frame, so a throwing `Frame` handler leaves that frame's peer-map or
+roster update undone. Still, guard handlers that touch scene objects; a destroyed
+`GameObject` is the common case, and a `GamebaseRunner` stops pumping its later clients
+for that frame.

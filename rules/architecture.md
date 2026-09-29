@@ -75,12 +75,22 @@ consequences and the decisions that are easy to undo by accident.
   handed `await ConnectAsync()` a connection the machine had already rejected. The
   guard now drops everything but the retired socket's own close, which is what still
   drives the reconnect.
-- **Schedule the settlement before raising the events, not after.** The flush still
-  happens at the end of the pass, but a handler that throws unwinds past whatever
-  comes after it: `Stop()` raising `Disconnected` before `ScheduleFailure` left
-  `await ConnectAsync()` pending forever, with `State` already `Closed` so it could
-  never be reissued. A null reference on a destroyed `GameObject` is the ordinary way
-  a game gets there.
+- **Do the SDK's own work for a transition before raising its first event.** A handler
+  that throws unwinds past everything after it, so whatever the SDK must do — schedule
+  or flush a settlement, arm a deadline, log the decision — happens first, and a flush
+  that must happen after the handlers goes in a `finally`. Paid for in `GatewaySocket`:
+  `Stop()`, `Close()` and `ConnectAsync()` could strand a pending connect (`Close()`
+  and `ConnectAsync()` run outside `Poll()`, so no later pass is guaranteed to flush
+  it), and `ScheduleReconnect` left the client `Reconnecting` with no reconnect ever
+  due. `HandleOpened` arms the hello deadline first on the same principle, although no
+  public path lets a lobby handler throw there today. A null reference on a destroyed
+  `GameObject`, or a send from a `Disconnected` handler (the client is not ready, so it
+  throws), is the ordinary way a game gets there.
+  - **Events after the first are best-effort** — `Reconnecting` and `Stopped` after
+    `Disconnected` — and the docs say so; do not contort the code to raise them anyway.
+  - **`Frame` is the deliberate exception**: its contract is "before any SDK handling",
+    so a throwing `Frame` handler leaves that frame's peer map and roster update undone.
+  - When you add a transition, look for SDK state written after an `?.Invoke` in it.
 - **Bound every loop the peer can feed, not just the outer one.** `MaxPollPasses`
   bounded the pass count while the inner drain over an unbounded queue had no bound at
   all, so a peer producing frames faster than the pump parses them could hold the

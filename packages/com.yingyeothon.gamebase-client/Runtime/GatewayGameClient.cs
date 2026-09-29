@@ -50,10 +50,16 @@ namespace Yingyeothon.Gamebase.Client
         /// </summary>
         event Action<ErrorFrame> Refused;
 
-        /// <summary>The connection dropped. Fires before every reconnect and before every stop.</summary>
+        /// <summary>
+        /// The connection dropped. Fires before every reconnect and before every stop; when
+        /// <c>WillReconnect</c> is set the retry is already scheduled.
+        /// </summary>
         event Action<DisconnectedEvent> Disconnected;
 
-        /// <summary>A retry is scheduled, with its attempt number and delay.</summary>
+        /// <summary>
+        /// A retry is scheduled, with its attempt number and delay. Raised after
+        /// <c>Disconnected</c>; not raised when a <c>Disconnected</c> handler threw or closed.
+        /// </summary>
         event Action<ReconnectingEvent> Reconnecting;
 
         /// <summary>Close 4001: the actor died. Retry only with a new <c>GameId</c>.</summary>

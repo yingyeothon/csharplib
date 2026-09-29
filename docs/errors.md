@@ -68,7 +68,7 @@ All of them are thrown **locally**, before anything reaches the wire.
 | --- | --- | --- |
 | `InvalidOperationException` | every sender — `Pos`, `Say`, `Event`, `Ping`, `Party.*`, `Send` | the client is not ready: before `ConnectAsync`, during a reconnect, or after it stopped. The message names the state. **This is the one a game hits most**, because a reconnect is invisible unless you watch `State` |
 | `InvalidOperationException` | `ConnectAsync` | called twice, or after the client closed |
-| `InvalidOperationException` | `Poll` | called re-entrantly, or while another thread is inside it |
+| `InvalidOperationException` | `Poll` | called re-entrantly, or while another thread is inside it. An exception **your handler** throws also comes out of `Poll()`, unwrapped |
 | `ArgumentNullException` | `Create`, `IGatewayGameClient.Send` | a null options object or frame |
 | `ArgumentException` | `Pos` | `dir` is over 16 bytes |
 | `GatewayClientException` | `Pos`, `Say`, `Event`, `Party.*` | the channel disables that capability, or that chat scope. `Code` is `capability_off` |
