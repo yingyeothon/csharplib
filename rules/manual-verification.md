@@ -376,10 +376,12 @@ Not covered, and each is a real gap rather than a formality:
 
 - The provider exchange with a **real** GitHub access token. There is no provider
   credential here, so only its refusal path was exercised.
-- **`4002` Idle → reconnect, and the backoff.** Not reachable from a client for the
-  reason above, and this repository does not own the gateway to restart it. It *is*
-  reachable through the public `IWebSocketFactory` seam with a double that stops
-  answering pings — that is a test to write, not a gateway run.
+- **The gateway actually sending `4002`.** Not reachable from a client for the reason
+  above, and this repository does not own the gateway to restart it. What the client
+  does with the close is covered through the public `IWebSocketFactory` seam, where a
+  fake socket delivers it: the `4002` case of `LobbyReconnectTests`' reconnect test
+  (the backoff timing, a fresh `hello`, an empty peer map) and of `GameClientTests`'
+  (a reconnect and a working `Send`; a `q` channel has neither `hello` nor peers).
 - The WebGL guard in a browser.
 
 ## Making states reachable without infrastructure
