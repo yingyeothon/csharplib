@@ -58,6 +58,9 @@ gate that will say so — but only after the build, one at a time. Do them toget
   `package.json` with the sibling pins, one asmdef per `Runtime/` and `Tests/` with a
   `csc.rsp` beside each, `Runtime/link.xml` for a client package — [unity.md](unity.md)
   § IL2CPP says which and what it lists.
+- A `.meta` beside every file and folder in it: `scripts/unity-meta.sh --write`, last,
+  once the tree is final, and stage them with the files. A rename after that moves the
+  `.meta`, it does not regenerate it ([unity.md](unity.md) § Assembly boundaries).
 - `tests/Yingyeothon.PublicApi.Tests`: `ApiSurface.Packages`, the `[TestCase]` list in
   `PublicApiTests`, and a `ProjectReference` in its `.csproj`; then run it, and approve
   the two files it writes by renaming them:

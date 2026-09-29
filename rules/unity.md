@@ -26,10 +26,36 @@ constraints that follow, and none of them fail at `dotnet build`.
 - Engine-facing glue lives in `Runtime/Unity/`, guarded by `#if UNITY_5_3_OR_NEWER`,
   and is excluded from the `.csproj` compile glob. Adding a file there means checking
   both builds.
-- asmdef `references` are written as **names**, not GUIDs, so they survive the `.meta`
-  regeneration a fresh clone triggers.
-- `.meta` files are not committed; Unity generates them on import. If stable GUIDs
-  ever matter, generate them once from a real editor and commit the lot.
+- asmdef `references` are written as **names**, not GUIDs, so a reference reads the
+  same in every consumer and depends on no `.meta`.
+- **Every asset under `packages/` has a committed `.meta`**, `Samples~` and hidden
+  files excepted. A git-URL install lands in the immutable `Library/PackageCache`,
+  where Unity generates nothing and ignores an asset without one — so the package
+  resolves, contributes no assembly, and the editor still exits 0
+  ([manual-verification.md](manual-verification.md) has the run that found it). The
+  first set came from Unity 6 itself, which writes a package asset's `.meta` as exactly
+  two lines, `fileFormatVersion: 2` and `guid:`, with no final newline; the newline was
+  added for `.editorconfig`. Those are the only sixty bytes the script accepts.
+- **A committed guid is permanent.** A consumer's scene reaches `GamebaseRunner`
+  through its script's guid, and Unity's asmdef inspector writes references as
+  `GUID:…` by default, whatever `docs/unity.md` recommends. So:
+  - a **new** file or folder gets its `.meta` from `scripts/unity-meta.sh --write`,
+    run once the tree is final. Never copy a `.meta` to make another — two assets
+    sharing a guid is how references break — and never copy one back from a scratch
+    Unity project, which may have re-serialized it;
+  - a **rename or move** is `git mv` on the asset *and* its `.meta`; for a folder that
+    is the folder and the `Folder.meta` beside it, which `git mv Folder …` does not
+    carry. If `--write` already ran on the new name, delete the fresh `.meta` and move
+    the old one over it;
+  - a `.meta` the script calls malformed is repaired to the two lines **keeping its
+    guid**, never deleted and regenerated;
+  - a **deleted** asset takes its `.meta` with it.
+- The script reads what `git add` would commit — tracked and untracked files, never
+  ignored ones — and `--staged` reads the index. `validate-packages.sh` runs the first,
+  and `pre-commit` the second whenever the index differs from `HEAD` anywhere under
+  `packages/` (an add, a rename, a deletion, a file turned symlink), so a `.meta` that exists
+  but was not staged stops the commit rather than landing an asset Unity ignores.
+  Git keeps no empty folder, so neither does the script; delete one you emptied.
 
 ## Nullable, and the one line that carries it
 

@@ -53,10 +53,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: No .meta, build output or credential-shaped path is tracked
+      - name: No stray .meta, build output or credential-shaped path is tracked
         run: |
-          bad=$(git ls-files | grep -a -E \
-            '\.meta$|\.received\.[a-z]+$|(^|/)(artifacts|bin|obj|Library|Temp|Logs|UserSettings|Builds)/|(^|/)\.env(\.|$)|(^|/)\.envrc$|^local/' \
-            | grep -a -vE '\.env\.example$' || true)
+          # -z: git quotes an unusual name, and a quoted line matches no anchored pattern.
+          if [ "$(git ls-files -z | tr -cd '\n' | wc -c)" -ne 0 ]; then echo "a tracked path contains a newline"; exit 1; fi
+          names=$(git ls-files -z | tr '\0' '\n')
+          bad=$({ printf '%s\n' "$names" | grep -a -E \
+            '\.received\.[a-z]+$|(^|/)(artifacts|bin|obj|Library|Temp|Logs|UserSettings|Builds)/|(^|/)\.env(\.|$)|(^|/)\.envrc$|^local/' \
+            | grep -a -vE '\.env\.example$'
+            printf '%s\n' "$names" | grep -a -E '\.meta$' | grep -a -vE '^packages/[^/]+/(([^./~]|[^./][^/]*[^/~])/)*([^./~]|[^./][^/]*[^/~])\.meta$'; } || true)
           if [ -n "$bad" ]; then echo "tracked paths that must not exist:"; echo "$bad"; exit 1; fi
           echo "tracked paths are clean"

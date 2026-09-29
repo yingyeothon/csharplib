@@ -96,8 +96,8 @@ https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.even
 ```
 
 **No release has been tagged yet**, so these URLs track `main`; append
-`#<tag>` to pin one as soon as there is one. Unity generates the `.meta` files on
-import; they are not committed here. Each package ships importable
+`#<tag>` to pin one as soon as there is one. Every asset carries its committed `.meta`,
+which is what lets a git-URL install compile at all. Each package ships importable
 `Samples~`. [docs/unity.md](docs/unity.md) has the details.
 
 ## Development
@@ -110,13 +110,15 @@ dotnet format Yingyeothon.sln --verify-no-changes
 dotnet test  Yingyeothon.sln -c Release        # NUnit 3, the version Unity ships
 ./scripts/check-coverage.sh                    # per-package floor: line 80 / branch 70
 ./scripts/validate-packages.sh                 # structural checks Unity cares about
+./scripts/unity-meta.sh --write                # a .meta for each new file under packages/
 ```
 
 The first `dotnet build` also points git at `scripts/git-hooks`
 (`./scripts/install-git-hooks.sh` does it on its own if you would rather not build).
 This repository is public, so those hooks refuse a commit that carries build output,
-a Unity `.meta`, or anything credential-shaped, and run [gitleaks][] on the staged
-diff — install it, or every commit is refused. CI runs the same scan over the whole
+a Unity `.meta` outside `packages/`, a package asset without its `.meta`, or anything
+credential-shaped, and run [gitleaks][] on the staged diff — install it, or every
+commit is refused. CI runs the same scan over the whole
 history. See [rules/security.md](rules/security.md).
 
 [gitleaks]: https://github.com/gitleaks/gitleaks

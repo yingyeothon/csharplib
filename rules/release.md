@@ -93,7 +93,7 @@ anything is pushed, and the commit and the tag then go together or not at all.
    [manual-verification.md](manual-verification.md) prescribes for pre-release runs: a
    git URL lands in `Library/PackageCache`, outside the repo, which is what proves the
    tag resolves. (Both files still forbid a `file:` dependency or a symlink, which
-   would write `.meta` into this working tree.) Note that the package ships the
+   would let Unity write into this working tree.) Note that the package ships the
    **whole** `packages/<name>/` directory, `Tests/` included — the
    `UNITY_INCLUDE_TESTS` define constraint on the test asmdefs is what keeps those from
    compiling in a consumer's project, so check it survived.

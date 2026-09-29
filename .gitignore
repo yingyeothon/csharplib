@@ -15,12 +15,15 @@ TestResults/
 *.received.txt
 *.received.md
 
-# Unity generates a .meta for everything it imports, including these packages when a
-# scratch project points at them. They are deliberately not committed (see
-# rules/unity.md), and a committed one would pin a GUID that every other clone
-# disagrees with. The pre-commit hook refuses them too, because .gitignore does not
-# survive `git add -f`.
+# Unity generates a .meta for everything it imports. The ones under packages/ are
+# committed: a package installed by git URL is immutable, and Unity ignores every asset
+# in it that has no .meta (rules/unity.md; scripts/unity-meta.sh makes and checks them).
+# Anywhere else a .meta means a Unity project was opened inside the repo, and the hooks
+# refuse it, because .gitignore does not survive `git add -f`.
 *.meta
+!/packages/**/*.meta
+/packages/**/*~/**/*.meta
+/packages/**/.*/**/*.meta
 
 # A Unity project opened anywhere under the repo would otherwise offer these up.
 Library/

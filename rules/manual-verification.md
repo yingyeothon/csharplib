@@ -108,9 +108,9 @@ Unity 6 has neither: it bundles .NET 6 and a newer build backend.
 1. Build it **outside the repo**, in a scratch directory.
    `<editor>/Editor/Unity -batchmode -nographics -quit -createProject <path>`.
 2. **Copy** every `packages/com.yingyeothon.*` folder into `<project>/Packages/`.
-   Do not use a `file:` UPM dependency and do not symlink: Unity writes `.meta` files
-   into whatever it imports, and `.meta` files are deliberately not committed here, so
-   either would dirty the working tree.
+   Do not use a `file:` UPM dependency and do not symlink: Unity writes into whatever
+   it imports — a `.meta` for any asset that lacks one, a re-serialized one where its
+   format changed — so either would dirty the working tree.
 3. In `Packages/manifest.json`, add `com.unity.test-framework` and list every
    package name under `testables` — the `Tests` asmdefs carry
    `defineConstraints: ["UNITY_INCLUDE_TESTS"]` and compile only for a testable.
@@ -137,7 +137,8 @@ the `.meta` files it needs. A package a consumer installs — a git URL, a tarba
 registry — is unpacked into `Library/PackageCache` and is *immutable*, and there Unity
 generates nothing: an asset with no `.meta` is **ignored**, silently, one log line each.
 
-Run this before any tag, from a bare clone so no uncommitted file can rescue it:
+Run this before any tag, on **both** editors, from a bare clone so no uncommitted file
+can rescue it:
 
 ```bash
 git clone --bare <repo> /tmp/x.git          # the URL must end in .git or UPM rejects it
@@ -281,34 +282,39 @@ a blocking `Assert.ThrowsAsync` over a yielding path deadlocked the whole run, a
 ([testing.md](testing.md)). The `HttpListener` transport tests run under Mono as
 plain HTTP; only the WebSocket half of the gateway's is ignored there.
 
-### The install path is broken, and this run is what found it
+### The install path was broken, and this run is what found it
 
-**A git-URL install of `70c334d` compiles nothing.** All four packages resolve, and then
-every asset in them is ignored — 448 log lines of *"has no meta file, but it's in an
-immutable folder"* — so `Library` ends up with **zero** `Yingyeothon*.dll`. This is not
-a regression from this change; it is the state of the tree, and it makes
-`docs/getting-started.md` §1 and `docs/unity.md` § Installing describe a path that does
-not work.
-
-The cause is a straight collision between two deliberate decisions: UPM requires `.meta`
-files in a package consumed from an immutable source, and this repository does not commit
-them (`.gitignore`, and [The scratch project](#the-scratch-project) is built around their
-absence). Copying the packages hides it, and copying is what every verification here has
-done.
+**A git-URL install of `70c334d` compiled nothing.** All four packages resolved, and then
+every asset in them was ignored — 448 log lines of *"has no meta file, but it's in an
+immutable folder"* — so `Library` ended up with **zero** `Yingyeothon*.dll`, and
+`docs/getting-started.md` §1 and `docs/unity.md` § Installing described a path that did
+not work. UPM requires a `.meta` for every asset of a package consumed from an immutable
+source, and this repository did not commit them. Copying the packages hides it, and
+copying is what every verification before it had done.
 
 Confirmed both directions on 6000.0.25f1, from bare clones:
 
 | Bare clone contains | Assets ignored | Assemblies compiled | Samples |
 | --- | --- | --- | --- |
-| no `.meta` (the tree as it stands) | 448 | **none** | — |
+| no `.meta` (the tree at `70c334d`) | 448 | **none** | — |
 | `.meta` committed | 32 (the unpaired `csc.rsp.meta`) | all four | — |
 | `.meta` **and** `csc.rsp` committed | **0** | all four, 0 errors, 0 CS8632 | **7 import** |
 
-So the fix works and is one decision: **commit the `.meta` files.** That reverses a
-documented policy in `docs/unity.md`, `.gitignore` and this file, so it is the user's
-call and not a thing to fold into an unrelated commit. Until it is made, **no tag**
-([release.md](release.md)) — a consumer following the guide gets four packages with no
-code in them.
+**Fixed by committing them**, in the commit that adds `scripts/unity-meta.sh`. The 160 files there are the ones Unity 6 wrote into an embedded copy, each
+given a final newline, and the same bare-clone check against that tree on 6000.0.25f1
+gave: all five packages resolved into `Library/PackageCache`, **0** *immutable folder*
+lines, all five `Yingyeothon*.dll`, all eight samples imported (1 / 1 / 4 / 1 / 1), and a
+forced clean compile (`ScriptAssemblies` deleted, `CompileScripts` seen) with 0 errors
+and 0 warnings. **2021.3.45f2 was not run**: its `bee_backend` hang needs the wrapper in
+[Two things Ubuntu 24.04 breaks](#two-things-ubuntu-2404-breaks-in-unity-20213), and
+that session was not permitted to swap a binary inside the editor install. Run the floor
+before the tag.
+
+The same install settles whether a `csc.rsp` is honoured from `Library/PackageCache`,
+which a warning count cannot — Unity suppresses warnings from an immutable package. The
+metadata can: nullable context makes Roslyn emit `NullableContextAttribute`, and each
+of the five `Yingyeothon*.dll` carried it while `Assembly-CSharp-Editor.dll`, which has
+no rsp, did not (`grep -a -c NullableContextAttribute <dll>`: 1 each, control 0).
 
 ### Against the dev gateway, same date
 
@@ -371,9 +377,6 @@ Not covered, and each is a real gap rather than a formality:
   reachable through the public `IWebSocketFactory` seam with a double that stops
   answering pings — that is a test to write, not a gateway run.
 - The WebGL guard in a browser.
-- Whether Unity honours a `csc.rsp` in an **immutable** package (a git-URL install
-  resolves into `Library/PackageCache`). Both scratch projects used copied, embedded
-  packages. Worth one run before a tag.
 
 ## Making states reachable without infrastructure
 

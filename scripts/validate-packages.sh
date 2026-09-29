@@ -121,6 +121,10 @@ done <<EOF
 $(find packages -path '*/Samples~/*' -name '*.cs' | sort)
 EOF
 
+# Without a .meta, an asset in a git-URL install is ignored and the package compiles
+# nothing. The rules live in the script, which can also write the missing ones.
+./scripts/unity-meta.sh || note "a package asset's .meta is missing or wrong; see above"
+
 # Reflection-based serialization is what IL2CPP's managed stripper breaks, and it
 # breaks it silently at runtime rather than at build time.
 if grep -rnE '\bActivator\.CreateInstance|GetType\(\)\.GetPropert|GetType\(\)\.GetField|Reflection\.Emit' \

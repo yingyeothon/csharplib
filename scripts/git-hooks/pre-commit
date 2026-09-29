@@ -13,23 +13,43 @@
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
-staged=$(git diff --cached --name-only --diff-filter=ACMR)
+# -z, never the default output: git quotes a name with a non-ASCII, control, '"' or '\'
+# character ("\354\234\240.../a.meta"), and a quoted line matches none of the anchored
+# patterns below. A name with a newline in it would split into two lines, so it is
+# refused outright.
+if [ "$(git diff --cached --name-only -z --diff-filter=ACMRT | tr -cd '\n' | wc -c)" -ne 0 ]; then
+  echo "pre-commit: a staged path contains a newline; rename it" >&2
+  exit 1
+fi
+staged=$(git diff --cached --name-only -z --diff-filter=ACMRT | tr '\0' '\n')
 
-# .meta: Unity writes one for everything it imports, and this repo deliberately does
-#        not carry them (rules/unity.md) — a committed one pins a GUID every other
-#        clone disagrees with.
+# .meta: allowed only below a package root, and never under a name Unity hides (one
+#        starting with '.' or ending in '~'). Anywhere else it is a Unity project
+#        opened inside the repo. Whether each one belongs to an asset, and is well
+#        formed, is scripts/unity-meta.sh's call, run on the index below.
 # artifacts|bin|obj|Library|Temp|Logs: build output. A bin/ or obj/ inside a package
 #        folder becomes Unity project assets (scripts/validate-packages.sh).
 # .received.*: the public-API and API-reference gates' actual output; approving is
 #        a rename, so a received file is never committed.
 # .env*/.envrc/local/: this repo needs no credentials, so one of these is a mistake.
-bad=$(printf '%s\n' "$staged" | grep -a -E \
-  '\.meta$|\.received\.[a-z]+$|(^|/)(artifacts|bin|obj|Library|Temp|Logs|UserSettings|Builds)/|(^|/)\.env(\.|$)|(^|/)\.envrc$|^local/' \
-  | grep -a -vE '\.env\.example$' || true)
+bad=$({ printf '%s\n' "$staged" | grep -a -E \
+  '\.received\.[a-z]+$|(^|/)(artifacts|bin|obj|Library|Temp|Logs|UserSettings|Builds)/|(^|/)\.env(\.|$)|(^|/)\.envrc$|^local/' \
+  | grep -a -vE '\.env\.example$'
+  printf '%s\n' "$staged" | grep -a -E '\.meta$' | grep -a -vE '^packages/[^/]+/(([^./~]|[^./][^/]*[^/~])/)*([^./~]|[^./][^/]*[^/~])\.meta$'; } || true)
 if [ -n "$bad" ]; then
   echo "pre-commit: refusing paths that must never be tracked:" >&2
   printf '%s\n' "$bad" >&2
   exit 1
+fi
+
+# The index, not the working tree: a .meta that --write created but nobody staged
+# would otherwise pass every local check and land an asset Unity ignores.
+# Any change under packages/ — an add, a rename, a deletion, a file turned symlink.
+if ! git diff --cached --quiet -- packages/; then
+  ./scripts/unity-meta.sh --staged >/dev/null || {
+    echo "pre-commit: a staged package asset and its .meta disagree; see above" >&2
+    exit 1
+  }
 fi
 
 command -v gitleaks >/dev/null || {

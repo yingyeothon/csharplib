@@ -30,9 +30,10 @@ asmdef**, reference the assemblies you use by name: `Yingyeothon.Gamebase.Client
 `Yingyeothon.KvStore`, `Yingyeothon.Codec` (needed for `JsonValue`, which is on both
 APIs), `Yingyeothon.Logger` (needed to set `Logger`), `Yingyeothon.EventBroker`.
 
-`.meta` files are not committed here; Unity generates them on import. If you vendor the
-packages into `Packages/` instead of using a git URL, **copy** the folders rather than
-symlinking them — Unity writes `.meta` files into whatever it imports.
+Every asset ships with its `.meta`, so a given version has the same GUIDs in every
+project that installs it. If you vendor the packages into `Packages/` instead of using a
+git URL, **copy** the folders rather than symlinking them — Unity writes into whatever it
+imports, and through a symlink that is someone's checkout.
 
 These sources are written with nullable annotations, and Unity has no project-wide
 setting for them, so each assembly folder carries a `csc.rsp` holding `-nullable:enable`

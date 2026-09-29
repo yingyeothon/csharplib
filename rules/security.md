@@ -29,8 +29,11 @@ wrong.
   obviously fake and keep the `.gitleaks.toml` allowlist entry pointed at that exact
   string, not at the files that hold it.
 - **Defenses, all required, none optional:**
-  - `.gitignore` — build output, `.meta`, `.env*`, `.envrc`, `local/`.
-  - `scripts/git-hooks/pre-commit` — refuses those paths even when force-added, then
+  - `.gitignore` — build output, a `.meta` outside `packages/`, `.env*`, `.envrc`,
+    `local/`.
+  - `scripts/git-hooks/pre-commit` — refuses those paths even when force-added, and a
+    `.meta` below any name Unity hides; `scripts/unity-meta.sh --staged` then refuses
+    an orphaned, malformed, duplicated or symlinked one, and a missing one. Then
     `gitleaks protect --staged`.
   - `scripts/git-hooks/pre-push` — re-checks the pushed tip's whole tree and runs
     `gitleaks detect` over the **entire history reachable from that tip**, so a commit
@@ -49,6 +52,15 @@ wrong.
     `set -o pipefail` that 141 makes the test **false**. Capture and count instead.
   - One NUL byte anywhere in a stream makes grep call the rest binary and stop
     matching. Every grep in a guard passes `-a`.
+- Two more, paid for while making `.meta` files committable:
+  - **Read git's path output with `-z`.** By default `git diff --name-only`, `ls-files`
+    and `ls-tree` quote a name holding a non-ASCII, control, `"` or `\` character
+    (`"\354\234\240.../a.meta"`), and a quoted line matches no anchored pattern — a
+    Korean folder name walked a stray `.meta` and a `Library/` file past all three
+    guards. Refuse a name with a newline outright, then `tr '\0' '\n'`.
+  - **Do not let the producer's failure become an empty list.** A failing `git ls-files`
+    inside a process substitution handed the loop nothing, and the guard passed. Capture
+    the list first, where `set -e` sees the failure.
 - **Prove any change to a guard by watching it refuse.** A throwaway staged file that
   should be blocked and an ordinary edit that should pass, for a hook; a deliberately
   broken input for a script. A guard that has only ever been seen saying yes has not

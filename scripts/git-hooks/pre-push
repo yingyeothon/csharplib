@@ -25,9 +25,16 @@ while read -r _lref lsha _rref rsha; do
   [ "$lsha" = "$zero" ] && continue   # a branch deletion carries nothing
   pushed=1
 
-  tracked=$(git ls-tree -r --name-only "$lsha" | grep -a -E \
-    '\.meta$|\.received\.[a-z]+$|(^|/)(artifacts|bin|obj|Library|Temp|Logs|UserSettings|Builds)/|(^|/)\.env(\.|$)|(^|/)\.envrc$|^local/' \
-    | grep -a -vE '\.env\.example$' || true)
+  # -z: git quotes an unusual name, and a quoted line matches no anchored pattern.
+  if [ "$(git ls-tree -r --name-only -z "$lsha" | tr -cd '\n' | wc -c)" -ne 0 ]; then
+    echo "pre-push: a path in $lsha contains a newline" >&2
+    exit 1
+  fi
+  names=$(git ls-tree -r --name-only -z "$lsha" | tr '\0' '\n')
+  tracked=$({ printf '%s\n' "$names" | grep -a -E \
+    '\.received\.[a-z]+$|(^|/)(artifacts|bin|obj|Library|Temp|Logs|UserSettings|Builds)/|(^|/)\.env(\.|$)|(^|/)\.envrc$|^local/' \
+    | grep -a -vE '\.env\.example$'
+    printf '%s\n' "$names" | grep -a -E '\.meta$' | grep -a -vE '^packages/[^/]+/(([^./~]|[^./][^/]*[^/~])/)*([^./~]|[^./][^/]*[^/~])\.meta$'; } || true)
   if [ -n "$tracked" ]; then
     echo "pre-push: paths that must never be tracked are in $lsha:" >&2
     printf '%s\n' "$tracked" >&2
