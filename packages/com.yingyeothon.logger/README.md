@@ -52,6 +52,10 @@ ILogger logger = FilteredLogger.Create(new FilteredLoggerOptions
 - `LogWriters` — `Console`, `Null`, `Combine`, `FromAction`, `Format`.
 - `NullLogger.Instance` — what every package defaults to.
 - `ConsoleLogger.Create`.
+- `UnityDebugWriter` (Unity builds only, behind `#if UNITY_5_3_OR_NEWER`, so absent from
+  the generated reference) — `Instance`, an `ILogWriter` over `UnityEngine.Debug.Log`,
+  `LogWarning` and `LogError`, and `CreateLogger(LogSeverity)`. `Debug` and `Info` both
+  go to `Debug.Log`, since Unity has no separate debug level.
 
 ## Notes
 

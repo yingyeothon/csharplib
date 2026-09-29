@@ -98,14 +98,14 @@ Four things about that file, each of which cost something to learn:
 
 A sample is **not** covered by any of this: `Samples~` is copied into the consumer's
 `Assets/`, out of reach of a package rsp, so a sample file that uses a nullable
-annotation carries its own `#nullable enable` — five of the ten sample `.cs` files
+annotation carries its own `#nullable enable` — six of the eleven sample `.cs` files
 today, and the guard requires it of any sample that annotates, so a new one cannot
 regress silently. Note that the directive turns on the flow analysis
 (CS8600/8602/8618) as well as the annotations, not only the CS8632 it was reached for;
 these are clean under both.
 
 `scripts/validate-packages.sh`'s `rsp_line` is the **enforcing** copy of that string:
-change it there first, then every `csc.rsp` (twelve today), then this section and `docs/unity.md`. If
+change it there first, then every `csc.rsp` (fourteen today), then this section and `docs/unity.md`. If
 they ever disagree, the script is right.
 
 What a consumer needs to know about this is one section in
@@ -125,7 +125,7 @@ were invisible only because nothing had forced a clean recompile —
 - Each client package's `Runtime/link.xml` preserves its own assembly and the two it
   depends on wholesale, because they are reached through interfaces and generic
   factories. A package a consumer may install without the other client needs its own
-  copy, which is why `kvstore-client` and `auth-client` do not rely on
+  copy, which is why `kvstore-client`, `auth-client` and `asset-client` do not rely on
   `gamebase-client`'s.
 - Wire types parse and build themselves by hand. It is more code and it is the point.
 

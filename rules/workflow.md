@@ -19,7 +19,13 @@
 - Stage intentionally, by path. Never `git add .` or `git add -A`: `artifacts/` and
   `.claude/` are git-ignored and safe, but a scratch console app, a Unity project or a
   file you did not mean to publish is not — and this repo is public. Run
-  `git status --porcelain` first, then name each path.
+  `git status --porcelain` first, then name each path. **Read `git diff --cached --stat`
+  before `git commit` and compare it path for path with the list you meant to stage** —
+  any mismatch is `git reset` and stage again. A `git add` that fails part-way — `xargs git add` over a list
+  that includes a path already `git rm`-ed aborts the whole add — still leaves `commit`
+  free to run on whatever was staged before, and a hook that only scans the staged diff
+  passes it. That is how bfe6486 went out carrying a sample's deletion and a package's
+  commit message, with the package in the next commit.
 - Work may be delegated to subagents, but **a review subagent reports; it never
   writes.** Tell each one explicitly: read only — no `Edit`, no `Write`, no
   `git add/commit/push/checkout/restore/stash`, no `dotnet build` or `dotnet test`.
@@ -154,7 +160,9 @@ so in the same message.
   counterpart when one exists (`../flutterlib/packages/`) and port its vocabulary; when
   none does, ask the user for the shape before designing one. Record it here with the
   date. So far: `auth-client` (flutterlib's
-  `yingyeothon_auth_client`, 2026-09-30). The worked counter-example is the doc store
+  `yingyeothon_auth_client`, 2026-09-30) and `asset-client` (tslib's newer
+  `@yingyeothon/asset-client` and flutterlib's `yingyeothon_asset_client`, 2026-09-30;
+  it carries no credential at all — the bundle key only decrypts what is public). The worked counter-example is the doc store
   (`/s/*`): its writes take the channel's doc apiKey, so it fails the test and has **no
   client** — `docs/kvstore.md` § 7 says what a game uses instead.
 - The gateway wire protocol is owned by the `service` repository. When it changes,

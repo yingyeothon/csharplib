@@ -34,6 +34,7 @@ void Update() => lobby.Poll();          // or nothing happens
 | [Lobby](docs/lobby.md) / [Dungeon](docs/dungeon.md) | the two channel kinds, feature by feature |
 | [Errors](docs/errors.md) / [Troubleshooting](docs/troubleshooting.md) | every refusal, close code and symptom |
 | [Key-value store](docs/kvstore.md) | announcements and a player's own record, with the same token |
+| [Asset bundles](docs/assets.md) | files the game ships beside its build, encrypted or not |
 | [API reference](docs/api/) | generated from the assemblies, gated in CI |
 
 ## Packages
@@ -46,6 +47,7 @@ void Update() => lobby.Poll();          // or nothing happens
 | [com.yingyeothon.gamebase-client](packages/com.yingyeothon.gamebase-client) | `Yingyeothon.Gamebase.Client` | Client SDK for the yyt realtime gateway (lobby + dungeon `q`) |
 | [com.yingyeothon.kvstore-client](packages/com.yingyeothon.kvstore-client) | `Yingyeothon.KvStore` | Client for the yyt key-value store (`doc.yyt.life/kv/*`) |
 | [com.yingyeothon.auth-client](packages/com.yingyeothon.auth-client) | `Yingyeothon.Auth` | Client for a yyt auth channel: sign-in URL, redirect, exchange, verify |
+| [com.yingyeothon.asset-client](packages/com.yingyeothon.asset-client) | `Yingyeothon.Assets` | Reader for yyt asset bundles on the CDN, decrypting `yyt-enc v1` |
 
 ```mermaid
 graph LR
@@ -55,6 +57,8 @@ graph LR
   kvstore-client --> logger
   auth-client --> codec
   auth-client --> logger
+  asset-client --> codec
+  asset-client --> logger
   logger --> codec
 ```
 
@@ -68,7 +72,9 @@ Five of them are C# reimplementations of the
 [tslib](https://github.com/yingyeothon/tslib) packages a game client can use. tslib has
 twenty; most are AWS Lambda, Redis or Node-socket server code that cannot run on a
 client at all. `auth-client` has no tslib counterpart — tslib's authorizers are the
-server half — and follows flutterlib's `yingyeothon_auth_client` instead.
+server half — and follows flutterlib's `yingyeothon_auth_client` instead; `asset-client`
+ports tslib's newer `@yingyeothon/asset-client`, which came with the platform's
+encrypted bundles.
 
 There is deliberately no client for the per-player document store (`/s/*`): its writes
 take the auth channel's doc apiKey, which a game must never hold. State a player writes
@@ -94,14 +100,16 @@ https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.logg
 https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.gamebase-client
 ```
 
-`com.yingyeothon.kvstore-client` and `com.yingyeothon.auth-client` sit on the same two
-dependencies and are independent of `gamebase-client` and of each other;
+`com.yingyeothon.kvstore-client`, `com.yingyeothon.auth-client` and
+`com.yingyeothon.asset-client` sit on the same two dependencies and are independent of
+`gamebase-client` and of each other;
 `com.yingyeothon.event-broker` is independent of all of them. Add any of them the same
 way if you want it:
 
 ```
 https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.kvstore-client
 https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.auth-client
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.asset-client
 https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.event-broker
 ```
 

@@ -62,6 +62,41 @@ built `Yingyeothon.KvStore` with the **real** `HttpClientTransport.Default`, aga
    must complete without throwing. It is the fact the state README's route table
    gets wrong ([architecture.md](architecture.md)).
 
+## Against the dev CDN
+
+`asset-client` reads public files, so its live check is a console app over the built
+`Yingyeothon.Assets` with the **real** `AssetHttpClientTransport`, against a throwaway
+encrypted live bundle. Unlike the store, the bundle is made for the check and removed
+after it. Every command takes `--profile dev`; the default profile may be prod.
+
+1. `yyt --profile dev --team <team> --project <project> asset create <name> --mode live
+   --encrypted --json`, and keep the `id` it prints (`ab_…`): every later command takes
+   the id, which needs no project context. Any team and project you can write to will
+   do; `yyt --profile dev asset list --json` shows the `teamId`/`projectId` of existing
+   bundles. The CLI must be `v0.12.0` or later (`yyt --version`).
+2. With `umask 077`, `yyt --profile dev asset key show <id>` into a file in the session's
+   scratch directory — never into this repository, never to the terminal.
+3. From inside a scratch directory holding `manifest.json` (a few bytes of JSON) and one
+   file over 128 KiB, so a range can cross two segment boundaries:
+   `yyt --profile dev --team <team> --project <project> asset sync <id> . --mutable
+   manifest.json`. ASCII paths only: the console refuses anything else. Dev throttles
+   writes: a `rate_limited` line uploaded nothing, so wait a few seconds and sync again
+   until it reports `0 failed` — a read before that is a `not_found`.
+4. `BaseUrl` is `https://dev-d.yyt.life/assets/<id>/` (`yyt --profile dev asset files <id>`
+   shows each file's URL). Read, in both `CorsSafe` modes: the manifest, the file whole,
+   a range across the two boundaries, the tail, an interrupted
+   `AssetFiles.DownloadToFileAsync` resumed from its part, a missing file (`not_found`,
+   403) and the vector key (`asset_corrupt`). Change the manifest, `sync` again, and read
+   it with `NoCache`. Print booleans and statuses only.
+5. `yyt --profile dev asset delete <id>`, then delete the key file.
+
+If a step cannot be done — no CLI, one too old, no team you can write to — do not
+substitute another bundle: record the gap under *Not covered* below and ask.
+
+**2026-09-30**: every step above passed against the code of the commit that adds
+`asset-client` (rerun after its review round changed the timeout paths); the bundle was
+deleted and its key removed.
+
 ## In Unity
 
 `dotnet build` proves nothing about the compiler Unity uses, about IL2CPP's stripper,
@@ -185,7 +220,8 @@ public static class SampleImport
     {
         foreach (var package in new[] { "com.yingyeothon.codec", "com.yingyeothon.event-broker",
                                         "com.yingyeothon.gamebase-client", "com.yingyeothon.kvstore-client",
-                                        "com.yingyeothon.auth-client", "com.yingyeothon.logger" })
+                                        "com.yingyeothon.auth-client", "com.yingyeothon.asset-client",
+                                        "com.yingyeothon.logger" })
         {
             var samples = Sample.FindByPackage(package, string.Empty).ToList();
             Debug.Log($"[SAMPLES] {package} count={samples.Count}");
@@ -222,7 +258,8 @@ A build that succeeds proves nothing about stripping — the player has to run. 
 `MonoBehaviour` in the scene that reaches every package through its factories
 (`GatewayLobbyClient.Create`, `GatewayGameClient.Create`, `KvStoreClient.Create` and
 `UnityWebRequestTransport.Instance`, `AuthClient.Create` and
-`AuthUnityWebRequestTransport.Instance`, `EventBroker.Create` and its generic `On<T>`,
+`AuthUnityWebRequestTransport.Instance`, `AssetBundleClient.Create` and
+`AssetUnityWebRequestTransport.Instance`, `EventBroker.Create` and its generic `On<T>`,
 `Json.Parse`/`Stringify`, `LogWriters.FromAction`, and `GamebaseRunner.CreatePersistent`), build with
 `ManagedStrippingLevel.High`, then run the player with `-batchmode -nographics
 -logFile` and grep the log for what it printed. That is what tests `Runtime/link.xml`.
@@ -383,6 +420,15 @@ Not covered, and each is a real gap rather than a formality:
   provider token (`401`), the wrong credential kind (`400`), and `/start` for a
   redirect off the allowlist (`403`) and on it with the nonce query (`302` to the
   provider).
+- **`asset-client` in Unity, at all**, for the same reason: EditMode, the sample, and
+  `AssetUnityWebRequestTransport`, which no `dotnet` build compiles. The EditMode run
+  reads the conformance vectors from `Packages/com.yingyeothon.asset-client/Tests/Fixtures`,
+  which only an embedded (copied) package has — the recipe above copies them, and a
+  git-URL install does not compile its tests at all. Its wire half is recorded in
+  [Against the dev CDN](#against-the-dev-cdn).
+- **`asset-client` on WebGL.** The CORS-safe plan (a `HEAD`, `Range`-only requests, the
+  whole-file fallback) has only been driven from .NET against the real CDN and against a
+  fake that hides the headers a browser hides; it has not run in a browser.
 - **`auth-client` on WebGL.** The auth service sends no CORS headers (dev, 2026-09-30),
   so from a browser only the redirect flow can work; the service calls fail as
   `network` until the service changes. Neither half has been run in a browser.

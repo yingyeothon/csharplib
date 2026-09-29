@@ -24,6 +24,7 @@ namespace Yingyeothon.PublicApi.Tests
         [TestCase("Yingyeothon.Gamebase.Client")]
         [TestCase("Yingyeothon.KvStore")]
         [TestCase("Yingyeothon.Auth")]
+        [TestCase("Yingyeothon.Assets")]
         public void ThePublicSurfaceMatchesItsApprovedSnapshot(string assembly)
         {
             var actual = Describe(assembly);

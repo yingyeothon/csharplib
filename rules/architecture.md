@@ -137,6 +137,14 @@ consequences and the decisions that are easy to undo by accident.
   waiting until its idle timer — found by an integration test that hung, not by a
   unit test.
 
+- **A timeout must not share the shape of a rejection that drives a fallback.** The asset
+  client falls back from a ranged read to the whole file when the request itself is
+  refused (status 0, no detail — a browser's refused preflight). A response timeout used
+  to come out in that same shape, so a slow segment on WebGL would have fetched up to a
+  quarter-gigabyte file instead; it now carries its own detail. And bound a wait by
+  racing it as well as by the token: a transport stream that checks its token only on
+  entry otherwise leaves the timeout inert.
+
 ## Lifetime
 
 - A replaced or closed `IWebSocket` is disposed exactly once. TypeScript leaves this

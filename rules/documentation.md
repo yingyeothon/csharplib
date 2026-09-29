@@ -13,7 +13,9 @@ Link to them; do not re-derive them. When this repository and `gateway/README.md
 disagree, that document is right; for the store it is `services/state/README.md`
 § KV routes, and where that README and `services/state/src/kvstore.ts` disagree, the
 code wins ([architecture.md](architecture.md)); for sign-in it is
-`services/auth/README.md`, and again the code (`services/auth/src/app.ts`) over it.
+`services/auth/README.md`, and again the code (`services/auth/src/app.ts`) over it; for
+assets it is `docs/asset-encryption.md` with its vectors, and `cli/internal/assetcrypt`
+where the text and the Go disagree (the vectors settle it).
 
 ## `docs/` — the guide
 
@@ -35,6 +37,9 @@ Current owners, so a new page does not take one over by accident:
   redirect), IL2CPP, WebGL, the editor console
 - `kvstore.md` — the key-value store, console collections to refusals; the one page
   that carries the store's error table
+- `assets.md` — asset bundles: their shapes, the manifest pattern and the console's path
+  rule, a ranged read and a change under it, the Unity specifics, and *why* a game meets
+  each error code; what each code means is the package README's
 - `troubleshooting.md` — symptom → the one check → the link. Not a second explanation
 
 ## Package READMEs

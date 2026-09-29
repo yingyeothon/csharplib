@@ -1,0 +1,71 @@
+  AssetBundleClient.Create(AssetBundleClientOptions) : IAssetBundleClient
+  AssetBundleClient.DefaultTimeout : TimeSpan
+  AssetBundleClient.MaxTimeout : TimeSpan
+  AssetBundleClientOptions.BaseUrl : String get set
+  AssetBundleClientOptions.BodyIdleTimeout : Nullable<TimeSpan> get set
+  AssetBundleClientOptions.CorsSafe : Nullable<Boolean> get set
+  AssetBundleClientOptions.Key : String get set
+  AssetBundleClientOptions.KeyBytes : Byte[] get set
+  AssetBundleClientOptions.Logger : ILogger get set
+  AssetBundleClientOptions.ResponseTimeout : Nullable<TimeSpan> get set
+  AssetBundleClientOptions.Transport : IAssetTransport get set
+  AssetBundleClientOptions.ctor()
+  AssetClientException.Code : String get
+  AssetClientException.Detail : String get
+  AssetClientException.Status : Int32 get
+  AssetClientException.ctor(String, Int32, String, Exception)
+  AssetDownloadOptions.NoCache : Boolean get set
+  AssetDownloadOptions.OnProgress : Action<AssetDownloadProgress> get set
+  AssetDownloadOptions.Resume : AssetResume get set
+  AssetDownloadOptions.ctor()
+  AssetDownloadProgress.ETag : String get
+  AssetDownloadProgress.Total : Nullable<Int64> get
+  AssetDownloadProgress.Written : Int64 get
+  AssetDownloadProgress.ctor(Int64, Nullable<Int64>, String)
+  AssetDownloadResult.Bytes : Int64 get
+  AssetDownloadResult.ETag : String get
+  AssetDownloadResult.ctor(Int64, String)
+  AssetErrorCodes.AssetCorrupt : String
+  AssetErrorCodes.BadKey : String
+  AssetErrorCodes.Http : String
+  AssetErrorCodes.Network : String
+  AssetErrorCodes.NotFound : String
+  AssetFiles.DownloadToFileAsync(IAssetBundleClient, String, String, Action<AssetDownloadProgress>?, CancellationToken?) : Task<AssetDownloadResult>
+  AssetHttpClientTransport.Create(HttpClient) : IAssetTransport
+  AssetHttpClientTransport.Default : IAssetTransport get
+  AssetHttpRequest.Headers : IReadOnlyList<KeyValuePair<String, String>> get
+  AssetHttpRequest.Method : String get
+  AssetHttpRequest.ResponseTimeout : TimeSpan get
+  AssetHttpRequest.Url : Uri get
+  AssetHttpRequest.ctor(String, Uri, IReadOnlyList<KeyValuePair<String, String>>, TimeSpan)
+  AssetReadOptions.NoCache : Boolean get set
+  AssetReadOptions.ctor()
+  AssetResume.ETag : String get
+  AssetResume.Offset : Int64 get
+  AssetResume.ctor(Int64, String)
+  IAssetBundleClient.DownloadAsync(String, IAssetSink, AssetDownloadOptions?, CancellationToken?) : Task<AssetDownloadResult>
+  IAssetBundleClient.ReadAsync(String, AssetReadOptions?, CancellationToken?) : Task<Byte[]>
+  IAssetBundleClient.ReadJsonAsync(String, AssetReadOptions?, CancellationToken?) : Task<JsonValue>
+  IAssetBundleClient.ReadRangeAsync(String, Int64, Nullable<Int64>, AssetReadOptions?, CancellationToken?) : Task<Byte[]>
+  IAssetResponse.GetHeader(String) : String
+  IAssetResponse.ReadAsync(Byte[], Int32, Int32, CancellationToken) : Task<Int32>
+  IAssetResponse.Status : Int32 get
+  IAssetSink.ResetAsync(CancellationToken) : Task
+  IAssetSink.WriteAsync(ArraySegment<Byte>, CancellationToken) : Task
+  IAssetTransport.SendAsync(AssetHttpRequest, CancellationToken) : Task<IAssetResponse>
+class AssetBundleClientOptions
+class AssetClientException
+class AssetDownloadOptions
+class AssetDownloadProgress
+class AssetDownloadResult
+class AssetHttpRequest
+class AssetReadOptions
+class AssetResume
+interface IAssetBundleClient
+interface IAssetResponse
+interface IAssetSink
+interface IAssetTransport
+static class AssetBundleClient
+static class AssetErrorCodes
+static class AssetFiles
+static class AssetHttpClientTransport

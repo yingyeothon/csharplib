@@ -23,11 +23,17 @@ wrong.
   that teaches them invites a game to ship against them.
 - `yyt-platform.md` (untracked, in the parent directory), `service/todo/**` and
   `service/local/**` are private. Nothing from them belongs here, however useful.
-- The one credential-shaped literal in the tree is the test fixture
-  `eyJ.secret-token.sig`, which is three dot-separated words that look like a JWT and
-  are not one. The "never logs the token" tests need a literal to search for. Keep it
-  obviously fake and keep the `.gitleaks.toml` allowlist entry pointed at that exact
-  string, not at the files that hold it.
+- The credential-shaped literals in the tree are test fixtures. `eyJ.secret-token.sig`
+  is three dot-separated words that look like a JWT and are not one; the "never logs
+  the token" tests need a literal to search for, so keep it obviously fake and keep its
+  `.gitleaks.toml` allowlist entry pointed at that exact string, not at the files that
+  hold it. The asset conformance vectors' key — bytes `0123456789abcdef` ×4, and its
+  `yak1.` text — is copied verbatim from the service, and each has an exact, anchored
+  allowlist entry (`\b(0123456789abcdef){4}\b`: an unanchored one would clear a real
+  key that merely starts with those bytes). `.gitleaks.toml` also carries the service's
+  `yak1.` rule, so any other bundle key is refused: no source may hold `yak1.` followed
+  by 43 base64url characters, and a test that needs a non-canonical one builds it at run
+  time.
 - **Defenses, all required, none optional:**
   - `.gitignore` — build output, a `.meta` outside `packages/`, `.env*`, `.envrc`,
     `local/`.

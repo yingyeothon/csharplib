@@ -16,6 +16,7 @@ https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.even
 https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.gamebase-client
 https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.kvstore-client
 https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.auth-client
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.asset-client
 ```
 
 Add a package's dependencies before the package itself, or Package Manager reports them
@@ -28,7 +29,7 @@ against.
 Every runtime asmdef here is `autoReferenced`, so a script in Unity's default
 `Assembly-CSharp` needs no further step. **If your own scripts live in their own
 asmdef**, reference the assemblies you use by name: `Yingyeothon.Gamebase.Client`,
-`Yingyeothon.KvStore`, `Yingyeothon.Auth`, `Yingyeothon.Codec` (needed for `JsonValue`,
+`Yingyeothon.KvStore`, `Yingyeothon.Auth`, `Yingyeothon.Assets`, `Yingyeothon.Codec` (needed for `JsonValue`,
 which is on every client's API), `Yingyeothon.Logger` (needed to set `Logger`),
 `Yingyeothon.EventBroker`.
 
@@ -46,7 +47,7 @@ nothing warns you about either:
   into `Assets/` to patch, and an imported sample you extend, compile under *your*
   project's settings. If the file uses `string?` and your assembly has no nullable
   context, you get `CS8632` on every annotation. Adding `#nullable enable` at the top of
-  that file is the fix; the five samples that need it already have it.
+  that file is the fix; the six samples that need it already have it.
 - **Your own assembly is yours to configure.** Signatures copied out of the
   [API reference](README.md#reference) carry `?`, so an asmdef of your own that uses them
   wants the same one-line `csc.rsp` beside it, or `#nullable disable` and no
@@ -63,6 +64,7 @@ Import_. They land in `Assets/Samples/…` and are yours to edit.
 | gamebase-client | `Dungeon Run` | entry API → `q` socket → `Finished` / `Aborted` |
 | gamebase-client | `WebGL Transport` | the `IWebSocketFactory` / `IHttpFetcher` adapters |
 | auth-client | `Sign In` | both ways to get a channel JWT, and checking a kept one |
+| asset-client | `Asset Quickstart` | the manifest pattern: a manifest, a whole file, a range, a resumable download |
 | kvstore-client | `KvStore Quickstart` | announcements and a player's own record, from [Key-value store](kvstore.md) |
 | codec | `Json Basics` | building and reading frames |
 | logger | `Unity Logging` | routing the logger to the editor console |
@@ -169,7 +171,8 @@ No reflection anywhere in a runtime assembly — no `Activator.CreateInstance`, 
 stripper removes what it cannot see being used and fails at runtime, in a shipped
 player, rather than at build time. Wire types parse and build themselves by hand.
 
-`Runtime/link.xml` in each client package (gamebase-client, kvstore-client, auth-client) preserves
+`Runtime/link.xml` in each client package (gamebase-client, kvstore-client, auth-client,
+asset-client) preserves
 its own assembly plus `Yingyeothon.Codec` and `Yingyeothon.Logger` wholesale, since they
 are reached through interfaces and generic factories. It is picked up automatically. Managed stripping at **High** is verified before each
 release with a player that actually runs and touches every package.
@@ -226,7 +229,9 @@ The `WebGL Transport` sample is the skeleton for both.
 The key-value store client has the same seam and, unlike the gateway, ships the WebGL
 side of it — see [Key-value store](#key-value-store) below. So does the auth client,
 `AuthUnityWebRequestTransport.Instance`, although on WebGL its requests are blocked for
-now: see [Signing in](#signing-in).
+now: see [Signing in](#signing-in). And so does the asset client,
+`AssetUnityWebRequestTransport.Instance`, which also switches itself to CORS-safe
+requests in a WebGL player ([Asset bundles § On Unity](assets.md#on-unity)).
 
 ## Key-value store
 

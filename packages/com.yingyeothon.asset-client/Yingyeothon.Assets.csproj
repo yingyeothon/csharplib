@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AssemblyName>Yingyeothon.Assets</AssemblyName>
+    <RootNamespace>Yingyeothon.Assets</RootNamespace>
+    <PackageId>Yingyeothon.Assets</PackageId>
+    <Description>Reader for yyt asset bundles on the CDN: whole files, JSON manifests, byte ranges and resumable downloads, decrypting yyt-enc v1 with the bundle key.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Runtime/**/*.cs" Exclude="Runtime/Unity/**/*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../com.yingyeothon.codec/Yingyeothon.Codec.csproj" />
+    <ProjectReference Include="../com.yingyeothon.logger/Yingyeothon.Logger.csproj" />
+  </ItemGroup>
+
+</Project>

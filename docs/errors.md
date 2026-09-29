@@ -107,7 +107,10 @@ The key-value store client is the exception to "thrown locally": its
 `ArgumentException`s it throws locally, is in
 [Key-value store § Refusals](kvstore.md#6-refusals). The auth client's `AuthException`
 is mostly the auth service's answer too; its codes are in the
-[auth-client README](../packages/com.yingyeothon.auth-client/README.md#failures).
+[auth-client README](../packages/com.yingyeothon.auth-client/README.md#failures). The
+asset client's `AssetClientException` is the CDN's answer or the ciphertext's verdict;
+its codes are in the
+[asset-client README](../packages/com.yingyeothon.asset-client/README.md#errors).
 
 ## Close codes
 

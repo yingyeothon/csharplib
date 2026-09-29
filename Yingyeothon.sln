@@ -35,6 +35,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Yingyeothon.Auth", "package
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Yingyeothon.Auth.Tests", "packages\com.yingyeothon.auth-client\Yingyeothon.Auth.Tests.csproj", "{91E827C9-04A6-4F2C-88C2-4D89E2198928}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Yingyeothon.Assets", "packages\com.yingyeothon.asset-client\Yingyeothon.Assets.csproj", "{C77EE91B-9761-4772-B2E0-E00AB9C9433E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Yingyeothon.Assets.Tests", "packages\com.yingyeothon.asset-client\Yingyeothon.Assets.Tests.csproj", "{12AE3321-5BDE-4E7A-B363-62223B9BAB78}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -100,6 +104,14 @@ Global
 		{91E827C9-04A6-4F2C-88C2-4D89E2198928}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{91E827C9-04A6-4F2C-88C2-4D89E2198928}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{91E827C9-04A6-4F2C-88C2-4D89E2198928}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C77EE91B-9761-4772-B2E0-E00AB9C9433E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C77EE91B-9761-4772-B2E0-E00AB9C9433E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C77EE91B-9761-4772-B2E0-E00AB9C9433E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C77EE91B-9761-4772-B2E0-E00AB9C9433E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{12AE3321-5BDE-4E7A-B363-62223B9BAB78}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{12AE3321-5BDE-4E7A-B363-62223B9BAB78}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{12AE3321-5BDE-4E7A-B363-62223B9BAB78}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{12AE3321-5BDE-4E7A-B363-62223B9BAB78}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{ECEBF373-1DB4-417D-8A85-ED456AF0553B} = {DFCDE053-853B-4525-BE43-40B53E2DB5A5}
@@ -116,5 +128,7 @@ Global
 		{E2A80605-6DDC-4592-8EB7-FBA1DC5F2D32} = {DFCDE053-853B-4525-BE43-40B53E2DB5A5}
 		{09EFD546-E87C-4274-822A-E0D665E6A18C} = {DFCDE053-853B-4525-BE43-40B53E2DB5A5}
 		{91E827C9-04A6-4F2C-88C2-4D89E2198928} = {DFCDE053-853B-4525-BE43-40B53E2DB5A5}
+		{C77EE91B-9761-4772-B2E0-E00AB9C9433E} = {DFCDE053-853B-4525-BE43-40B53E2DB5A5}
+		{12AE3321-5BDE-4E7A-B363-62223B9BAB78} = {DFCDE053-853B-4525-BE43-40B53E2DB5A5}
 	EndGlobalSection
 EndGlobal

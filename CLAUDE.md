@@ -2,9 +2,10 @@
 
 ## Project Shape
 
-- `csharplib` holds the C# client packages of the yyt platform: five ported from
-  [tslib](https://github.com/yingyeothon/tslib) — the ones a **game client** can use —
-  plus `auth-client`, modelled on flutterlib's. Each is a UPM package and a pair of
+- `csharplib` holds the C# client packages of the yyt platform: five ports of the
+  [tslib](https://github.com/yingyeothon/tslib) packages a **game client** can use,
+  `asset-client` (a port of tslib's later `@yingyeothon/asset-client`), and
+  `auth-client`, modelled on flutterlib's since tslib has no client half. Each is a UPM package and a pair of
   `.csproj` files over the same sources.
 - Everything targets `netstandard2.0` + `netstandard2.1`, C# 9, with no third-party
   dependencies and no engine references in any Runtime assembly, so Unity's Mono and
@@ -22,7 +23,8 @@
   `kvstore-client` it is `services/state/src/kvstore.ts` there, with
   `services/state/README.md` _KV routes_ and `docs/kvstore.md`, both in `service`; for
   `auth-client` it is `services/auth/src/` there (`app.ts`, `redirect.ts`), with
-  `services/auth/README.md` and `docs/auth-game-contract.md`.
+  `services/auth/README.md` and `docs/auth-game-contract.md`; for `asset-client` it is
+  `docs/asset-encryption.md` and its vectors there, with `cli/internal/assetcrypt`.
 
 ## Required Rule Lookup
 

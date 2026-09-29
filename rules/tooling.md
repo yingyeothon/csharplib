@@ -78,6 +78,14 @@ gate that will say so — but only after the build, one at a time. Do them toget
   and where each is documented. [unity.md](unity.md) § IL2CPP's `link.xml` bullet when
   the package has a `link.xml`. The normative-spec lines in `CLAUDE.md` and
   [documentation.md](documentation.md) for a package that talks to the platform.
+- A test fixture file: a `<None … CopyToOutputDirectory>` in the Tests `.csproj`, a
+  lookup that also finds it in place under `Packages/<name>/Tests/` for the editor run,
+  and a `.gitattributes` with `-diff` beside anything large and generated.
+- A new credential shape (a key format the package takes): a `.gitleaks.toml` rule for
+  it, an exact allowlist entry for any fixture of that shape, and the fixture paragraph
+  in [security.md](security.md).
+- A new guide page: its owner line in [documentation.md](documentation.md), and its
+  row in `docs/README.md` and the root README's documentation table.
 - **Moving a sample between packages** is its own list: the old `package.json`
   `samples` entry, the `Samples.Build` `Compile` path, `docs/unity.md`'s samples table,
   the old package README's sample count, and every doc that named the sample's

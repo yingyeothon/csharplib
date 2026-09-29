@@ -1,6 +1,6 @@
 # csharplib documentation
 
-The six packages in this repository are the client half of the yyt platform. This
+The seven packages in this repository are the client half of the yyt platform. This
 folder is the guide; the package READMEs are the per-package reference, and the
 `service` repository owns the wire protocol.
 
@@ -28,13 +28,14 @@ folder is the guide; the package READMEs are the per-package reference, and the
 | Log without leaking a token or a payload | [`Yingyeothon.Logger`](../packages/com.yingyeothon.logger/README.md) |
 | Read or write the key-value store by hand | [`Yingyeothon.KvStore`](../packages/com.yingyeothon.kvstore-client/README.md) |
 | Sign a player in, or check a kept token | [`Yingyeothon.Auth`](../packages/com.yingyeothon.auth-client/README.md) |
+| Load a database, music or a level pack from the CDN | [Asset bundles](assets.md) |
 | Decouple your own game events | [`Yingyeothon.EventBroker`](../packages/com.yingyeothon.event-broker/README.md) |
 
-`gamebase-client` (the realtime gateway), `kvstore-client` (the key-value store) and
-`auth-client` (the channel JWT both of them take) are the three that talk to the
-platform, and each stands on its own. `codec` is on all three APIs — every frame,
-payload, stored value and raw config is a `JsonValue` — so you will read it whatever you
-build; `logger` and `event-broker` are optional.
+`gamebase-client` (the realtime gateway), `kvstore-client` (the key-value store),
+`auth-client` (the channel JWT both of them take) and `asset-client` (files on the CDN)
+are the four that talk to the platform, and each stands on its own. `codec` is on all
+four APIs — every frame, payload, stored value, raw config and manifest is a `JsonValue`
+— so you will read it whatever you build; `logger` and `event-broker` are optional.
 
 ## Reference
 
@@ -44,16 +45,19 @@ code. Every public type and member, with the same summary your IDE shows:
 - [`Yingyeothon.Gamebase.Client`](api/Yingyeothon.Gamebase.Client.md)
 - [`Yingyeothon.KvStore`](api/Yingyeothon.KvStore.md)
 - [`Yingyeothon.Auth`](api/Yingyeothon.Auth.md)
+- [`Yingyeothon.Assets`](api/Yingyeothon.Assets.md)
 - [`Yingyeothon.Codec`](api/Yingyeothon.Codec.md)
 - [`Yingyeothon.Logger`](api/Yingyeothon.Logger.md)
 - [`Yingyeothon.EventBroker`](api/Yingyeothon.EventBroker.md)
 
-`GamebaseRunner`, `UnityWebRequestTransport` and `AuthUnityWebRequestTransport` are the
-three public types absent from it: they sit behind `#if UNITY_5_3_OR_NEWER`, so the
-`dotnet` build the reference is generated from never sees them.
-[Unity](unity.md#polling) documents the first,
-[Unity § Key-value store](unity.md#key-value-store) the second, and the
-[auth-client README](../packages/com.yingyeothon.auth-client/README.md#threads-and-webgl) the third.
+`GamebaseRunner`, `UnityWebRequestTransport`, `AuthUnityWebRequestTransport`,
+`AssetUnityWebRequestTransport` and `UnityDebugWriter` are the five public types absent
+from it: they sit behind `#if UNITY_5_3_OR_NEWER`, so the `dotnet` build the reference is
+generated from never sees them. [Unity](unity.md#polling) documents the first,
+[Unity § Key-value store](unity.md#key-value-store) the second, the
+[auth-client](../packages/com.yingyeothon.auth-client/README.md#threads-and-webgl) and
+[asset-client](../packages/com.yingyeothon.asset-client/README.md#webgl) READMEs the
+next two, and the [logger README](../packages/com.yingyeothon.logger/README.md) the last.
 
 Each package's README also carries its own `## Public API` summary and the deliberate
 differences from its `@yingyeothon/*` original — read those before "fixing" a
@@ -64,7 +68,8 @@ behaviour to match tslib, because the difference is often the fix:
 [gamebase-client](../packages/com.yingyeothon.gamebase-client/README.md),
 [kvstore-client](../packages/com.yingyeothon.kvstore-client/README.md),
 [auth-client](../packages/com.yingyeothon.auth-client/README.md) (whose model is
-flutterlib's package; tslib has no client counterpart).
+flutterlib's package; tslib has no client counterpart),
+[asset-client](../packages/com.yingyeothon.asset-client/README.md).
 
 ## What lives in the `service` repository
 
