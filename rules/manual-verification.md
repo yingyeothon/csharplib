@@ -303,8 +303,12 @@ against. A compiler flag is a build change even when no `.cs` moved.
 
 ### The run that added `auth-client` and `asset-client`
 
-**2026-09-30**, Unity Personal, Ubuntu 24.04, **6000.0.25f1 only**, at the commit that
-records this run (its parent carries the code). **2021.3.45f2 was not run**: its
+**2026-09-30**, Unity Personal, Ubuntu 24.04, **6000.0.25f1 only**, for `8e4ad6f` (the
+commit that records this run; its parent carries the code). One seam: the IL2CPP and
+WebGL builds and the non-asset EditMode runs used the Unity transports one revision before
+`d24488d`'s last edit (the redirect exemption narrowed to `ConnectionError` and to a
+request that did not time out); the Mono player and the asset EditMode run were repeated
+on the final code. Repeat the IL2CPP player before a tag. **2021.3.45f2 was not run**: its
 `bee_backend` hang needs the wrapper in
 [Two things Ubuntu 24.04 breaks](#two-things-ubuntu-2404-breaks-in-unity-20213), and this
 session was not permitted to swap a binary inside the editor install. The floor is owed
