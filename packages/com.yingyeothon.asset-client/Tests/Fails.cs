@@ -45,5 +45,21 @@ namespace Yingyeothon.Assets.Tests
             Assert.Fail("expected an OperationCanceledException");
             return null!;
         }
+
+        internal static async Task<T> With<T>(Func<Task> call)
+            where T : Exception
+        {
+            try
+            {
+                await call();
+            }
+            catch (T error)
+            {
+                return error;
+            }
+
+            Assert.Fail("expected " + typeof(T).Name);
+            return null!;
+        }
     }
 }

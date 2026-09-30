@@ -139,7 +139,11 @@
   yields when the fake returns an unsettled task (`FakeTransport.Hangs`, with a client
   `Timeout` or a cancelled token — `KvFailureTests.ATransportThatNeverAnswersIsATimeout`)
   or a real timer runs; every other `FakeTransport` reply settles inline, and the
-  blocking assertions are fine there. The same context is why a test must not read
+  blocking assertions are fine there. **Real file IO yields too**: the asset client's
+  `AssetFiles` tests blocked on `FileStream.WriteAsync` with `.Wait()` and
+  `Assert.ThrowsAsync` and hung the whole 2026-09-30 editor run the same way, green under
+  dotnet. Anything that touches the disk, the network or a real timer (not `FakeClock`)
+  is `async Task` and awaits. The same context is why a test must not read
   `task.IsCanceled` or `IsCompleted` right after the call that settles it: under
   dotnet the continuation ran inline, in the editor it was posted, and the assertion
   is one frame early. Await the task instead.

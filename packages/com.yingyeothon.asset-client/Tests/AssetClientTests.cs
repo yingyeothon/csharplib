@@ -505,7 +505,7 @@ namespace Yingyeothon.Assets.Tests
         }
 
         [Test]
-        public void DownloadToFileWritesThePartThenTheFileAndResumesFromIt()
+        public async Task DownloadToFileWritesThePartThenTheFileAndResumesFromIt()
         {
             var folder = Path.Combine(Path.GetTempPath(), "yyt-asset-" + Guid.NewGuid().ToString("N"));
             try
@@ -516,14 +516,16 @@ namespace Yingyeothon.Assets.Tests
                 var client = Client(cdn);
 
                 // An interrupted first attempt: the progress callback throws after the first piece.
-                Assert.ThrowsAsync<InvalidOperationException>(
+                // Awaited, never Assert.ThrowsAsync: file IO really yields, and a blocking
+                // assertion deadlocks the editor's main thread (rules/testing.md).
+                await Fails.With<InvalidOperationException>(
                     () => AssetFiles.DownloadToFileAsync(client, "a.bin", destination, _ => throw new InvalidOperationException("stop")));
                 Assert.That(File.Exists(destination), Is.False);
                 Assert.That(File.Exists(destination + ".part"), Is.True);
                 Assert.That(File.ReadAllText(destination + ".part.etag"), Is.EqualTo("\"etag-1\""));
 
                 cdn.Requests.Clear();
-                var result = AssetFiles.DownloadToFileAsync(client, "a.bin", destination).Result;
+                var result = await AssetFiles.DownloadToFileAsync(client, "a.bin", destination);
 
                 Assert.That(File.ReadAllBytes(destination), Is.EqualTo(plain));
                 Assert.That(result.Bytes, Is.EqualTo(200000L));
@@ -536,10 +538,10 @@ namespace Yingyeothon.Assets.Tests
                 // An existing file is replaced, and a changed object discards the part and its ETag.
                 cdn.Requests.Clear();
                 var second = Put(cdn, "a.bin", TestEncryptor.Pattern(200000, 9));
-                Assert.ThrowsAsync<InvalidOperationException>(
+                await Fails.With<InvalidOperationException>(
                     () => AssetFiles.DownloadToFileAsync(client, "a.bin", destination, _ => throw new InvalidOperationException("stop")));
                 Assert.That(File.ReadAllText(destination + ".part.etag"), Is.EqualTo("\"etag-2\""));
-                AssetFiles.DownloadToFileAsync(client, "a.bin", destination).Wait();
+                await AssetFiles.DownloadToFileAsync(client, "a.bin", destination);
                 Assert.That(File.ReadAllBytes(destination), Is.EqualTo(second));
             }
             finally
@@ -896,7 +898,7 @@ namespace Yingyeothon.Assets.Tests
         }
 
         [Test]
-        public void APartLongerThanTheFileIsDiscardedAndTheDownloadRedone()
+        public async Task APartLongerThanTheFileIsDiscardedAndTheDownloadRedone()
         {
             var folder = Path.Combine(Path.GetTempPath(), "yyt-asset-" + Guid.NewGuid().ToString("N"));
             try
@@ -908,7 +910,7 @@ namespace Yingyeothon.Assets.Tests
                 File.WriteAllBytes(destination + ".part", new byte[5000]);
                 File.WriteAllText(destination + ".part.etag", "\"etag-1\"");
 
-                AssetFiles.DownloadToFileAsync(Client(cdn), "a.bin", destination).Wait();
+                await AssetFiles.DownloadToFileAsync(Client(cdn), "a.bin", destination);
 
                 Assert.That(File.ReadAllBytes(destination), Is.EqualTo(plain));
             }
@@ -919,7 +921,7 @@ namespace Yingyeothon.Assets.Tests
         }
 
         [Test]
-        public void ASideFileThatIsALinkIsNeverWrittenThrough()
+        public async Task ASideFileThatIsALinkIsNeverWrittenThrough()
         {
 #if NET6_0_OR_GREATER
             var folder = Path.Combine(Path.GetTempPath(), "yyt-asset-" + Guid.NewGuid().ToString("N"));
@@ -940,7 +942,7 @@ namespace Yingyeothon.Assets.Tests
 
                 var cdn = new FakeCdn();
                 var plain = Put(cdn, "a.bin", TestEncryptor.Pattern(1000));
-                AssetFiles.DownloadToFileAsync(Client(cdn), "a.bin", destination).Wait();
+                await AssetFiles.DownloadToFileAsync(Client(cdn), "a.bin", destination);
 
                 Assert.That(File.ReadAllText(victim), Is.EqualTo("untouched"));
                 Assert.That(File.ReadAllBytes(destination), Is.EqualTo(plain));
@@ -950,6 +952,7 @@ namespace Yingyeothon.Assets.Tests
                 Directory.Delete(folder, true);
             }
 #else
+            await Task.CompletedTask;
             Assert.Ignore("File.CreateSymbolicLink needs .NET 6; the editor's profile has none");
 #endif
         }
