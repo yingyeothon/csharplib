@@ -95,9 +95,9 @@ In Unity, _Window → Package Manager → Add package from git URL_. A git-URL p
 cannot resolve its own dependencies, so add each one it needs:
 
 ```
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.codec#v0.1.0
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.logger#v0.1.0
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.gamebase-client#v0.1.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.codec#v0.2.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.logger#v0.2.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.gamebase-client#v0.2.0
 ```
 
 `com.yingyeothon.kvstore-client`, `com.yingyeothon.auth-client` and
@@ -107,10 +107,10 @@ https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.game
 way if you want it:
 
 ```
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.kvstore-client#v0.1.0
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.auth-client#v0.1.0
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.asset-client#v0.1.0
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.event-broker#v0.1.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.kvstore-client#v0.2.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.auth-client#v0.2.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.asset-client#v0.2.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.event-broker#v0.2.0
 ```
 
 These URLs pin a release tag; move every one of them together to take another, and drop

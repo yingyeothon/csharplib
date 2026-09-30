@@ -1,6 +1,6 @@
 {
   "name": "com.yingyeothon.asset-client",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "displayName": "Yingyeothon Asset Client",
   "description": "Reader for yyt asset bundles on the CDN: whole files, JSON manifests, byte ranges and resumable downloads, decrypting yyt-enc v1 with the bundle key.",
   "unity": "2021.3",
@@ -10,8 +10,8 @@
     "url": "https://github.com/yingyeothon"
   },
   "dependencies": {
-    "com.yingyeothon.codec": "0.1.0",
-    "com.yingyeothon.logger": "0.1.0"
+    "com.yingyeothon.codec": "0.2.0",
+    "com.yingyeothon.logger": "0.2.0"
   },
   "keywords": [
     "yyt",

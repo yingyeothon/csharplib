@@ -1,6 +1,6 @@
 {
   "name": "com.yingyeothon.codec",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "displayName": "Yingyeothon Codec",
   "description": "Dependency-free JSON value tree, parser, writer and codec abstraction for Unity-compatible builds.",
   "unity": "2021.3",

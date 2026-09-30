@@ -9,10 +9,10 @@ Add four git URLs in _Package Manager → + → Add package from git URL_ — th
 are the gateway client and what it depends on, the fourth is what §3 signs in with:
 
 ```
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.codec#v0.1.0
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.logger#v0.1.0
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.gamebase-client#v0.1.0
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.auth-client#v0.1.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.codec#v0.2.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.logger#v0.2.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.gamebase-client#v0.2.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.auth-client#v0.2.0
 ```
 
 A git-URL package cannot resolve its own dependencies, so all four must be present;

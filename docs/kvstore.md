@@ -15,7 +15,7 @@ reference is [`Yingyeothon.KvStore`](../packages/com.yingyeothon.kvstore-client/
 URL as in [Getting started § 1](getting-started.md#1-install-the-packages), then this:
 
 ```
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.kvstore-client#v0.1.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.kvstore-client#v0.2.0
 ```
 
 The package is independent of `gamebase-client`: a game that only reads a notice board

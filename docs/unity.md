@@ -10,13 +10,13 @@ _Window → Package Manager → + → Add package from git URL_. A git-URL packa
 resolve its own dependencies, so add each one:
 
 ```
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.codec#v0.1.0
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.logger#v0.1.0
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.event-broker#v0.1.0
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.gamebase-client#v0.1.0
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.kvstore-client#v0.1.0
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.auth-client#v0.1.0
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.asset-client#v0.1.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.codec#v0.2.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.logger#v0.2.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.event-broker#v0.2.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.gamebase-client#v0.2.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.kvstore-client#v0.2.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.auth-client#v0.2.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.asset-client#v0.2.0
 ```
 
 Add a package's dependencies before the package itself, or Package Manager reports them

@@ -16,7 +16,7 @@ including how a Unity build receives the redirect.
 ## Install
 
 ```
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.auth-client#v0.1.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.auth-client#v0.2.0
 ```
 
 The fragment pins a release tag; keep the same one on every `com.yingyeothon.*` URL

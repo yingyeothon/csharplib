@@ -8,7 +8,7 @@ Independent of every other package here and of the gateway; see [the guide](../.
 ## Install
 
 ```
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.event-broker#v0.1.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.event-broker#v0.2.0
 ```
 
 The fragment pins a release tag; keep the same one on every `com.yingyeothon.*` URL
