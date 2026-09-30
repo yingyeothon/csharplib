@@ -321,7 +321,9 @@ and booleans, never a URL or a token — and you grep the log for `[PROBE]`:
   `FireAsync` past a handler returning such a task, with a second handler after it. Each
   must print `finished=True`, the map `ok=True onMain=True`, the broker
   `secondOnMain=True`. The native players run the same checks, plus `MapAsync` over
-  `HttpFetcher.Default` against `:18778`: `status=404 offMain=True`
+  `HttpFetcher.Default` against `:18778`: `status=404 offMain=True`, waiting by wall-clock
+  time (up to 20 s), not by frames — an unthrottled batch-mode player runs hundreds of
+  frames before Mono's first `HttpClient` reply
   ([The consumer-task hang](#the-consumer-task-hang));
 - each Unity transport against `:18777` → `network (0)`, and no `FOLLOWED`; against
   `:18778` → `kv` null, `auth http (404)`, `asset not_found (404)`. A control that reads
@@ -338,7 +340,8 @@ and booleans, never a URL or a token — and you grep the log for `[PROBE]`:
   not work around it — hand the user a script that runs it with `umask 077` and writes
   only `internal static class BundleKey { public const string Value = "…"; }` into each
   scratch project's `Assets/`, never printing it, and wait. Never read the key back. After
-  the run delete the bundle, every `BundleKey.cs`, the key file, the WebGL build and
+  the run delete the bundle, every `BundleKey.cs`, the key file, the WebGL build, each
+  scratch project's `Library` (it holds the key compiled into `Assembly-CSharp`) and
   `<scratch>/chrome`. If the user declines, record the CDN check as not covered;
 - the auth browser flow's client half: `BuildStartUrl`, the nonce in `sessionStorage`
   through a `.jslib` in the scratch project's `Assets/`, a same-tab
@@ -360,8 +363,11 @@ per-check `start` line, so the last one printed names the check that hung.
 This subsection holds the last **full, two-editor** run, which is what a release needs. Always record the
 **commit** as well as the date: a release asks whether this run
 covers the code being tagged, and a date alone cannot answer it
-([release.md](release.md)). Record the sha that was run in a commit after it that touches
-nothing outside `rules/`; a later commit touching anything else means a new run.
+([release.md](release.md)). Run from `git archive S` (the embedded projects) and a bare
+clone of S (the git-URL projects), never from the working tree, and record S in a commit
+that touches nothing outside `rules/`; which later commits keep S valid is
+[release.md](release.md) step 2's rule. When you replace this record, grep the file for
+the old sha and for `#last-verified`: a link here must not be paired with a sha.
 
 A full run is every check in [In Unity](#in-unity) on both editors. The live sections
 ([gateway](#against-a-real-gateway), [store](#against-the-dev-store),
@@ -371,47 +377,49 @@ run being full unless the record says why it does not matter for a tag. The date
 sections after this one are either partial runs, which say what they cover, or pieces of
 an earlier full run, which say which one.
 
-**2026-09-30**, at commit `6ac4ccf`, on Unity Personal, Ubuntu 24.04, with the 2021.3
-workarounds above (the `bee_backend` wrapper was put back and its checksum matched). The
-commit that records this run changes only `rules/`, which no package ships and Unity never
-compiles: for [release.md](release.md) step 2 the verified sha is `6ac4ccf`, and the tag
-message names it. Everything ran from `git archive` of that commit (the embedded projects) and from a bare clone of it (the git-URL projects); the
-browser was headless Chrome 154 with SwiftShader against a dev CDN bundle made for it; the
-bundle, its key, the `BundleKey.cs` files, the builds and the Chrome profiles were deleted
-afterwards, as the recipe says.
+**2026-09-30**, at commit `d8ce422`, on Unity Personal, Ubuntu 24.04, with the 2021.3
+workarounds above (the `bee_backend` wrapper was put back and its checksum matched).
+Everything ran from `git archive` of that commit and from a bare clone of it; the browser
+was headless Chrome 154 with SwiftShader against a dev CDN bundle made for it; the
+bundle, its key, the `BundleKey.cs` files, the builds, the projects' `Library` and the
+Chrome profiles were deleted afterwards, as the recipe says.
 
 | Check | 2021.3.45f2 | 6000.0.25f1 |
 | --- | --- | --- |
-| EditMode, all seven packages, one per run | **0 failed**; 886 / 874 / 12 ignored — the twelve [named above](#run-the-package-tests-inside-the-editor) | same |
+| EditMode, all seven packages, one per run | **0 failed**; 890 / 878 / 12 ignored — the twelve [named above](#run-the-package-tests-inside-the-editor) | same |
 | Bare-clone git-URL install | 7 in `Library/PackageCache`, 0 *immutable folder*, 7 `Yingyeothon*.dll`, each with `NullableContextAttribute` | same |
 | Samples listed and imported | 1 / 1 / 3 / 1 / 1 / 1 / 1 (codec, event-broker, gamebase, kvstore, auth, asset, logger) | same |
 | Clean compile of the git-URL project with the samples (`ScriptAssemblies` deleted) | `CompileScripts` seen, 0 errors, 0 warnings — an immutable install suppresses package warnings, so this counts the samples and the harness | same |
-| `StandaloneLinux64` Mono, stripping **High** | ran every package through its factories, decrypted an asset vector, and each Unity transport answered a `302` as `http (302)`; nothing followed it | same |
+| `StandaloneLinux64` Mono, stripping **High** | ran every package through its factories, decrypted an asset vector, each Unity transport answered a `302` as `http (302)` and nothing followed it; the consumer checks all `finished=True` on the main thread; `HttpFetcher.Default` `status=404 offMain=True` | same |
 | `StandaloneLinux64` IL2CPP, stripping **High** | same as Mono | same |
-| WebGL | linked; in the browser every check of [the recipe](#run-the-webgl-player-in-a-browser) printed what it expects (the browser's 3 redirects, 0 followed; with `CorsSafe` off both ranges `http (206)` `no Content-Range`, as the asset README documents). The canary was compiled but not placed in this scene, and neither build had the per-check `start` lines the recipe asks for | same, and the canary: none of the four ran |
+| WebGL | linked; in the browser every check of [the recipe](#run-the-webgl-player-in-a-browser) printed what it expects, the per-check `start` lines included: the four consumer checks `finished=True` on the main thread, 3 redirects and 0 followed, and with `CorsSafe` off both ranges `http (206)` `no Content-Range`, as the asset README documents; the no-pool control: all four `false`, as expected | same |
 
-Not repeated from the previous full run (2026-09-01, at `fbf7b6d`, parent `70c334d`): the
-embedded project without `csc.rsp` — the six `csc.rsp` files added since are shown to apply
-by `NullableContextAttribute` in all seven assemblies, not by taking them away — and
-`docs/getting-started.md` pasted into a script — compiled against the first tag
-instead ([The first tag, installed](#the-first-tag-installed)). The two sections
-[The install path was broken](#the-install-path-was-broken-and-the-2026-09-01-run-is-what-found-it)
-and [Against the dev gateway, 2026-09-01](#against-the-dev-gateway-2026-09-01) belong to that
-run.
+One seam: in the first pass both Mono players printed `default-fetcher finished=False`
+— the probe waited by frames, which the recipe now forbids. Only the scratch probe
+changed; both players of each editor were rebuilt from the same `d8ce422` packages and
+printed `status=404 offMain=True` and every other line as before, so the run stays full.
 
-The live sections: [Against a real gateway](#against-a-real-gateway) was rerun on the
-`6ac4ccf` build (dev lobby: `hello` with `aoi`, one `snapshot` for a `pos`, a clean
-close). The store's, the CDN's and the auth service's were not: since their dated runs no
-non-Unity source of `kvstore-client` or `auth-client` has changed, and `asset-client`'s
-only change is `Race`, whose path without a synchronization context — the console app's —
-is the old one.
+Skipped from the recipe: the vector-key read ran in the default `CorsSafe` mode only,
+not in both; it tests the key, not the request plan the mode changes. Not called for, so
+not run: taking a `csc.rsp` away (no compiler flag changed), and pasting
+`docs/getting-started.md` (unchanged since [the first tag](#the-first-tag-installed), and
+the approved public API with it). The previous full run, at `6ac4ccf`, is the one the
+first tag was cut from.
 
-Skipped, and why neither matters for a tag: the WebGL thread canary on 2021.3 and the
-per-check `start` lines are diagnostics for a check that never prints, and every check
-printed on both editors. The provider hop of the auth flow and a stalled server in a
-browser are in *Not covered* below.
+The live sections: [Against a real gateway](#against-a-real-gateway) ran on the tree of
+`d8ce422` before its last doc-comment edits (to `GatewayLobbyClient.cs` and a sample):
+`hello` with `aoi`, `MapAsync` over `HttpFetcher.Default` parsed the dev lobby's map to an
+object and a second call returned the cached one, one `snapshot` for a `pos`, a clean
+close. Its step 4, the forced reconnect, was not repeated: no reconnect code changed. The
+store's and the auth service's live runs were not repeated: `kvstore-client` and
+`auth-client` changed only under `Runtime/Unity/` since. Nor the CDN's console run:
+`asset-client`'s one change outside `Runtime/Unity/` since is `BodyReader.Race`
+(`6ac4ccf`), whose path without a synchronization context — the console app's — keeps
+the old behaviour and is covered by the asset tests; its context path is the WebGL row.
+The provider hop of the auth flow and a stalled server in a browser are in *Not covered*
+below.
 
-The two editors agreed on every row, the canary aside. When they do not, that is the
+The two editors agreed on every row. When they do not, that is the
 finding — 2021.3 is the floor for a reason ([Which editor](#which-editor)).
 
 **Do not carry a player row forward on "the sources did not change".** The 2026-09-01
@@ -426,7 +434,7 @@ against. A compiler flag is a build change even when no `.cs` moved.
 
 **2026-09-30**, a partial run: [release.md](release.md) step 7 for the first tag, which
 the user cut on commit `c2f6339` from the verified sha `6ac4ccf`. It adds nothing to
-*Last verified*, which is still the full run at `6ac4ccf`. On 2021.3.45f2 (with the
+that full run. On 2021.3.45f2 (with the
 2021.3 workarounds above; the `bee_backend` wrapper was put back and its checksum
 matched) and 6000.0.25f1, each editor got two **new** scratch projects whose
 `manifest.json` names
@@ -442,8 +450,8 @@ The page as of `c2f6339`: §3's lines 63–70 verbatim inside an
 `async Task<string> SignIn(string providerAccessToken, string idToken)`, plus the
 `ExchangeIdTokenAsync("google", idToken)` call its prose names, and §4's `LobbyQuickstart`
 byte for byte. §5's line is the same `Pos` call §4 compiles, with placeholder arguments.
-No sample was imported from this install; the samples were last imported from the bare
-clone of `6ac4ccf` ([Last verified](#last-verified)).
+No sample was imported from this install; the full runs import them from a bare clone
+([Last verified](#last-verified)).
 
 ### The consumer-task hang
 
@@ -454,8 +462,8 @@ a handler, each completed a frame later both plainly and with
 `RunContinuationsAsynchronously` — while `DiagProbe` showed no pool
 (`Task.Run completes=False`). The cause is in [unity.md](unity.md#webgl): under
 `ConfigureAwait(false)` the runtime will not inline a continuation on a thread with a
-synchronization context, so it went to the pool. The fix's own run is the full run that
-follows it.
+synchronization context, so it went to the pool. The fix's own run is
+[Last verified](#last-verified), at `d8ce422`.
 
 ### The WebGL browser run
 
@@ -466,7 +474,7 @@ commit that records it (its parent is `79f981d`). The first pass, at `79f981d`, 
 committed but for comments — copied into both scratch projects, with the asset EditMode
 suite first (**0 failed**, 109 / 108 / 1 skipped, on each editor; the ordering test
 `AnAnswerThatArrivedBeforeTheCancelWins` was added after it and runs in the full run). Only the WebGL rows are
-covered here; the full two-editor run on `6ac4ccf` is [Last verified](#last-verified).
+covered here; the full two-editor run that covered this code was at `6ac4ccf`.
 
 | Check | at `79f981d`, both editors | with the fix, 2021.3.45f2 and 6000.0.25f1 |
 | --- | --- | --- |
@@ -498,7 +506,7 @@ final code was the WebGL link (since run: [Last verified](#last-verified)).
 because that session was not permitted to swap a binary inside the editor install (the
 `bee_backend` wrapper of
 [Two things Ubuntu 24.04 breaks](#two-things-ubuntu-2404-breaks-in-unity-20213)). The full
-run it called for is [Last verified](#last-verified), at `6ac4ccf`.
+run it called for was at `6ac4ccf`.
 
 | Check | 6000.0.25f1 |
 | --- | --- |
@@ -583,7 +591,7 @@ forced clean compile (`ScriptAssemblies` deleted, `CompileScripts` seen) with 0 
 and 0 warnings. **2021.3.45f2 was not run**: its `bee_backend` hang needs the wrapper in
 [Two things Ubuntu 24.04 breaks](#two-things-ubuntu-2404-breaks-in-unity-20213), and
 that session was not permitted to swap a binary inside the editor install. The floor ran
-at `6ac4ccf` ([Last verified](#last-verified)).
+in the full run at `6ac4ccf`.
 
 The same install settles whether a `csc.rsp` is honoured from `Library/PackageCache`,
 which a warning count cannot — Unity suppresses warnings from an immutable package. The
