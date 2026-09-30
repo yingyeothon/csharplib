@@ -384,8 +384,8 @@ afterwards, as the recipe says.
 Not repeated from the previous full run (2026-09-01, at `fbf7b6d`, parent `70c334d`): the
 embedded project without `csc.rsp` — the six `csc.rsp` files added since are shown to apply
 by `NullableContextAttribute` in all seven assemblies, not by taking them away — and
-`docs/getting-started.md` pasted into a script; its §3 auth snippet has never been
-compiled in Unity. The two sections
+`docs/getting-started.md` pasted into a script — compiled against the first tag
+instead ([The first tag, installed](#the-first-tag-installed)). The two sections
 [The install path was broken](#the-install-path-was-broken-and-the-2026-09-01-run-is-what-found-it)
 and [Against the dev gateway, 2026-09-01](#against-the-dev-gateway-2026-09-01) belong to that
 run.
@@ -412,6 +412,29 @@ run added a `csc.rsp` per asmdef, which is not a source change and which
 `NullableContextAttribute` and `EmbeddedAttribute` into the Unity-built assemblies. That
 is exactly the metadata `ManagedStrippingLevel.High` and `Runtime/link.xml` are tested
 against. A compiler flag is a build change even when no `.cs` moved.
+
+### The first tag, installed
+
+**2026-09-30**, a partial run: [release.md](release.md) step 7 for the first tag, which
+the user cut on commit `c2f6339` from the verified sha `6ac4ccf`. It adds nothing to
+*Last verified*, which is still the full run at `6ac4ccf`. On 2021.3.45f2 (with the
+2021.3 workarounds above; the `bee_backend` wrapper was put back and its checksum
+matched) and 6000.0.25f1, each editor got two **new** scratch projects whose
+`manifest.json` names
+`https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.<name>#<the tag>`
+— GitHub itself, not a local clone. The URLs were written into the manifest in one edit.
+
+| Check | 2021.3.45f2 | 6000.0.25f1 |
+| --- | --- | --- |
+| All seven packages | 7 in `Library/PackageCache`, every `packages-lock.json` hash `c2f6339`, 0 *immutable folder*, 0 `error CS`, 7 `Yingyeothon*.dll`, **no** `Yingyeothon*Tests*.dll` anywhere in `Library` | same |
+| Only [getting-started](../docs/getting-started.md) §1's four URLs, with its §3 and §4 code pasted into `Assets/` | 4 in `PackageCache`, 4 `Yingyeothon*.dll`, `CompileScripts` seen, 0 errors, 0 warnings from the pasted scripts (the packages' own are suppressed from an immutable install) | same |
+
+The page as of `c2f6339`: §3's lines 63–70 verbatim inside an
+`async Task<string> SignIn(string providerAccessToken, string idToken)`, plus the
+`ExchangeIdTokenAsync("google", idToken)` call its prose names, and §4's `LobbyQuickstart`
+byte for byte. §5's line is the same `Pos` call §4 compiles, with placeholder arguments.
+No sample was imported from this install; the samples were last imported from the bare
+clone of `6ac4ccf` ([Last verified](#last-verified)).
 
 ### The WebGL browser run
 
@@ -610,7 +633,19 @@ Not covered, and each is a real gap rather than a formality:
   (2026-09-30): config, verify (a live token and a forged one), a fake provider token
   (`401`), the wrong credential kind (`400`), and `/start` for a redirect off the
   allowlist (`403`) and on it with the nonce query (`302` to the provider).
-- **`docs/getting-started.md` §3 (auth) compiled in Unity** — never.
+- **`docs/getting-started.md`'s code compiled in Unity** — only as of the first tag
+  ([The first tag, installed](#the-first-tag-installed)). A later edit to its code blocks
+  is uncompiled until pasted into a scratch project again. The rest of `docs/` — the
+  alias in `docs/unity.md` § Logging to the editor console among them — has never been
+  pasted at all; only the samples stand in for it.
+- **Upgrading from one tag to the next** (`docs/unity.md` § Installing, *Upgrading*). It needs a second
+  tag: install every package at the previous tag in a new project, then change every
+  fragment to the new tag in one edit.
+- **Adding the URLs one at a time in Package Manager.** Every run wrote them into
+  `manifest.json` at once, so the dependency-first order of `docs/getting-started.md`
+  §1 and `docs/unity.md` § Installing, and what Package Manager reports without it, has
+  never been exercised. `UnityEditor.PackageManager.Client.Add` per URL through
+  `-executeMethod` is the headless form of that click.
 - **A stalled server in a browser.** On WebGL only `UnityWebRequest.timeout` bounds a
   request; no browser run has waited it out.
 - **The auth provider hop in a browser.** No dev auth channel has a provider, so the
