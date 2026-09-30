@@ -50,6 +50,12 @@ bool anyHandler = await broker.FireAsync(new PlayerDied { UserId = "alice" });
 - `FireAsync` returns `false` when nothing was registered for that type.
 - `Off` removes only the first registration matching that delegate.
 - Not thread-safe. Drive it from one thread, as tslib does.
+- **Threads.** After a handler that did not finish at once, `FireAsync` resumes on the
+  synchronization context it was called from, so in Unity every handler runs on the main
+  thread, possibly a frame later. With no context, the rest of the dispatch runs wherever
+  that handler's task finished: until `FireAsync` completes, touch the broker from no
+  other thread (a handler may still `On` and `Off`). Await it; blocking the calling
+  thread on it deadlocks while a handler is still running.
 
 ## Differences from `@yingyeothon/event-broker`
 

@@ -101,9 +101,10 @@ deleted and its key removed.
 
 `dotnet build` proves nothing about the compiler Unity uses, about IL2CPP's stripper,
 or about Mono's BCL. Run the suite and a player inside the editor before a release.
-The four things below were all found this way and none of them is reachable from
-`dotnet test`: a `ConfigureAwait(false)` that resumed a caller on a thread-pool
-thread, two `double` differences, and a test harness Mono cannot host
+The four things below were all found this way and none of them was reachable from
+`dotnet test` as it then stood: a `ConfigureAwait(false)` that resumed a caller on a
+thread-pool thread (a test that installs its own context now can —
+[testing.md](testing.md)), two `double` differences, and a test harness Mono cannot host
 ([unity.md](unity.md)).
 
 ### Which editor
@@ -314,6 +315,14 @@ and booleans, never a URL or a token — and you grep the log for `[PROBE]`:
 
 - the gateway guard: `ConnectAsync()` over the default factory fails
   (`GatewayStoppedException`, state `Closed`);
+- consumer tasks that finish a frame later on the main thread, completed plainly and
+  with `RunContinuationsAsynchronously`: `MapAsync` over an `IHttpFetcher` of the probe's
+  own (the lobby opened by a fake `IWebSocketFactory` that sends a `hello`), and
+  `FireAsync` past a handler returning such a task, with a second handler after it. Each
+  must print `finished=True`, the map `ok=True onMain=True`, the broker
+  `secondOnMain=True`. The native players run the same checks, plus `MapAsync` over
+  `HttpFetcher.Default` against `:18778`: `status=404 offMain=True`
+  ([The consumer-task hang](#the-consumer-task-hang));
 - each Unity transport against `:18777` → `network (0)`, and no `FOLLOWED`; against
   `:18778` → `kv` null, `auth http (404)`, `asset not_found (404)`. A control that reads
   `network (0)` means the servers, not the transports, are wrong;
@@ -435,6 +444,18 @@ The page as of `c2f6339`: §3's lines 63–70 verbatim inside an
 byte for byte. §5's line is the same `Pos` call §4 compiles, with placeholder arguments.
 No sample was imported from this install; the samples were last imported from the bare
 clone of `6ac4ccf` ([Last verified](#last-verified)).
+
+### The consumer-task hang
+
+**2026-09-30**, 6000.0.25f1, WebGL in headless Chrome, a control run: the probe's
+consumer checks (above) against the packages of the first tag (`c2f6339`). All four
+printed `finished=False` — `MapAsync` over the probe's own fetcher and `FireAsync` past
+a handler, each completed a frame later both plainly and with
+`RunContinuationsAsynchronously` — while `DiagProbe` showed no pool
+(`Task.Run completes=False`). The cause is in [unity.md](unity.md#webgl): under
+`ConfigureAwait(false)` the runtime will not inline a continuation on a thread with a
+synchronization context, so it went to the pool. The fix's own run is the full run that
+follows it.
 
 ### The WebGL browser run
 

@@ -112,7 +112,10 @@ namespace Yingyeothon.Gamebase.Client.Samples
     /// <remarks>
     /// The map asset is public and immutable, so the request carries no headers —
     /// adding one would send the token to a CDN. The URL still comes off the wire, so
-    /// bound it anyway: the default fetcher uses 30 seconds, 16 MB and 5 redirects.
+    /// bound it anyway, as the default fetcher does: 30 seconds as
+    /// <c>UnityWebRequest.timeout</c>, 5 as <c>redirectLimit</c>, 16 MB in the download
+    /// handler — never a timer or a token, which do not fire in a WebGL player. Complete
+    /// the task however is convenient; the SDK continues from it on the main thread.
     /// </remarks>
     public sealed class WebGLHttpFetcher : IHttpFetcher
     {

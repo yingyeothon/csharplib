@@ -179,7 +179,20 @@ namespace Yingyeothon.Gamebase.Client
             JsonValue result;
             try
             {
-                var response = await _fetcher.GetAsync(mapUrl, CancellationToken.None).ConfigureAwait(false);
+                // A consumer's fetcher is awaited plainly. Under ConfigureAwait(false),
+                // a task it completes on Unity's main thread — any way at all, since the
+                // runtime refuses to inline such a continuation under a synchronization
+                // context — sends the rest of this method to the thread pool, which a
+                // WebGL player does not have. A plain await posts it back to the caller's
+                // context instead, so the parse runs there, once per map URL.
+                //
+                // The default fetcher is HttpClient's, finishes on the pool and never runs
+                // on WebGL, so it keeps ConfigureAwait(false): its parse stays off the
+                // main thread, and a caller blocking on the result does not deadlock.
+                var fetch = _fetcher.GetAsync(mapUrl, CancellationToken.None);
+                var response = ReferenceEquals(_fetcher, HttpFetcher.Default)
+                    ? await fetch.ConfigureAwait(false)
+                    : await fetch;
                 if (!response.Ok)
                 {
                     throw new MapFetchException(response.Status);

@@ -201,12 +201,15 @@ completes; a plain `await` does resume, on the main thread. So on WebGL:
 
 - A timeout is `UnityWebRequest.timeout`. The store, auth and asset transports set it
   from the client's own timeout; a token you cancel on a timer does nothing.
-- Any task you hand the SDK — from an adapter you write (a socket, an `IHttpFetcher`) or
-  from an `EventBroker` handler — completes **on the main thread and without
-  `RunContinuationsAsynchronously`**. `MapAsync` and `EventBroker` continue from it with
-  `ConfigureAwait(false)`, which sends an asynchronously completed task's continuation to
-  the thread pool, and there is none. An `async` method's own task is fine; a raw
-  `TaskCompletionSource` needs care.
+- A task you hand the SDK — from a transport or an `IHttpFetcher` you write, or from an
+  `EventBroker` handler — may complete any way it likes, `RunContinuationsAsynchronously`
+  included: the SDK continues from it on the main thread's synchronization context,
+  never on a pool. Tags from before that fix sent the rest of `MapAsync` and of
+  `FireAsync`'s dispatch to the pool, and hung here on any task not already complete,
+  an `async` method's included
+  ([Troubleshooting](troubleshooting.md#mapasync-or-fireasync-never-finishes-in-a-browser)).
+  Await these calls rather than blocking on them —
+  [Connection lifecycle § Threading](connection-lifecycle.md#threading).
 
 A WebGL build supplies its own transport through the same options every other build
 uses — this is configuration, not a fork:

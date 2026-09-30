@@ -148,11 +148,25 @@ were invisible only because nothing had forced a clean recompile —
   as the native bound — on WebGL it simply never fires — provided the Unity transport
   also sets `UnityWebRequest.timeout`, which all three do. `GatewayLobbyClientImpl.ConnectAsync`
   and `MapFetcher.Observe` use `ExecuteSynchronously` on `Default`, which runs inline
-  unless the antecedent was completed with `RunContinuationsAsynchronously`, and
-  `MapFetcher.CompleteAsync` and `EventBroker`'s fire loop `await … .ConfigureAwait(false)`
-  a task the consumer supplies, which goes to the pool the same way. Those are latent —
-  no shipped task reaches them that way — and `docs/unity.md` § WebGL tells the consumer;
-  removing that `ConfigureAwait(false)` changes native threading and is its own change. `asset-client`'s `Race` used `WhenAny`, so every read through
+  unless the antecedent was completed with `RunContinuationsAsynchronously`. Never
+  create their antecedents (`GatewaySocket`'s `pending`, `MapFetcher`'s `started`) with
+  that option, and never hang such a continuation off a task the consumer supplies
+  unless, like `AssetHttp.Race`, it takes `Default` only when there is no context.
+- **A task the consumer supplies is awaited plainly, never `.ConfigureAwait(false)`**
+  (or continued on the caller's context, as `AssetHttp.Race` does) — anything reached
+  through an option or a registration: an `IHttpFetcher`, a transport, an
+  `EventBroker` handler. Under `ConfigureAwait(false)` the runtime will not inline a
+  continuation on a thread that has a synchronization context, so a task completed later
+  on Unity's main thread — *any* such task, `RunContinuationsAsynchronously` or not —
+  sent it to the pool: off the main thread natively, nowhere on WebGL. `MapFetcher.CompleteAsync`
+  and `EventBroker`'s fire loop did exactly that until the browser probe caught both
+  hanging ([manual-verification.md](manual-verification.md#the-consumer-task-hang)). The one exception is
+  `MapFetcher` over `HttpFetcher.Default`, which is `HttpClient`'s own and never on WebGL:
+  it keeps `ConfigureAwait(false)` so a multi-MB map parses off the main thread. A
+  consumer's fetcher does not get that — its parse runs on the caller's context, once
+  per URL. That cost is accepted: do not move the parse with `ConfigureAwait(false)` or
+  `Task.Run`, which a WebGL player cannot run.
+- `asset-client`'s `Race` used `WhenAny`, so every read through
   `AssetUnityWebRequestTransport` hung in a browser while every test and both native
   players passed. The regression test pumps a context by hand and fails on any post
   from another thread ([testing.md](testing.md)).
@@ -180,18 +194,22 @@ were invisible only because nothing had forced a clean recompile —
   makes all of these the main thread anyway. Both were found by the manual
   verification, not by a test.
 - `await ConnectAsync()` resumes on the pump thread by design, so `Send()` is legal
-  straight after it. A `MapAsync()` continuation is a normal task continuation and
-  may land elsewhere; marshal back before touching the client.
+  straight after it. `await MapAsync()` resumes on the caller's context like any await,
+  but the task is not settled on the pump, so a host without a context may resume
+  anywhere ([connection-lifecycle.md](../docs/connection-lifecycle.md#threading) owns the
+  consumer's wording).
 - **Never `ConfigureAwait(false)` on a task the caller awaits.** `GatewayLobbyClient`
   did, and on Unity's Mono the continuation was not inlined — `await ConnectAsync()`
   resumed on a thread-pool thread, which is exactly where `Send()` and every other
-  entry point are illegal, and where touching a `Transform` throws. A dotnet host
-  hides this because .NET inlines the same continuation. Settle a caller-visible task
+  entry point are illegal, and where touching a `Transform` throws. A dotnet test host
+  hides this only because it has no synchronization context. Settle a caller-visible task
   from a synchronous `ContinueWith(..., TaskContinuationOptions.ExecuteSynchronously,
   TaskScheduler.Default)` over the internal one, and leave the resumption context to
   the caller: Unity's synchronization context puts them back on the main thread, a
-  console host resumes inline. `ConfigureAwait(false)` is still right inside the
-  transport's own background loops and in `MapFetcher`, which never resume a caller.
+  console host resumes inline. `ConfigureAwait(false)` appears only on a path WebGL
+  never reaches: inside the `HttpClient` transports (`HttpFetcher.Default` among them)
+  and `ClientWebSocketTransport`, over the BCL's own tasks, and in `MapFetcher`'s await
+  of `HttpFetcher.Default` itself. Everywhere else, a plain `await`.
 
 ## Numbers and culture
 

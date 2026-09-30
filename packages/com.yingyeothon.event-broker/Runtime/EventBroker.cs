@@ -73,7 +73,13 @@ namespace Yingyeothon.EventBroker
                         live.Remove(registration);
                     }
 
-                    await registration.Handler(value).ConfigureAwait(false);
+                    // Awaited plainly. Under ConfigureAwait(false), a handler task that
+                    // completed later on Unity's main thread — an ordinary async handler —
+                    // sent the next handler to the thread pool, because the runtime will not
+                    // inline such a continuation under a synchronization context: off the
+                    // main thread natively, and nowhere at all in a WebGL player. A plain
+                    // await posts it back to the context FireAsync was called from.
+                    await registration.Handler(value);
                 }
 
                 return true;

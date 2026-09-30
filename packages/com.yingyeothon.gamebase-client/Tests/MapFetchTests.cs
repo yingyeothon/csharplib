@@ -192,5 +192,112 @@ namespace Yingyeothon.Gamebase.Client.Tests
 
             Assert.That(text.Kind, Is.EqualTo(JsonKind.String));
         }
+
+        // ---- no thread but the caller's --------------------------------------------------
+
+        /// <summary>
+        /// A context the test pumps itself, counting every post that arrives from another
+        /// thread: dotnet has a thread pool to finish work the caller never pumps, a WebGL
+        /// player has none, so work that leaves the caller's thread is exactly what hangs there.
+        /// </summary>
+        private sealed class PumpedContext : SynchronizationContext
+        {
+            private readonly System.Collections.Concurrent.ConcurrentQueue<(SendOrPostCallback, object?)> _queue =
+                new System.Collections.Concurrent.ConcurrentQueue<(SendOrPostCallback, object?)>();
+
+            private readonly int _thread = Environment.CurrentManagedThreadId;
+
+            internal int ForeignPosts;
+
+            public override void Post(SendOrPostCallback d, object? state)
+            {
+                if (Environment.CurrentManagedThreadId != _thread)
+                {
+                    Interlocked.Increment(ref ForeignPosts);
+                }
+
+                _queue.Enqueue((d, state));
+            }
+
+            internal void Pump()
+            {
+                while (_queue.TryDequeue(out var item))
+                {
+                    item.Item1(item.Item2);
+                }
+            }
+        }
+
+        private static void WithContext(PumpedContext context, Action body)
+        {
+            var previous = SynchronizationContext.Current;
+            SynchronizationContext.SetSynchronizationContext(context);
+            try
+            {
+                body();
+            }
+            finally
+            {
+                SynchronizationContext.SetSynchronizationContext(previous);
+            }
+        }
+
+        /// <summary>
+        /// A fetcher the test completes by hand on the caller's thread, either plainly or with
+        /// <c>RunContinuationsAsynchronously</c> as the Unity transports complete.
+        /// </summary>
+        private sealed class AsynchronousHttpFetcher : IHttpFetcher
+        {
+            private readonly TaskCompletionSource<HttpFetchResult> _pending;
+
+            internal AsynchronousHttpFetcher(bool runContinuationsAsynchronously)
+                => _pending = new TaskCompletionSource<HttpFetchResult>(
+                    runContinuationsAsynchronously ? TaskCreationOptions.RunContinuationsAsynchronously : TaskCreationOptions.None);
+
+            internal void Complete(HttpFetchResult response) => _pending.SetResult(response);
+
+            public Task<HttpFetchResult> GetAsync(string url, CancellationToken cancellationToken) => _pending.Task;
+        }
+
+        /// <remarks>
+        /// With <c>ConfigureAwait(false)</c> the rest of the fetch went to the thread pool
+        /// either way — the runtime does not inline such a continuation under a
+        /// synchronization context — and a WebGL player has no pool, so <c>MapAsync</c>
+        /// never finished there.
+        /// </remarks>
+        [TestCase(false)]
+        [TestCase(true)]
+        public void AFetchAnsweredLaterFinishesOnTheCallersContext(bool runContinuationsAsynchronously)
+        {
+            var fetcher = new AsynchronousHttpFetcher(runContinuationsAsynchronously);
+            var harness = new LobbyHarness(o => o.HttpFetcher = fetcher);
+            Assert.That(harness.ConnectAsync().IsCompleted, Is.True);
+            var context = new PumpedContext();
+            var caller = Environment.CurrentManagedThreadId;
+            var settledOn = 0;
+
+            WithContext(context, () =>
+            {
+                var map = harness.Client.MapAsync();
+                map.ContinueWith(
+                    _ => settledOn = Environment.CurrentManagedThreadId,
+                    CancellationToken.None,
+                    TaskContinuationOptions.ExecuteSynchronously,
+                    TaskScheduler.Default);
+
+                fetcher.Complete(new HttpFetchResult(true, 200, "{\"ok\":true}"));
+                for (var i = 0; i < 200 && !map.IsCompleted; i++)
+                {
+                    context.Pump();
+                    Thread.Sleep(1); // time for a thread pool, if the fetch went to one
+                }
+
+                Assert.That(map.IsCompleted, Is.True);
+                Assert.That(map.Result.GetBool("ok"), Is.True);
+            });
+
+            Assert.That(settledOn, Is.EqualTo(caller));
+            Assert.That(context.ForeignPosts, Is.EqualTo(0));
+        }
     }
 }

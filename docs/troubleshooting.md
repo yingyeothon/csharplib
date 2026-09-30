@@ -112,8 +112,22 @@ supported there and there is no thread for a receive loop. What you see is
 No error and no timeout, only on WebGL: the package is pinned to a `main` from before the
 asset client stopped waiting on a thread a WebGL player does not have. See
 [asset-client § WebGL](../packages/com.yingyeothon.asset-client/README.md#webgl) for how to
-move the pin. The same symptom from your own `IHttpFetcher` or socket is
-[Unity § WebGL](unity.md#webgl): no thread pool, no timers.
+move the pin. The same symptom from your own transport is a `Task.Run`, `Task.Delay` or
+`CancelAfter` inside it — [Unity § WebGL](unity.md#webgl): no thread pool, no timers.
+
+## `MapAsync` or `FireAsync` never finishes in a browser
+
+No error, only on WebGL, with your own `IHttpFetcher`, or after an `EventBroker` handler
+that does not finish at once — the handlers after it never run either. On a native
+player the same cause shows as Unity's "can only be called from the main thread" inside
+those later handlers. The package is pinned to a tag from before the SDK stopped
+sending those continuations to a thread pool. Move every `com.yingyeothon.*` pin to a
+tag whose message names this fix (`git tag -n99 -l`, or the repository's tag list;
+[Unity § Installing](unity.md#installing)).
+
+The same freeze on any platform, right where you call `.Result` or `.Wait()` on one of
+them, is a blocked main thread: await it instead
+([Connection lifecycle § Threading](connection-lifecycle.md#threading)).
 
 ## `MapAsync` throws
 
@@ -123,8 +137,8 @@ move the pin. The same symptom from your own `IHttpFetcher` or socket is
   re-point it with `yyt channels update <lobby> --map-url …`.
 - The channel has no map at all: `hello.MapUrl` is empty.
 
-Remember that a `MapAsync` continuation may resume on **any** thread. Marshal back
-before touching the client or a `Transform`.
+Where an `await MapAsync()` resumes is
+[Connection lifecycle § Threading](connection-lifecycle.md#threading).
 
 ## The dungeon ended and I do not know why
 

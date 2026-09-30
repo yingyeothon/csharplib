@@ -47,8 +47,16 @@ is thread identity: any thread may pump, as long as only one does at a time.
   definition not connected and every sender throws.
 - `await ConnectAsync()` resumes on the pump thread by design, so `Send` is legal
   straight after it.
-- `await MapAsync()` is an ordinary task continuation and **may resume anywhere**.
-  Marshal back before touching the client or the engine.
+- `await MapAsync()` resumes on your synchronization context like any `await` — the
+  main thread in Unity — but it is not settled on the pump, so in a host without a
+  context it **may resume anywhere**: marshal back before touching the client or the
+  engine.
+- **Await, never block.** With your own `IHttpFetcher`, the fetch finishes on the
+  synchronization context of the call that started it — Unity's main thread — and so
+  does an `EventBroker`'s `FireAsync` after a handler that did not finish at once.
+  `.Result`, `.Wait()` or `GetAwaiter().GetResult()` on that thread stops the very
+  context the work needs, and the game freezes. (`HttpFetcher.Default` finishes off the
+  main thread, so blocking on it does not deadlock — but it still stalls the frame.)
 
 Thread identity is deliberately not pinned: in Unity the synchronization context makes
 these all the main thread anyway, and pinning it broke legitimate hosts twice.

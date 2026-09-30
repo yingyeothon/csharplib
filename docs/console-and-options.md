@@ -74,7 +74,7 @@ channel that starts using it does not arrive as an unknown field.
 
 | Property | Type | Default | What it does |
 | --- | --- | --- | --- |
-| `HttpFetcher` | `IHttpFetcher?` | `HttpFetcher.Default` | Used by `MapAsync()`. Required on WebGL. The default bounds the request at 30 s, 16 MB and 5 redirects, because `mapUrl` comes off the wire. |
+| `HttpFetcher` | `IHttpFetcher?` | `HttpFetcher.Default` | Used by `MapAsync()`. Required on WebGL. The default bounds the request at 30 s, 16 MB and 5 redirects, because `mapUrl` comes off the wire; with your own, the map parses on the main thread ([Lobby § The map](lobby.md#the-map)). |
 | `HelloTimeoutMillis` | `double` | `10000` | How long one socket may take to say `hello`. Exceeding it closes that socket and reconnects; it does not fail `ConnectAsync`. |
 
 ### `GatewayGameClientOptions` adds

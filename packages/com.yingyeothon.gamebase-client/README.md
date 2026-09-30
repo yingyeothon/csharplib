@@ -100,8 +100,10 @@ is inside `Poll()`. Sending from inside a handler is fine — that is the normal
 answer an event — and `ConnectAsync` resumes on the pump, so `Send` is legal straight
 after `await`. The connect task is settled on the thread that called `Poll()`, and
 your `await` then resumes on your own synchronization context: Unity's main thread in
-a game, inline in a console host. A `MapAsync()` continuation is a normal task
-continuation and may land anywhere — marshal back before touching the client.
+a game, inline in a console host. `await MapAsync()` resumes on your synchronization
+context too, but it is not settled on the pump, so with no context it may resume
+anywhere; never block on it
+([Connection lifecycle § Threading](../../docs/connection-lifecycle.md#threading)).
 
 ## Reconnect policy
 

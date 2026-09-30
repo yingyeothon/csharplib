@@ -246,7 +246,10 @@ always a new URL in a later `hello`, which is why publishing a map is a console 
 and never a client rebuild or a CDN invalidation.
 
 The default fetcher bounds the request at 30 seconds, 16 MB and 5 redirects, because
-the URL comes off the wire.
+the URL comes off the wire, and parses the map off the main thread. With a fetcher of
+your own — one that wraps `HttpFetcher.Default` included — the JSON is parsed on the
+context of the call that started the fetch, Unity's main thread, once per URL: a large
+map is a frame hitch, so fetch it behind a loading screen.
 
 Three outcomes are worth knowing:
 
@@ -258,9 +261,9 @@ Three outcomes are worth knowing:
   the game's and this SDK only transports it. Reading a field off it then throws
   `JsonKindException`, so check `map.Kind == JsonKind.Object` if the map may be wrong.
 
-`MapAsync` throws `InvalidOperationException` before `hello`. Its continuation is an
-ordinary task continuation and **may resume on any thread** — unlike `ConnectAsync` —
-so marshal back to the main thread before touching the client or a `Transform`. It also
+`MapAsync` throws `InvalidOperationException` before `hello`. Where its `await` resumes,
+and why you must not block on it, is
+[Connection lifecycle § Threading](connection-lifecycle.md#threading). It also
 takes a `CancellationToken`; cancelling yours does not disturb another caller awaiting
 the same fetch.
 

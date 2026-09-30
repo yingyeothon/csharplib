@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
 
@@ -223,6 +224,92 @@ namespace Yingyeothon.EventBroker.Tests
             Assert.Throws<ArgumentNullException>(() => broker.On((Action<DataEvent>)null!));
             Assert.Throws<ArgumentNullException>(() => broker.On((Func<DataEvent, Task>)null!));
             Assert.Throws<ArgumentNullException>(() => broker.Off((Action<DataEvent>)null!));
+        }
+
+        // ---- no thread but the caller's --------------------------------------------------
+
+        /// <summary>
+        /// A context the test pumps itself, counting every post that arrives from another
+        /// thread: dotnet has a thread pool to finish work the caller never pumps, a WebGL
+        /// player has none, so work that leaves the caller's thread is exactly what hangs there.
+        /// </summary>
+        private sealed class PumpedContext : SynchronizationContext
+        {
+            private readonly System.Collections.Concurrent.ConcurrentQueue<(SendOrPostCallback, object?)> _queue =
+                new System.Collections.Concurrent.ConcurrentQueue<(SendOrPostCallback, object?)>();
+
+            private readonly int _thread = Environment.CurrentManagedThreadId;
+
+            internal int ForeignPosts;
+
+            public override void Post(SendOrPostCallback d, object? state)
+            {
+                if (Environment.CurrentManagedThreadId != _thread)
+                {
+                    Interlocked.Increment(ref ForeignPosts);
+                }
+
+                _queue.Enqueue((d, state));
+            }
+
+            internal void Pump()
+            {
+                while (_queue.TryDequeue(out var item))
+                {
+                    item.Item1(item.Item2);
+                }
+            }
+        }
+
+        private static void WithContext(PumpedContext context, Action body)
+        {
+            var previous = SynchronizationContext.Current;
+            SynchronizationContext.SetSynchronizationContext(context);
+            try
+            {
+                body();
+            }
+            finally
+            {
+                SynchronizationContext.SetSynchronizationContext(previous);
+            }
+        }
+
+        /// <remarks>
+        /// With <c>ConfigureAwait(false)</c> the fire loop went on to the next handler on
+        /// the thread pool either way — the runtime does not inline such a continuation
+        /// under a synchronization context — so off Unity's main thread on a native player,
+        /// and never at all in a WebGL player, which has no pool.
+        /// </remarks>
+        [TestCase(false)]
+        [TestCase(true)]
+        public void AHandlerThatFinishesLaterIsFollowedOnTheCallersContext(bool runContinuationsAsynchronously)
+        {
+            var broker = EventBroker.Create();
+            var first = new TaskCompletionSource<bool>(
+                runContinuationsAsynchronously ? TaskCreationOptions.RunContinuationsAsynchronously : TaskCreationOptions.None);
+            var secondRanOn = 0;
+            broker.On<DataEvent>(_ => first.Task);
+            broker.On<DataEvent>(_ => { secondRanOn = Environment.CurrentManagedThreadId; });
+            var context = new PumpedContext();
+            var caller = Environment.CurrentManagedThreadId;
+
+            WithContext(context, () =>
+            {
+                var fire = broker.FireAsync(new DataEvent("a"));
+                first.SetResult(true);
+                for (var i = 0; i < 200 && !fire.IsCompleted; i++)
+                {
+                    context.Pump();
+                    Thread.Sleep(1); // time for a thread pool, if the loop went to one
+                }
+
+                Assert.That(fire.IsCompleted, Is.True);
+                Assert.That(fire.Result, Is.True);
+            });
+
+            Assert.That(secondRanOn, Is.EqualTo(caller));
+            Assert.That(context.ForeignPosts, Is.EqualTo(0));
         }
     }
 }

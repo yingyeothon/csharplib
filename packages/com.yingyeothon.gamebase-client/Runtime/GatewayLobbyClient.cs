@@ -106,6 +106,12 @@ namespace Yingyeothon.Gamebase.Client
         void Close();
 
         /// <summary>Fetches <c>hello.mapUrl</c>, cached per URL.</summary>
+        /// <remarks>
+        /// With your own <see cref="GatewayLobbyClientOptions.HttpFetcher"/>, the fetch
+        /// finishes, and the map is parsed, on the synchronization context of the call
+        /// that started it — Unity's main thread — so await the result rather than
+        /// blocking that thread on it.
+        /// </remarks>
         Task<JsonValue> MapAsync(CancellationToken cancellationToken = default);
 
         /// <summary>Announces a position. Until the first call the player has no zone at all.</summary>

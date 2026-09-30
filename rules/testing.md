@@ -122,9 +122,11 @@
 - `dotnet test` is one runtime. Running the same `packages/*/Tests` sources inside the
   editor (`unity test --mode EditMode`, see [manual-verification.md](manual-verification.md))
   is what found the `ConfigureAwait(false)` that resumed a caller on a thread-pool
-  thread and the two `double` differences above. None of them is expressible as a
+  thread and the two `double` differences above. The doubles are not expressible as a
   dotnet-hosted test, so the editor run — not a new unit test — is their regression
-  guard. Say so in the commit rather than inventing a test that cannot fail.
+  guard; say so in the commit rather than inventing a test that cannot fail. A pool hop
+  *is* expressible, once the test installs a context of its own — `PumpedContext`,
+  below; a dotnet host without one hides it.
 - **`Assert.ThrowsAsync` and `Assert.That(async () => …)` block the calling thread**,
   and inside the editor that thread is the main thread — the one every `await` in a
   client posts its continuation back to through Unity's synchronization context. Over
@@ -160,12 +162,25 @@
   clean 0. `AReadCompletesWithOnlyTheCallersContextPumped` and
   `ACancelledReadReleasesItsLateResponseThroughTheCallersContext` both failed on the
   `WhenAny` version ([unity.md](unity.md#webgl)); `AnAnswerThatArrivedBeforeTheCancelWins`
-  pins that both sides of the race decide on the context in arrival order. Do not test
+  pins that both sides of the race decide on the context in arrival order. **Every such
+  test asserts two things**: foreign posts are 0 (work that came back from the pool) and
+  the work finished on the caller's thread (work that ran on the pool and never posted,
+  which leaves the count at 0). Record the thread from
+  `task.ContinueWith(…, ExecuteSynchronously, TaskScheduler.Default)` on the task the
+  public call returned, attached **before** the fake is released — or from the next
+  `EventBroker` handler — never from an `await` or `FromCurrentSynchronizationContext()`,
+  which always land on the caller. Put a `Thread.Sleep(1)` in the pump loop, so a pool
+  hop finishes inside the loop and the thread assertion, not `IsCompleted`, reports it.
+  Run it with the fake completing both plainly and with `RunContinuationsAsynchronously`:
+  `MapFetchTests.AFetchAnsweredLaterFinishesOnTheCallersContext` and
+  `EventBrokerTests.AHandlerThatFinishesLaterIsFollowedOnTheCallersContext` failed in
+  both modes on the `ConfigureAwait(false)` version. `PumpedContext` is per package like
+  `Fails` — there is no shared test assembly; copy it. Do not test
   `TaskScheduler.Current` after the await: an await continuation runs with the current
   task cleared, so it reads `Default` whatever the continuation's scheduler was — such a
   test cannot fail. The store and auth clients await their
-  transports directly and need no such test until a combinator or `ContinueWith` enters
-  their path.
+  transports directly and need no such test until a combinator, a `ContinueWith` or a
+  `ConfigureAwait(false)` enters their path.
 - The editor's NUnit has no `Count` constraint for an array behind `IReadOnlyList<T>`
   (`Has.Count.EqualTo` fails with "Property Count was not found" there and passes under
   dotnet). Assert `list.Count` with `Is.EqualTo` instead.

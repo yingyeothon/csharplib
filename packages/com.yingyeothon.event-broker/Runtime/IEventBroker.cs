@@ -40,6 +40,11 @@ namespace Yingyeothon.EventBroker
         /// registered during dispatch runs from the next call. A handler that faults
         /// faults this call and the remaining handlers do not run.
         /// </summary>
+        /// <remarks>
+        /// After a handler that did not finish at once, dispatch continues on the
+        /// synchronization context this was called from, if it has one — Unity's main
+        /// thread — so await the result rather than blocking that thread on it.
+        /// </remarks>
         /// <returns>Whether at least one handler was registered for this event type.</returns>
         Task<bool> FireAsync<TEvent>(TEvent value);
     }
