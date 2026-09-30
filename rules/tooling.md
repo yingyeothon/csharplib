@@ -71,8 +71,7 @@ gate that will say so — but only after the build, one at a time. Do them toget
   `ProjectReference`.
 - Root `README.md` (package table, mermaid graph, install list), `docs/README.md`
   (routing table, reference list, README list), `docs/unity.md` (install list, samples
-  table), `docs/getting-started.md` if it is on the path, and `check-docs.sh` check 5's
-  file list when the new guide page carries an install URL.
+  table), and `docs/getting-started.md` if it is on the path.
 - `docs/README.md`: its count sentence, the "three that talk to the platform" paragraph,
   and the paragraph naming the `#if UNITY_5_3_OR_NEWER` types absent from `docs/api`
   and where each is documented. [unity.md](unity.md) § IL2CPP's `link.xml` bullet when

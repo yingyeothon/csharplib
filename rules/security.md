@@ -75,7 +75,11 @@ wrong.
   which passed while the assembly and the manifests carried different versions.
 - Make the broken input in a copy of the repo under `/tmp`, not in place. Reverting it
   with `git checkout <file>` also discards any unstaged edit you had in that file
-  ([workflow.md](workflow.md)).
+  ([workflow.md](workflow.md)). The clone has the same trap: before the first scenario,
+  commit only the guard's own files there (`git add <paths> && git commit -m guard --
+  <paths>`), then undo each scenario with `git reset -q --hard && git clean -fd`, which
+  also drops what a scenario staged. Without that commit the reset reverts the guard you
+  copied in, and every later scenario silently runs the old one. That commit is throwaway: never push from the clone.
 - A leak already in history is not fixed by a new commit. Rewrite it
   (`git filter-repo --replace-text`) and force-push, and assume anything already
   cloned, forked or cached stays out. If a real credential ever lands here, rotating

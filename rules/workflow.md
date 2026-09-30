@@ -45,9 +45,11 @@
   copy of the repo under `/tmp`. Paid for this session: testing a guard against a
   deliberately broken `README.md` reverted an unrelated fix in the same file.
 - Releases are git tags and are the **user's** call — see [release.md](release.md).
-  **An unpushed commit on `main` that fails `check-docs.sh` on the install URLs is a
-  pending release, not a broken tree.** Confirm with `git log -1 --stat`; if it only
-  bumps the version and pins URLs, print `release.md`'s two commands and stop. Do not
+  **An unpushed commit on `main` whose only `check-docs.sh` failures are *"pins vX.Y.Z,
+  which is not a tag yet"* is a pending release, not a broken tree.** Confirm with
+  `git log -1 --stat`; if it is a release commit — the version bump, the pinned URLs,
+  and any prose release.md step 4 retracts — print `release.md`'s two commands and stop.
+  Any other `check-docs.sh` failure on it is release.md step 5's to fix first. Do not
   unpin the URLs and do not reset.
 - `.claude/handover.md` is a **session note, not a rule**: where it and `rules/`
   disagree, `rules/` wins. Check its premise against `git log` and `git branch -a`

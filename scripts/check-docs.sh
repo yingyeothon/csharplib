@@ -87,11 +87,14 @@ for approved in tests/Yingyeothon.PublicApi.Tests/Approved/*.approved.txt; do
   done < <(grep -a -E '^(class|enum|interface|struct|static class) ' "$approved")
 done
 
-# ---- 4. every install URL agrees with the version --------------------------
+# ---- 4. every install URL pins the version --------------------------------
 #
-# The tag is the release (rules/release.md), so an unpinned URL is honest only
-# while no tag exists and a URL pinned to a tag that is not cut is a 404 for every
-# consumer. Nothing else looks at them: check 1 skips http(s) links on purpose.
+# The tag is the release (rules/release.md): a URL pinned to a tag that is not cut
+# is a 404 for every consumer, and a URL with no tag tracks main. Tags are never
+# deleted, so since the first one an unpinned URL is refused, even for a package the
+# last tag lacks. The one pin that fails honestly is v$version before its tag exists —
+# a release's bump window, which the local tag ends (rules/release.md steps 5 and 6).
+# Nothing else looks at the URLs: check 1 skips http(s) links on purpose.
 version=$(sed 's/<!--.*-->//g' Directory.Build.props \
   | sed -n 's/.*<Version>\([^<]*\)<\/Version>.*/\1/p' | head -1)
 
@@ -102,9 +105,17 @@ version=$(sed 's/<!--.*-->//g' Directory.Build.props \
 # is pushed (rules/release.md).
 tagged=$(git ls-remote --tags origin "refs/tags/v$version" 2>/dev/null || true)
 [ -n "$tagged" ] || tagged=$(git tag -l "v$version" 2>/dev/null || true)
+
+# Capture the list before reading it: grep's exit 1 is "no match", anything else is a
+# search that failed, and that must not read as an empty list (rules/security.md).
+# The class is what a package path and a tag are made of, so a quote, a bracket or a
+# comma after the URL is not taken for part of it; a sentence's full stop is dropped.
+found=$(grep -a -rho 'https://github.com/yingyeothon/csharplib\.git?path=[A-Za-z0-9._/#-]*' \
+  README.md docs packages/*/README.md) || [ $? -eq 1 ] || note "cannot search for install URLs"
 urls=0
 while IFS= read -r url; do
   [ -n "$url" ] || continue
+  url=${url%.}
   urls=$((urls + 1))
   case "$url" in
     *"#v$version")
@@ -112,24 +123,22 @@ while IFS= read -r url; do
     *'#'*)
       note "$url pins something other than v$version" ;;
     *)
-      [ -z "$tagged" ] || note "$url tracks main, but v$version is tagged" ;;
+      note "$url has no tag, so it tracks main" ;;
   esac
-done < <(grep -a -rho 'https://github.com/yingyeothon/csharplib\.git?path=[^ )`]*' \
-  README.md docs packages/*/README.md)
+done <<< "$found"
 
-# ---- 5. the pre-release prose agrees with the tag --------------------------
+# ---- 5. no page still calls the SDK unreleased -----------------------------
 #
 # Check 4 gates the URLs; without this a release could pin every one of them and
-# still ship every listed file saying no release has been tagged.
+# still ship a page saying no release has been tagged — false wherever it appears,
+# since the first tag. Case-insensitive, so a lower-case quotation is caught too.
 notice='No release has been tagged yet'
-for file in README.md docs/getting-started.md docs/unity.md docs/kvstore.md packages/*/README.md; do
-  says=$(grep -a -c -F "$notice" "$file" 2>/dev/null || true)
-  if [ -n "$tagged" ] && [ "${says:-0}" -gt 0 ]; then
-    note "$file still says \"$notice\", but v$version is tagged"
-  elif [ -z "$tagged" ] && [ "${says:-0}" -eq 0 ]; then
-    note "$file carries an unpinned install URL but does not say why"
-  fi
-done
+stale=$(grep -a -rli -F "$notice" README.md docs packages/*/README.md) \
+  || [ $? -eq 1 ] || note "cannot search for the pre-release notice"
+while IFS= read -r file; do
+  [ -n "$file" ] || continue
+  note "$file still says \"$notice\", but a release has been tagged"
+done <<< "$stale"
 
 [ "$fail" -eq 0 ] && echo "docs: $links relative links resolve, $urls install URLs match v$version, no orphan page, every public type documented"
 exit "$fail"

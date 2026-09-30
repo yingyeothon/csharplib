@@ -63,24 +63,26 @@ anything is pushed, and the commit and the tag then go together or not at all.
 3. **[agent]** Bump the version in all three: `Directory.Build.props` `<Version>`, every
    `packages/*/package.json` `"version"`, and every `com.yingyeothon.*` pin under
    those manifests' `"dependencies"`. `./scripts/validate-packages.sh` proves it.
-4. **[agent]** Pin every install URL to `#vX.Y.Z` — across `README.md`,
-   `docs/getting-started.md`, `docs/unity.md`, `docs/kvstore.md` and every
-   `packages/*/README.md`; the summary line of a green `check-docs.sh` prints the
+4. **[agent]** Pin every install URL to `#vX.Y.Z` — in every file
+   `grep -rlF 'csharplib.git?path=' README.md docs packages/*/README.md` lists; the summary line of a green `check-docs.sh` prints the
    count, and while the URLs pin an uncut tag it prints nothing. `./scripts/check-docs.sh` fails when a URL and the version
    disagree in either direction, so run it rather than counting by hand.
 
    **No sentence names the version** (Versioning, above), so the URLs are all step 4
-   moves; grep `v[0-9]+\.[0-9]+\.[0-9]+` across the files above and `rules/` to confirm
+   moves; grep `v[0-9]+\.[0-9]+\.[0-9]+` across `README.md`, `docs/`, every
+   `packages/*/README.md` and `rules/` to confirm
    none crept in. v0.1.0 also retracted every pre-release claim — the "no release has
    been tagged yet" sentences and `CONVENTIONS.md`'s *"Nothing has been released yet"*
    paragraph. A rule file that states a fact a release invalidates has to be listed
    here, or it will not be found.
 5. **[agent]** Commit the bump. **Do not push** — `check-docs.sh` fails while the URLs name a
-   tag that does not exist, so `pre-push` would refuse it, correctly. In that window it
-   fails twice per file: check 4's *"pins vX.Y.Z, which is not a tag yet"*, and check 5's
-   *"carries an unpinned install URL but does not say why"*, which is wrong — the URLs are
-   pinned; check 5 predates the first tag and has not been narrowed. Both clear once the
-   local tag exists.
+   tag that does not exist, so `pre-push` would refuse it, correctly. In that window a
+   clean bump fails only with check 4's *"pins vX.Y.Z, which is not a tag yet"*, once per
+   URL, and that clears once the local tag exists. Any other failure of checks 4 and 5
+   is something step 4 missed — *"pins something other than vX.Y.Z"* (a URL still on
+   the previous tag), *"has no tag"* (an unpinned URL) or *"still says"* (the
+   pre-release notice). Fix it and amend it into the bump commit before handing over, so
+   the release stays one commit; never unpin a URL to make the gate pass.
 6. **[user]** Finish it, on that commit:
 
    ```bash
@@ -115,5 +117,10 @@ anything is pushed, and the commit and the tag then go together or not at all.
 - **`--atomic` rejected because someone pushed to `main` first.** `git pull --rebase`,
   re-run the gate, delete the local tag and re-create it on the rebased commit — it was
   never pushed, so it may still move.
-- **`pre-push` failed on the tag push.** Fix the failure and push again; never
-  `--no-verify`.
+- **`pre-push` failed on the tag push.** `--atomic`, so neither landed. A dirty working
+  tree or a missing tool is fixed in place and the same push retried. Anything else is in
+  the bump commit — step 1 pushed everything before it through the same hook — so
+  **[agent]** fixes it and amends it into that commit, which must still pass step 2's
+  `git diff --name-only S HEAD`, pushes nothing, and hands back; **[user]** then runs
+  `git tag -d vX.Y.Z` and step 6 again. The tag was never pushed, so it may still move,
+  and pushing the old one would publish the unfixed commit. Never `--no-verify`.
