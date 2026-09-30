@@ -4,9 +4,9 @@
 #
 # The generated API reference is gated by tests/Yingyeothon.PublicApi.Tests and the
 # per-package `## Public API` listings by the same suite. What neither can see is the
-# guide: a link that rots, a page nothing reaches, or a public type the guide never
-# mentions. A promise the reader cannot follow is worse than a missing document, so
-# these three are checks and not conventions.
+# guide: a link that rots, a page nothing reaches, a public type the guide never
+# mentions, or an install URL no release serves. A promise the reader cannot follow is
+# worse than a missing document, so these are checks and not conventions.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -94,32 +94,62 @@ done
 # deleted, so since the first one an unpinned URL is refused, even for a package the
 # last tag lacks. The one pin that fails honestly is v$version before its tag exists —
 # a release's bump window, which the local tag ends (rules/release.md steps 5 and 6).
-# Nothing else looks at the URLs: check 1 skips http(s) links on purpose.
+# A cut tag must also contain the package: a URL for a package added since is a 404.
+# Check 1 skips http(s) links on purpose; check 6 counts the URLs per package.
 version=$(sed 's/<!--.*-->//g' Directory.Build.props \
   | sed -n 's/.*<Version>\([^<]*\)<\/Version>.*/\1/p' | head -1)
 
-# Ask the remote, not the local ref store: a CI checkout carries no tags unless the
-# workflow sets fetch-tags, so reading `git tag -l` there would call every pinned URL
-# unreleased and turn CI red for good the day the first tag lands. The local list is
-# the offline fallback, and it is also what lets a release pin its URLs before the tag
-# is pushed (rules/release.md).
+# Ask the remote whether the tag is cut, not the local ref store: the local list is the
+# offline fallback, and it is also what lets a release pin its URLs before the tag is
+# pushed (rules/release.md). Which packages it ships is read from the tag's tree, which
+# has to be here — so a CI checkout needs fetch-tags, and a clone that has not fetched a
+# tag someone else pushed is told to.
 tagged=$(git ls-remote --tags origin "refs/tags/v$version" 2>/dev/null || true)
 [ -n "$tagged" ] || tagged=$(git tag -l "v$version" 2>/dev/null || true)
+
+# Whether the cut tag ships packages/$1. Only called once the tag's tree is readable,
+# so an empty answer is "not in the tag", never "could not look".
+ships() { [ -n "$(git ls-tree -d --name-only "v$version" -- "packages/$1")" ]; }
+tree_ok=0
+if [ -n "$tagged" ]; then
+  if git rev-parse -q --verify "v$version^{tree}" > /dev/null; then
+    tree_ok=1
+  else
+    note "v$version is a tag on origin but not here, so its packages cannot be read: git fetch --tags"
+  fi
+fi
 
 # Capture the list before reading it: grep's exit 1 is "no match", anything else is a
 # search that failed, and that must not read as an empty list (rules/security.md).
 # The class is what a package path and a tag are made of, so a quote, a bracket or a
 # comma after the URL is not taken for part of it; a sentence's full stop is dropped.
-found=$(grep -a -rho 'https://github.com/yingyeothon/csharplib\.git?path=[A-Za-z0-9._/#-]*' \
+# Any spelling Unity would accept is matched — another scheme, `www.`, the org's case,
+# no `.git` — and refused unless it is the canonical https URL: the others ask the
+# consumer for a key, or for nothing TLS would have checked, and check 6 counts only
+# the canonical form. The name class is every legal UPM name segment, as in
+# validate-packages.sh.
+canonical='https://github.com/yingyeothon/csharplib.git?path='
+found=$(grep -a -rhoiE '[a-z+]*(://|@)(www\.)?github\.com[:/]yingyeothon/csharplib(\.git)?\?path=[A-Za-z0-9._/#-]*' \
   README.md docs packages/*/README.md) || [ $? -eq 1 ] || note "cannot search for install URLs"
 urls=0
 while IFS= read -r url; do
   [ -n "$url" ] || continue
   url=${url%.}
   urls=$((urls + 1))
+  case "$url" in "$canonical"*) ;; *) note "$url is not the https URL, which needs no credentials" ;; esac
+  if [[ "$url" =~ \?path=/packages/(com\.yingyeothon\.[a-z0-9._-]+)(#|$) ]]; then
+    name=${BASH_REMATCH[1]}
+  else
+    note "$url does not name one package as ?path=/packages/com.yingyeothon.<name>"
+    continue
+  fi
   case "$url" in
     *"#v$version")
-      [ -n "$tagged" ] || note "$url pins v$version, which is not a tag yet" ;;
+      if [ -z "$tagged" ]; then
+        note "$url pins v$version, which is not a tag yet"
+      elif [ "$tree_ok" -eq 1 ]; then
+        ships "$name" || note "$url names a package v$version does not ship, so it is a 404"
+      fi ;;
     *'#'*)
       note "$url pins something other than v$version" ;;
     *)
@@ -140,5 +170,46 @@ while IFS= read -r file; do
   note "$file still says \"$notice\", but a release has been tagged"
 done <<< "$stale"
 
-[ "$fail" -eq 0 ] && echo "docs: $links relative links resolve, $urls install URLs match v$version, no orphan page, every public type documented"
+# ---- 6. an install URL exactly where a release ships the package ------------
+#
+# rules/documentation.md wants each package's URL in its README's `## Install`, the
+# root README's list and docs/unity.md § Installing, and check 4 refuses one a tag
+# cannot serve. So a package added between releases has none of the three, and its
+# README carries the fixed sentence below instead, until the release that ships it
+# replaces the sentence with the URL (rules/release.md step 4). In the bump window no
+# tag answers yet and every package is about to ship, so every package needs all three.
+pending='Not in a release yet: the release that ships this package adds its install URL here.'
+for dir in packages/com.yingyeothon.*/; do
+  name=${dir%/}
+  name=${name#packages/}
+  readme="packages/$name/README.md"
+  if [ -z "$tagged" ] || { [ "$tree_ok" -eq 1 ] && ships "$name"; }; then
+    shipped=1
+  elif [ "$tree_ok" -eq 1 ]; then
+    shipped=0
+  else
+    continue # check 4 already said the tag cannot be read
+  fi
+  for file in "$readme" README.md docs/unity.md; do
+    own=$(grep -a -c -F "${canonical}/packages/$name#" "$file") \
+      || [ $? -eq 1 ] || { note "cannot search $file"; continue; }
+    if [ "$shipped" -eq 1 ] && [ "$own" -eq 0 ]; then
+      note "$file has no install URL for $name, but the release ships it"
+    elif [ "$shipped" -eq 0 ] && [ "$own" -gt 0 ]; then
+      note "$file has an install URL for $name, but v$version does not ship it"
+    fi
+  done
+  # Exact for the line a README must hold; any trace of it for the one it must drop.
+  said=$(grep -a -c -F -x "$pending" "$readme") \
+    || [ $? -eq 1 ] || { note "cannot search $readme"; continue; }
+  left=$(grep -a -c -F "${pending%%:*}" "$readme") \
+    || [ $? -eq 1 ] || { note "cannot search $readme"; continue; }
+  if [ "$shipped" -eq 1 ] && [ "$left" -gt 0 ]; then
+    note "$readme still says it is not in a release yet, but the release ships it"
+  elif [ "$shipped" -eq 0 ] && [ "$said" -eq 0 ]; then
+    note "$readme has no URL yet, so its ## Install needs the line: $pending"
+  fi
+done
+
+[ "$fail" -eq 0 ] && echo "docs: $links relative links resolve, $urls install URLs match v$version, no orphan page, every public type documented, every package URL where its release is"
 exit "$fail"

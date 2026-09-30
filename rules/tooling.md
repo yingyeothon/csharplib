@@ -69,9 +69,13 @@ gate that will say so — but only after the build, one at a time. Do them toget
   to the output directory at build time.
 - `tests/Yingyeothon.Samples.Build`: the engine-free sample files and a
   `ProjectReference`.
-- Root `README.md` (package table, mermaid graph, install list), `docs/README.md`
-  (routing table, reference list, README list), `docs/unity.md` (install list, samples
-  table), and `docs/getting-started.md` if it is on the path.
+- Root `README.md` (package table, mermaid graph), `docs/README.md` (routing table,
+  reference list, README list), `docs/unity.md` (samples table), and
+  `docs/getting-started.md` if it is on the path. **Not** the install lists: a package
+  gets its URL in the release that ships it ([documentation.md](documentation.md)
+  § Package READMEs).
+- A package-name match in a script uses `[a-z0-9._-]+`, every legal UPM name segment —
+  `[a-z-]+` has twice made a name with a digit invisible to a gate.
 - `docs/README.md`: its count sentence, the "three that talk to the platform" paragraph,
   and the paragraph naming the `#if UNITY_5_3_OR_NEWER` types absent from `docs/api`
   and where each is documented. [unity.md](unity.md) § IL2CPP's `link.xml` bullet when

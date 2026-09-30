@@ -48,6 +48,20 @@ Same sections, in this order:
 
 1. `# <Assembly>` and a one-paragraph purpose statement.
 2. `## Install` — the git URL, plus the dependencies a git-URL package cannot resolve.
+   A package added since the last tag has **no URL anywhere** — its README, the root
+   `README.md`'s install list, `docs/unity.md` § Installing — until the release that
+   ships it: `#<last tag>` is a 404 for it, and an unpinned URL, a `#<sha>` or a `file:`
+   path would put an untagged package beside tagged siblings. There is deliberately no
+   interim install. Its `## Install` holds exactly this line, on its own, naming no
+   version; its other sections are written as for a released package:
+
+   ```
+   Not in a release yet: the release that ships this package adds its install URL here.
+   ```
+
+   [release.md](release.md) step 4 swaps the line for the URL. `check-docs.sh` check 6
+   checks which of the three files carry the URL and which README carries the line —
+   not where in the file — and check 4 refuses a URL a tag cannot serve.
 3. `## Usage` — a short runnable snippet.
 4. Any section the package genuinely needs (`## Poll, or nothing happens`,
    `## Reconnect policy`, `## Wire details worth knowing`).

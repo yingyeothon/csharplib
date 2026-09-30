@@ -24,8 +24,9 @@ mechanism: no registry, no publish step, no staging window, nothing to yank.
   `scripts/validate-packages.sh` fails on any disagreement. The third is the one a
   bump forgets, and it leaves a manifest demanding a version that no longer exists.
 - `check-docs.sh` check 4 compares every install URL against the cut tag, asking the
-  **remote** — a CI checkout has no tags unless the workflow sets `fetch-tags`. If you
-  change either, change both.
+  **remote** whether it is cut, and checks 4 and 6 read which packages it ships from the
+  tag's tree, which must be **local** — so the CI checkout's `fetch-tags` is required,
+  not an optimisation. If you change either, change both.
 - Stable semver only: a git URL has no dist-tag, so Package Manager cannot tell an
   `-rc` tag from a release. The version lives in the three places above and in every
   install URL's `#v…` fragment, and **nowhere in prose** — check 4 guards the URLs and
@@ -43,7 +44,7 @@ mechanism: no registry, no publish step, no staging window, nothing to yank.
 ## Release flow
 
 **The tag and the push are the user's; everything that can be undone is yours.** Do
-steps 1–4, leave the bump **committed but unpushed**, print the two commands, and
+steps 1–5, leave the bump **committed but unpushed**, print the two commands, and
 stop. Never run `git tag` and never push a tag yourself, even when told to "just do
 it".
 
@@ -69,7 +70,11 @@ anything is pushed, and the commit and the tag then go together or not at all.
 4. **[agent]** Pin every install URL to `#vX.Y.Z` — in every file
    `grep -rlF 'csharplib.git?path=' README.md docs packages/*/README.md` lists; the summary line of a green `check-docs.sh` prints the
    count, and while the URLs pin an uncut tag it prints nothing. `./scripts/check-docs.sh` fails when a URL and the version
-   disagree in either direction, so run it rather than counting by hand.
+   disagree in either direction, so run it rather than counting by hand. A package added
+   since the last tag has no URL yet ([documentation.md](documentation.md)) and so is not
+   in that grep: `grep -rlF 'Not in a release yet:' packages/*/README.md` finds it.
+   Replace that line with its URL, and add the URL to the root `README.md`'s install list
+   and `docs/unity.md` § Installing — check 6 fails the bump until all three are done.
 
    **No sentence names the version** (Versioning, above), so the URLs are all step 4
    moves; grep `v[0-9]+\.[0-9]+\.[0-9]+` across `README.md`, `docs/`, every
@@ -82,11 +87,14 @@ anything is pushed, and the commit and the tag then go together or not at all.
 5. **[agent]** Commit the bump. **Do not push** — `check-docs.sh` fails while the URLs name a
    tag that does not exist, so `pre-push` would refuse it, correctly. In that window a
    clean bump fails only with check 4's *"pins vX.Y.Z, which is not a tag yet"*, once per
-   URL, and that clears once the local tag exists. Any other failure of checks 4 and 5
+   URL, and that clears once the local tag exists. Any other failure of checks 4, 5 and 6
    is something step 4 missed — *"pins something other than vX.Y.Z"* (a URL still on
-   the previous tag), *"has no tag"* (an unpinned URL) or *"still says"* (the
-   pre-release notice). Fix it and amend it into the bump commit before handing over, so
-   the release stays one commit; never unpin a URL to make the gate pass.
+   the previous tag), *"has no tag"* (an unpinned URL), *"is not the https URL"*, *"does
+   not name one package"* (a malformed `?path=`), *"still says"* (the pre-release
+   notice), or check 6's *"has no install URL for"* and *"still
+   says it is not in a release yet"* (a package new in this release). Fix it and amend
+   it into the bump commit before handing over, so the release stays one commit; never
+   unpin a URL to make the gate pass.
 6. **[user]** Finish it, on that commit:
 
    ```bash
