@@ -301,6 +301,49 @@ the floor for a reason ([Which editor](#which-editor)).
 is exactly the metadata `ManagedStrippingLevel.High` and `Runtime/link.xml` are tested
 against. A compiler flag is a build change even when no `.cs` moved.
 
+### The run that added `auth-client` and `asset-client`
+
+**2026-09-30**, Unity Personal, Ubuntu 24.04, **6000.0.25f1 only**, at the commit that
+records this run (its parent carries the code). **2021.3.45f2 was not run**: its
+`bee_backend` hang needs the wrapper in
+[Two things Ubuntu 24.04 breaks](#two-things-ubuntu-2404-breaks-in-unity-20213), and this
+session was not permitted to swap a binary inside the editor install. The floor is owed
+before a tag.
+
+| Check | 6000.0.25f1 |
+| --- | --- |
+| EditMode, all seven packages, one package per run | **0 failed**: 883 / 871 / 12 skipped — the eleven WebSocket ones above and one symbolic-link test that needs .NET 6 |
+| Bare-clone git-URL install | all seven resolved into `Library/PackageCache`, **0** *immutable folder* lines, all seven `Yingyeothon*.dll`, each carrying `NullableContextAttribute` |
+| Samples listed and imported | one per `samples[]` entry: 1 / 1 / 3 / 1 / 1 / 1 / 1 (codec, event-broker, gamebase, kvstore, auth, asset, logger) |
+| Clean compile (`ScriptAssemblies` deleted) | `CompileScripts` seen, 0 errors, 0 warnings |
+| `StandaloneLinux64` Mono, stripping **High** | built and ran: every package through its factories, an asset vector decrypted in the player (through an in-memory transport), and all three Unity transports against a local `302` — none followed it, each answered `http (302)` |
+| `StandaloneLinux64` IL2CPP, stripping **High** | built and ran, the same lines |
+| WebGL | compiled and linked; not opened in a browser |
+
+Two things only this run could have found. The first attempt hung the whole EditMode run
+at `Running tests for ExecutionSettings` — the asset client's file-download tests blocked
+the main thread on real file IO ([testing.md](testing.md)); per-package runs are what
+located it. And the kvstore `UnityWebRequestTransport` used Unity's default of 32
+redirects, so a redirect would have carried the player's `Authorization` header to
+whatever host it named; this run is what added `redirectLimit = 0` to it (auth's and
+asset's had it). With the limit at 0 Unity reports a refused redirect as a
+`ConnectionError` that still carries the `3xx`, which the transports first surfaced as
+`network (0)`; they now hand it back as the reply it is. The probe, for the next run: a
+`MonoBehaviour` pointing each client at `http://127.0.0.1:18777` through its Unity
+transport, and beside the player
+
+```python
+import http.server
+class H(http.server.BaseHTTPRequestHandler):
+    def do_GET(self):
+        if self.path.startswith("/elsewhere"): print("FOLLOWED", flush=True)
+        self.send_response(302); self.send_header("Location", "http://127.0.0.1:18777/elsewhere")
+        self.send_header("Content-Length", "0"); self.end_headers()
+http.server.HTTPServer(("127.0.0.1", 18777), H).serve_forever()
+```
+
+A `FOLLOWED` line is the failure.
+
 ### The run that added `kvstore-client`
 
 **2026-09-06**, at the commit that adds `kvstore-client` (the child of `3714e39`; this
@@ -412,20 +455,22 @@ Read from the source rather than observed, and marked so on purpose:
 
 Not covered, and each is a real gap rather than a formality:
 
-- **`auth-client` in Unity, at all.** It was added (2026-09-30) after the last editor
-  run, so its EditMode tests, its `Sign In` sample import and
-  `AuthUnityWebRequestTransport` — which no `dotnet` build compiles — are owed by the
-  next run. Its wire half was checked against `auth-dev` with the real
-  `AuthHttpClientTransport` as committed (2026-09-30): config, verify (a live token and a forged one), a fake
-  provider token (`401`), the wrong credential kind (`400`), and `/start` for a
-  redirect off the allowlist (`403`) and on it with the nonce query (`302` to the
-  provider).
-- **`asset-client` in Unity, at all**, for the same reason: EditMode, the sample, and
-  `AssetUnityWebRequestTransport`, which no `dotnet` build compiles. The EditMode run
-  reads the conformance vectors from `Packages/com.yingyeothon.asset-client/Tests/Fixtures`,
-  which only an embedded (copied) package has — the recipe above copies them, and a
-  git-URL install does not compile its tests at all. Its wire half is recorded in
-  [Against the dev CDN](#against-the-dev-cdn).
+- **`auth-client` and `asset-client` on the 2021.3 floor.** Covered on 6000.0.25f1 only
+  ([the run above](#the-run-that-added-auth-client-and-asset-client)). The asset client's
+  EditMode run reads the conformance vectors from
+  `Packages/com.yingyeothon.asset-client/Tests/Fixtures`, which only an embedded (copied)
+  package has — the recipe copies them, and a git-URL install does not compile its tests
+  at all. Its wire half is in [Against the dev CDN](#against-the-dev-cdn); auth-client's
+  was checked against `auth-dev` with the real `AuthHttpClientTransport` as committed
+  (2026-09-30): config, verify (a live token and a forged one), a fake provider token
+  (`401`), the wrong credential kind (`400`), and `/start` for a redirect off the
+  allowlist (`403`) and on it with the nonce query (`302` to the provider).
+- **Redirects on WebGL.** Unity documents a `redirectLimit` of 0 there as failing the
+  request on a redirect, so the three transports should report `network` rather than
+  `http (3xx)`; no browser has run it.
+- **`asset-client` through its Unity transport, successfully.** The players read a vector
+  through an in-memory transport and ran `AssetUnityWebRequestTransport` only against the
+  redirect probe.
 - **`asset-client` on WebGL.** The CORS-safe plan (a `HEAD`, `Range`-only requests, the
   whole-file fallback) has only been driven from .NET against the real CDN and against a
   fake that hides the headers a browser hides; it has not run in a browser.

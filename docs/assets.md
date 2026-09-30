@@ -112,8 +112,9 @@ the package README gives the count and the error after it.
   because the CDN exposes only `ETag` and `Content-Length` to a page and refuses a
   preflight. The Unity transport buffers each answer whole, as a browser does, so a
   download there holds the whole file and `ResponseTimeout` must cover its whole
-  transfer. **The Unity side — WebGL included — has not been run yet**; see the package
-  README.
+  transfer. It has been compiled for Mono, IL2CPP and WebGL and run in the first two
+  against a redirect; a successful read through it in a player, and anything in a
+  browser, is not yet recorded.
 - **Threads.** Calls may start on any thread with the default transport, and the
   `UnityWebRequest` one needs the main thread; a task — and a download's progress
   callback — resumes on your synchronization context either way, so start them on the
