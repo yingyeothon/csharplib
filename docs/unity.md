@@ -27,10 +27,12 @@ A URL with no fragment tracks `main`. Keep **one** release tag on every
 each package's `package.json` pins its siblings to its own version, so mixed tags are
 unsupported.
 
-**Upgrading.** Releases are this repository's tags; each annotated tag's message says
-what changed on the public surface and what you must change (`git tag -n99 -l` in a
-clone). While the version is `0.x`, a minor bump (`0.1` → `0.2`) may break your code and
-a patch does not. Change the fragment of every `com.yingyeothon.*` entry in
+**Upgrading.** Releases are this repository's tags, and there are no GitHub Releases:
+each annotated tag's message is the release note, saying what changed on the public
+surface and what you must change. Read them with `git tag -n99 -l` in a clone, or on the
+[Tags page](https://github.com/yingyeothon/csharplib/tags) behind each tag's `…` toggle.
+While the version is `0.x`, a minor bump (`0.1` → `0.2`) may break your code and a patch
+does not. Change the fragment of every `com.yingyeothon.*` entry in
 `Packages/manifest.json` in one edit; a changed URL makes the Package Manager resolve it
 again and rewrite its `packages-lock.json` entry.
 
@@ -68,7 +70,7 @@ Import_. They land in `Assets/Samples/…` and are yours to edit.
 
 | Package | Sample | What it shows |
 | --- | --- | --- |
-| gamebase-client | `Lobby Quickstart` | the `MonoBehaviour` from [Getting started](getting-started.md) |
+| gamebase-client | `Lobby Quickstart` | a variant of the client in [Getting started § 4](getting-started.md#4-create-the-client-and-poll-it): an engine-free `LobbySession` that also sends zone chat, and a `MonoBehaviour` over it |
 | gamebase-client | `Dungeon Run` | entry API → `q` socket → `Finished` / `Aborted` |
 | gamebase-client | `WebGL Transport` | the `IWebSocketFactory` / `IHttpFetcher` adapters |
 | auth-client | `Sign In` | both ways to get a channel JWT, and checking a kept one |

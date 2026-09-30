@@ -154,7 +154,8 @@ public sealed class LobbyQuickstart : MonoBehaviour
 }
 ```
 
-That is a complete lobby client, and it ships as the `LobbyQuickstart` sample.
+That is a complete lobby client. The `Lobby Quickstart` sample is a variant of it
+([Unity § Samples](unity.md#samples)).
 
 ## 5. Send your position
 

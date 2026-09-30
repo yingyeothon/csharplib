@@ -120,13 +120,14 @@ move the pin. The same symptom from your own transport is a `Task.Run`, `Task.De
 No error, only on WebGL, with your own `IHttpFetcher`, or after an `EventBroker` handler
 that does not finish at once — the handlers after it never run either. On a native
 player the same cause shows as Unity's "can only be called from the main thread" inside
-those later handlers. The package is pinned to a tag from before the SDK stopped
-sending those continuations to a thread pool. Move every `com.yingyeothon.*` pin to a
-tag whose message names this fix (`git tag -n99 -l`, or the repository's tag list;
-[Unity § Installing](unity.md#installing)).
+those later handlers. The package is pinned to a tag, or to a `main`, from before the
+SDK stopped sending those continuations to a thread pool. Move every
+`com.yingyeothon.*` pin to a tag whose message names this fix —
+[Unity § Installing](unity.md#installing) says where to read the messages and how to
+move the pins.
 
-The same freeze on any platform, right where you call `.Result` or `.Wait()` on one of
-them, is a blocked main thread: await it instead
+The same freeze on any platform, right where you block on one of them (`.Result` and
+the like), is a blocked main thread: await it instead
 ([Connection lifecycle § Threading](connection-lifecycle.md#threading)).
 
 ## `MapAsync` throws
