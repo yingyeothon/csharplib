@@ -115,10 +115,11 @@ on dev, 2026-09-30), so the browser blocks every reply and each call fails as
 `network`. That is the service's to change. `AuthUnityWebRequestTransport.Instance` (in
 `Runtime/Unity`, behind `#if UNITY_5_3_OR_NEWER`) is the transport for a platform where
 `HttpClient` cannot send, and on WebGL it will carry those calls the day the service
-allows it. It sets `redirectLimit = 0` (a browser follows redirects itself, so on WebGL
-that is the browser's call), and checks its 1 MiB cap only once the download finished,
-since `UnityWebRequest` buffers the whole reply. Neither half has run in a Unity build
-yet; the first editor run is owed ([manual-verification](../../rules/manual-verification.md)).
+allows it. It follows no redirect (`redirectLimit = 0`) and on a native player hands a
+refused one back as its `3xx`, which the client reports as `http`; on WebGL, where Unity
+fails the request on a redirect, it is `network`. It checks its
+1 MiB cap only once the download finished, since `UnityWebRequest` buffers the whole
+reply.
 
 ## Nothing sensitive leaves the client
 

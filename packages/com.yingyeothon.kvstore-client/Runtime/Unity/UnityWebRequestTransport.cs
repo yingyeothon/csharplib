@@ -21,8 +21,12 @@ namespace Yingyeothon.KvStore
     /// WebGL can run, and by the cancellation token, whose abort is marshalled back to
     /// the main thread. Every status comes back as an <see cref="HttpReply"/>; a
     /// connection or data failure, or a reply over 4 MiB, throws a message that names
-    /// neither the URL nor a header. The task's continuations are not run inside the
-    /// request's callback, so a throwing <c>await</c> in the game surfaces at the game's
+    /// neither the URL nor a header. It follows no redirects (<c>redirectLimit = 0</c>),
+    /// because one would carry the token — and a PUT's body — to another host; a refused
+    /// redirect comes back as its <c>3xx</c> reply, as from <see cref="HttpClientTransport"/>.
+    /// On WebGL, Unity documents a limit of 0 as failing the request on a redirect, so there
+    /// it is a thrown failure instead (not yet run in a browser). The store sends none. The task's continuations are not run inside
+    /// the request's callback, so a throwing <c>await</c> in the game surfaces at the game's
     /// own frame.
     /// </remarks>
     public sealed class UnityWebRequestTransport : IHttpTransport
@@ -66,6 +70,11 @@ namespace Yingyeothon.KvStore
                     request.SetRequestHeader(header.Key, header.Value);
                 }
 
+                // No redirects, as HttpClientTransport follows none: a redirect would carry
+                // the Authorization header — the player's token — to whatever host it named,
+                // and a 307 or 308 the body with it.
+                request.redirectLimit = 0;
+
                 // Seconds, rounded up, never zero: zero means no timeout to Unity.
                 request.timeout = (int)Math.Max(1, Math.Ceiling(call.Timeout.TotalSeconds));
             }
@@ -78,6 +87,8 @@ namespace Yingyeothon.KvStore
             // The token fires on a timer thread; Abort is main-thread only. The
             // context captured here is the main thread's, so the abort is posted back
             // to it, and `finished` is only ever touched there.
+            var clock = System.Diagnostics.Stopwatch.StartNew();
+            var timeoutSeconds = request.timeout;
             var context = SynchronizationContext.Current;
             var registration = default(CancellationTokenRegistration);
             if (cancellationToken.CanBeCanceled)
@@ -107,8 +118,16 @@ namespace Yingyeothon.KvStore
                         return;
                     }
 
-                    if (request.result == UnityWebRequest.Result.ConnectionError
-                        || request.result == UnityWebRequest.Result.DataProcessingError)
+                    // A redirect the limit refused is a ConnectionError that still carries
+                    // the 3xx (observed on Mono and IL2CPP players): hand it back as the
+                    // answer it is, as HttpClient would — unless the time ran out, which a
+                    // stalled 3xx also reports as a ConnectionError.
+                    var redirected = request.result == UnityWebRequest.Result.ConnectionError
+                        && request.responseCode >= 300 && request.responseCode < 400
+                        && clock.Elapsed.TotalSeconds < timeoutSeconds - 0.5;
+                    if (!redirected
+                        && (request.result == UnityWebRequest.Result.ConnectionError
+                            || request.result == UnityWebRequest.Result.DataProcessingError))
                     {
                         // Not request.error: it can quote the URL. The kind is enough.
                         source.TrySetException(new IOException("kv transport failed: " + request.result));

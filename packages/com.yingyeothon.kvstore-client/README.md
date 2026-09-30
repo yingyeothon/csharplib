@@ -77,7 +77,12 @@ is `"kv {code} ({status})"` and nothing more; a log line is `"kv request"` with 
 method, the route kind (`meta | entries | entry | incr`), the status and the byte
 count — never a key, a value, a URL or the token. That includes the transport seam:
 an `IHttpTransport` you write receives the credential in `HttpCall.Headers` and must
-keep the same rule.
+keep the same rule. Neither shipped transport follows a redirect, which would carry the
+header — and a `PUT`'s body on a `307`/`308` — to whatever host it named. A `3xx` comes
+back as `http` with its status from either transport on a native player; on WebGL, where
+Unity fails the request on a redirect, it is `network` (documented, not yet run in a
+browser). The store sends none. (`UnityWebRequestTransport` followed redirects before
+2026-09-30.)
 
 ## Public API
 

@@ -234,8 +234,11 @@ per platform: pass `AssetUnityWebRequestTransport.Instance` (in `Runtime/Unity`,
 main thread. It buffers each answer whole — a browser's fetch does too — so a fresh
 download holds **the whole file** in memory, writing it to disk saves none, and
 `ResponseTimeout` must cover the whole transfer. Elsewhere, prefer the default transport
-for large downloads. **None of this has run in a Unity build yet**, WebGL or not; the
-first editor run is owed ([manual-verification](../../rules/manual-verification.md)).
+for large downloads. It follows no redirect; on a native player a refused one comes back
+as its `3xx` (`http`), on WebGL — where Unity fails the request — as `network`. Mono and
+IL2CPP players have compiled it and run it against a redirect; a successful read through
+it in a player, and anything in a browser, is not yet recorded
+([manual-verification](../../rules/manual-verification.md)).
 
 ## What this does not do
 

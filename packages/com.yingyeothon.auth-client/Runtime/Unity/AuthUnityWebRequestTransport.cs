@@ -82,6 +82,8 @@ namespace Yingyeothon.Auth
             // The token fires on a timer thread; Abort is main-thread only. The
             // context captured here is the main thread's, so the abort is posted back
             // to it, and `finished` is only ever touched there.
+            var clock = System.Diagnostics.Stopwatch.StartNew();
+            var timeoutSeconds = request.timeout;
             var context = SynchronizationContext.Current;
             var registration = default(CancellationTokenRegistration);
             if (cancellationToken.CanBeCanceled)
@@ -111,8 +113,16 @@ namespace Yingyeothon.Auth
                         return;
                     }
 
-                    if (request.result == UnityWebRequest.Result.ConnectionError
-                        || request.result == UnityWebRequest.Result.DataProcessingError)
+                    // A redirect the limit refused is a ConnectionError that still carries
+                    // the 3xx (observed on Mono and IL2CPP players): hand it back as the
+                    // answer it is, as HttpClient would — unless the time ran out, which a
+                    // stalled 3xx also reports as a ConnectionError.
+                    var redirected = request.result == UnityWebRequest.Result.ConnectionError
+                        && request.responseCode >= 300 && request.responseCode < 400
+                        && clock.Elapsed.TotalSeconds < timeoutSeconds - 0.5;
+                    if (!redirected
+                        && (request.result == UnityWebRequest.Result.ConnectionError
+                            || request.result == UnityWebRequest.Result.DataProcessingError))
                     {
                         // Not request.error: it can quote the URL. The kind is enough.
                         source.TrySetException(new IOException("auth transport failed: " + request.result));

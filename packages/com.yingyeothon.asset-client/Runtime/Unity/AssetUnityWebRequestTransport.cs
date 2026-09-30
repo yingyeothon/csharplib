@@ -67,6 +67,7 @@ namespace Yingyeothon.Assets
             // The token fires on a timer thread; Abort is main-thread only, so the abort is
             // posted back to the context captured here.
             var clock = Stopwatch.StartNew();
+            var timeoutSeconds = web.timeout;
             var context = SynchronizationContext.Current;
             var registration = default(CancellationTokenRegistration);
             if (cancellationToken.CanBeCanceled)
@@ -97,8 +98,16 @@ namespace Yingyeothon.Assets
                         return;
                     }
 
-                    if (web.result == UnityWebRequest.Result.ConnectionError
-                        || web.result == UnityWebRequest.Result.DataProcessingError)
+                    // A redirect the limit refused is a ConnectionError that still carries
+                    // the 3xx (observed on Mono and IL2CPP players): hand it back as the
+                    // answer it is, as HttpClient would — unless the time ran out, which a
+                    // stalled 3xx also reports as a ConnectionError.
+                    var redirected = web.result == UnityWebRequest.Result.ConnectionError
+                        && web.responseCode >= 300 && web.responseCode < 400
+                        && clock.Elapsed.TotalSeconds < timeoutSeconds - 0.5;
+                    if (!redirected
+                        && (web.result == UnityWebRequest.Result.ConnectionError
+                            || web.result == UnityWebRequest.Result.DataProcessingError))
                     {
                         var kind = web.result;
                         web.Dispose();
@@ -106,7 +115,7 @@ namespace Yingyeothon.Assets
                         // UnityWebRequest reports its own timeout as a connection error; the
                         // elapsed time is how to tell, without reading `.error` (which can
                         // quote the URL). The client must not take a timeout for a refusal.
-                        source.TrySetException(clock.Elapsed.TotalSeconds >= web.timeout - 0.5
+                        source.TrySetException(clock.Elapsed.TotalSeconds >= timeoutSeconds - 0.5
                             ? new TimeoutException("asset transport timed out")
                             : (Exception)new IOException("asset transport failed: " + kind));
                         return;

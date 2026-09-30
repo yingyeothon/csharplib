@@ -150,7 +150,7 @@ Everything else arrives as a `KvStoreException`. Its message is `"kv {code}
 | 0 | `network` | | no reply; the cause is `InnerException` |
 | 0 | `timeout` | | no reply within `Timeout` (15 s) |
 | any | `bad_body` | | a success reply the client could not read |
-| any | `http` | | a failure reply with no error envelope: the edge or a proxy answered |
+| any | `http` | | a failure reply with no error envelope: the edge or a proxy answered — a `3xx` included, since neither transport follows a redirect; an `http://` `BaseUrl` redirected to `https` lands here, and the fix is the `https` URL |
 
 Two 404s look alike on a read and on a delete: `GetAsync` returns null for a missing
 **key**, `DeleteAsync` returns for one, and a missing **collection** is the same 404 to
