@@ -16,14 +16,14 @@ including how a Unity build receives the redirect.
 ## Install
 
 ```
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.auth-client
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.auth-client#v0.1.0
 ```
 
-**No release has been tagged yet**, so this URL tracks `main`; append `#<tag>` to
-pin one as soon as there is one.
+The fragment pins a release tag; keep the same one on every `com.yingyeothon.*` URL
+([Unity § Installing](../../docs/unity.md#installing)).
 
 Depends on `com.yingyeothon.codec` and `com.yingyeothon.logger`; a git-URL package
-cannot resolve them, so add both first. It does not depend on `gamebase-client` or
+cannot resolve them, so add both first, on the same tag. It does not depend on `gamebase-client` or
 `kvstore-client`, and neither depends on it: the token is a string either takes.
 
 ## Usage

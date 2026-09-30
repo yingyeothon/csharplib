@@ -95,9 +95,9 @@ In Unity, _Window → Package Manager → Add package from git URL_. A git-URL p
 cannot resolve its own dependencies, so add each one it needs:
 
 ```
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.codec
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.logger
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.gamebase-client
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.codec#v0.1.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.logger#v0.1.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.gamebase-client#v0.1.0
 ```
 
 `com.yingyeothon.kvstore-client`, `com.yingyeothon.auth-client` and
@@ -107,14 +107,14 @@ https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.game
 way if you want it:
 
 ```
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.kvstore-client
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.auth-client
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.asset-client
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.event-broker
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.kvstore-client#v0.1.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.auth-client#v0.1.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.asset-client#v0.1.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.event-broker#v0.1.0
 ```
 
-**No release has been tagged yet**, so these URLs track `main`; append
-`#<tag>` to pin one as soon as there is one. Every asset carries its committed `.meta`,
+These URLs pin a release tag; move every one of them together to take another, and drop
+the fragment only if you mean to track `main`. Every asset carries its committed `.meta`,
 which is what lets a git-URL install compile at all. Each package ships importable
 `Samples~`. [docs/unity.md](docs/unity.md) has the details.
 

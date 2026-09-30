@@ -27,12 +27,10 @@ mechanism: no registry, no publish step, no staging window, nothing to yank.
   **remote** — a CI checkout has no tags unless the workflow sets `fetch-tags`. If you
   change either, change both.
 - Stable semver only: a git URL has no dist-tag, so Package Manager cannot tell an
-  `-rc` tag from a release. The current version is `0.1.0` and **no tag has been cut
-  yet**,
-  so every install URL in `README.md`, `docs/getting-started.md` and `docs/unity.md`
-  currently tracks `main` and says so. **The first release must delete those "no
-  release has been tagged yet" sentences and pin the URLs** — leaving them is
-  shipping a lie.
+  `-rc` tag from a release. The version lives in the three places above and in every
+  install URL's `#v…` fragment, and **nowhere in prose** — check 4 guards the URLs and
+  `validate-packages.sh` the rest, and nothing guards a sentence. Each release moves
+  every pin to its own tag.
 - **While the version is `0.x`, a breaking change bumps the minor** (`0.1.0` →
   `0.2.0`) and everything else the patch. `1.0.0` is a deliberate statement that the
   surface is stable, never a side effect of breaking it; from there, normal semver.
@@ -71,14 +69,18 @@ anything is pushed, and the commit and the tag then go together or not at all.
    count, and while the URLs pin an uncut tag it prints nothing. `./scripts/check-docs.sh` fails when a URL and the version
    disagree in either direction, so run it rather than counting by hand.
 
-   **Retract every pre-release claim in the same commit**, or a released repo keeps
-   asserting it has released nothing: the "no release has been tagged yet" sentences
-   (`check-docs.sh` check 5 lists the files that carry one),
-   `CONVENTIONS.md`'s *"Nothing has been released yet"* paragraph, and this file's own
-   "no tag has been cut yet" clause. A rule file that states a fact a release
-   invalidates has to be listed here, or it will not be found.
-5. **[agent]** Commit the bump. **Do not push** — `check-docs.sh` fails while the URLs name a tag
-   that does not exist, so `pre-push` would refuse it, correctly.
+   **No sentence names the version** (Versioning, above), so the URLs are all step 4
+   moves; grep `v[0-9]+\.[0-9]+\.[0-9]+` across the files above and `rules/` to confirm
+   none crept in. v0.1.0 also retracted every pre-release claim — the "no release has
+   been tagged yet" sentences and `CONVENTIONS.md`'s *"Nothing has been released yet"*
+   paragraph. A rule file that states a fact a release invalidates has to be listed
+   here, or it will not be found.
+5. **[agent]** Commit the bump. **Do not push** — `check-docs.sh` fails while the URLs name a
+   tag that does not exist, so `pre-push` would refuse it, correctly. In that window it
+   fails twice per file: check 4's *"pins vX.Y.Z, which is not a tag yet"*, and check 5's
+   *"carries an unpinned install URL but does not say why"*, which is wrong — the URLs are
+   pinned; check 5 predates the first tag and has not been narrowed. Both clear once the
+   local tag exists.
 6. **[user]** Finish it, on that commit:
 
    ```bash

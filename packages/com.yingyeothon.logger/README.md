@@ -8,13 +8,14 @@ Pass a logger to a gateway client through `GatewayClientOptions.Logger`; [docs/u
 ## Install
 
 ```
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.logger
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.logger#v0.1.0
 ```
 
-**No release has been tagged yet**, so this URL tracks `main`; append `#<tag>` to
-pin one as soon as there is one.
+The fragment pins a release tag; keep the same one on every `com.yingyeothon.*` URL
+([Unity § Installing](../../docs/unity.md#installing)).
 
-Depends on `com.yingyeothon.codec`.
+Depends on `com.yingyeothon.codec`; a git-URL package cannot resolve it, so add it first,
+on the same tag.
 
 ## Usage
 

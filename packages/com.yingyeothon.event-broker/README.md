@@ -3,16 +3,16 @@
 A type-safe event broker with asynchronous handlers, dispatched sequentially in
 registration order.
 
-Independent of the other three packages and of the gateway; see [the guide](../../docs/README.md) for what the rest of this repository is for.
+Independent of every other package here and of the gateway; see [the guide](../../docs/README.md) for what the rest of this repository is for.
 
 ## Install
 
 ```
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.event-broker
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.event-broker#v0.1.0
 ```
 
-**No release has been tagged yet**, so this URL tracks `main`; append `#<tag>` to
-pin one as soon as there is one.
+The fragment pins a release tag; keep the same one on every `com.yingyeothon.*` URL
+([Unity § Installing](../../docs/unity.md#installing)).
 
 No dependencies.
 

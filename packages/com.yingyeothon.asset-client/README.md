@@ -16,14 +16,14 @@ pattern.
 ## Install
 
 ```
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.asset-client
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.asset-client#v0.1.0
 ```
 
-**No release has been tagged yet**, so this URL tracks `main`; append `#<tag>` to
-pin one as soon as there is one.
+The fragment pins a release tag; keep the same one on every `com.yingyeothon.*` URL
+([Unity § Installing](../../docs/unity.md#installing)).
 
 Depends on `com.yingyeothon.codec` and `com.yingyeothon.logger`; a git-URL package
-cannot resolve them, so add both first. It depends on no other client here.
+cannot resolve them, so add both first, on the same tag. It depends on no other client here.
 
 ## Usage
 
@@ -245,10 +245,11 @@ IL2CPP players have run it against a redirect, and a Chrome WebGL player built w
 6000.0.25f1 against a live dev bundle and a redirect
 ([the browser run](../../rules/manual-verification.md#the-webgl-browser-run)).
 
-**Every `main` before the commit that rewrote `BodyReader.Race` (2026-09-30) hangs each
-read through it in a browser** — no error, no timeout. If `Packages/packages-lock.json`
-pins such a commit, delete this package's entry there (or re-add the git URL) so the
-Package Manager resolves again.
+Every tag includes the fix for a hang that stopped **each read through it in a browser**
+— no error, no timeout. A project that added the package by a URL with no fragment
+before the first tag may still have such a commit (anything before `6ac4ccf`) in
+`Packages/packages-lock.json`: pin every `com.yingyeothon.*` URL to a tag, which makes
+the Package Manager resolve them again.
 
 On WebGL the client's own bounds do not run: the player has no timer thread, so
 `BodyIdleTimeout` and the client's copy of `ResponseTimeout` never fire, and neither does

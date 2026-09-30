@@ -13,11 +13,11 @@ Every frame and payload on the gateway API is a `JsonValue`, so this package is 
 Unity Package Manager, _Add package from git URL_:
 
 ```
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.codec
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.codec#v0.1.0
 ```
 
-**No release has been tagged yet**, so this URL tracks `main`; append `#<tag>` to
-pin one as soon as there is one.
+The fragment pins a release tag; keep the same one on every `com.yingyeothon.*` URL
+([Unity § Installing](../../docs/unity.md#installing)).
 
 ## Usage
 

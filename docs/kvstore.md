@@ -15,12 +15,11 @@ reference is [`Yingyeothon.KvStore`](../packages/com.yingyeothon.kvstore-client/
 URL as in [Getting started § 1](getting-started.md#1-install-the-packages), then this:
 
 ```
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.kvstore-client
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.kvstore-client#v0.1.0
 ```
 
-**No release has been tagged yet**, so the URL tracks `main`; append `#<tag>` once one
-exists. It is independent of `gamebase-client`: a game that only reads a notice board needs no
-socket.
+The package is independent of `gamebase-client`: a game that only reads a notice board
+needs no socket.
 
 ## 2. Create the collections in the console
 

@@ -9,18 +9,18 @@ Add four git URLs in _Package Manager → + → Add package from git URL_ — th
 are the gateway client and what it depends on, the fourth is what §3 signs in with:
 
 ```
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.codec
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.logger
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.gamebase-client
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.auth-client
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.codec#v0.1.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.logger#v0.1.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.gamebase-client#v0.1.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.auth-client#v0.1.0
 ```
 
 A git-URL package cannot resolve its own dependencies, so all four must be present;
 adding them in this order avoids Package Manager reporting a missing one in between. The
 minimum editor is **Unity 2021.3**.
 
-**No release has been tagged yet**, so a git URL without a fragment tracks `main`. Once
-a tag exists, append `#<tag>` to each URL so your team does not silently move. [Unity § Installing](unity.md#installing) has the rest:
+Each URL pins a release tag, so your team does not silently move; a git URL without a
+fragment tracks `main`. [Unity § Installing](unity.md#installing) has the rest:
 asmdefs, `.meta` files, and vendoring into `Packages/`.
 
 ## 2. Collect the ids from the console
