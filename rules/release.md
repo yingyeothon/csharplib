@@ -112,7 +112,9 @@ anything is pushed, and the commit and the tag then go together or not at all.
    compiling in a consumer's project, so check it survived. When a previous tag exists,
    also walk the upgrade `docs/unity.md` § Installing describes: a new project with
    every package at the previous tag, then every fragment moved to the new one in one
-   edit of `manifest.json` — and drop that item from *Not covered* once it has run.
+   edit of `manifest.json`. Record both as a dated partial run in
+   [manual-verification.md](manual-verification.md), as *The second tag, installed, and
+   the upgrade to it* does.
 
 ## When a release half-lands
 

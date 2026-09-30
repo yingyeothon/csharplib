@@ -324,7 +324,14 @@ and booleans, never a URL or a token — and you grep the log for `[PROBE]`:
   `HttpFetcher.Default` against `:18778`: `status=404 offMain=True`, waiting by wall-clock
   time (up to 20 s), not by frames — an unthrottled batch-mode player runs hundreds of
   frames before Mono's first `HttpClient` reply
-  ([The consumer-task hang](#the-consumer-task-hang));
+  ([The consumer-task hang](#the-consumer-task-hang)). Two more shapes, on every player,
+  each expecting the same lines: the map check on a **new** lobby client (a map is
+  cached per client, and a cached one skips the path under test) with `MapAsync` given an
+  uncancelled `new CancellationTokenSource().Token` while the fetch is still pending —
+  that is `MapFetcher.Observe`, which completes the caller's task from a `ContinueWith`
+  rather than an `await`; and both checks with the fetch and the handler written as `async`
+  methods awaiting a `TaskCompletionSource` the probe completes from the next `Update`,
+  never `Task.Delay`, which needs the pool;
 - each Unity transport against `:18777` → `network (0)`, and no `FOLLOWED`; against
   `:18778` → `kv` null, `auth http (404)`, `asset not_found (404)`. A control that reads
   `network (0)` means the servers, not the transports, are wrong;
@@ -453,6 +460,24 @@ The page as of `c2f6339`: §3's lines 63–70 verbatim inside an
 byte for byte. §5's line is the same `Pos` call §4 compiles, with placeholder arguments.
 No sample was imported from this install; the full runs import them from a bare clone
 ([Last verified](#last-verified)).
+
+### The second tag, installed, and the upgrade to it
+
+**2026-09-30**, a partial run: [release.md](release.md) step 7 for the second tag, which
+the user cut on commit `22741f7` from the verified sha `d8ce422`. It is not a *Last
+verified* run and does not satisfy release.md step 2. Same editors, workarounds and
+GitHub URLs as [the first tag](#the-first-tag-installed); each editor got two **new**
+projects, one installed at the second tag and one installed at the first and then
+upgraded, the URLs written into `manifest.json` in one edit each time.
+
+| Check | 2021.3.45f2 | 6000.0.25f1 |
+| --- | --- | --- |
+| All seven packages at the second tag | 7 in `Library/PackageCache`, every `packages-lock.json` hash `22741f7`, 0 *immutable folder*, 0 `error CS`, 7 `Yingyeothon*.dll`, **no** `Yingyeothon*Tests*.dll` anywhere in `Library` | same |
+| The upgrade: all seven at the first tag, opened, then every `#v…` fragment moved to the second in one `manifest.json` edit and the project opened again | before: every lock hash `c2f6339`; after: every lock hash `22741f7`, 7 in `PackageCache` and none left at the old commit, `CompileScripts` seen, 0 errors, 0 warnings, 7 `Yingyeothon*.dll`, no Tests dll; all seven cached trees match `git archive` of the tag file for file; the recompiled dlls differ from the fresh project's (2021.3 does not build deterministically) | same, except that each cached `package.json` gains Unity's `_fingerprint` line; all seven recompiled dlls are byte-identical to the fresh project's |
+
+The upgrade reopened the project in batch mode; what it did not reach is under *Not
+covered*. `getting-started.md` was not pasted again: only its four URLs changed since the
+first tag.
 
 ### The consumer-task hang
 
@@ -668,9 +693,13 @@ Not covered, and each is a real gap rather than a formality:
   is uncompiled until pasted into a scratch project again. The rest of `docs/` — the
   alias in `docs/unity.md` § Logging to the editor console among them — has never been
   pasted at all; only the samples stand in for it.
-- **Upgrading from one tag to the next** (`docs/unity.md` § Installing, *Upgrading*). It needs a second
-  tag: install every package at the previous tag in a new project, then change every
-  fragment to the new tag in one edit.
+- **The upgrade in a running editor, through the Package Manager window, or one that
+  adds a package the old tag lacked.** The one upgrade run
+  ([The second tag, installed](#the-second-tag-installed-and-the-upgrade-to-it)) reopened
+  the project in batch mode, with the same seven packages on both tags.
+- **The probe's cancellable-token and `async`-method shapes**
+  ([the WebGL recipe](#run-the-webgl-player-in-a-browser)). No run has recorded them;
+  drop this once one does.
 - **Adding the URLs one at a time in Package Manager.** Every run wrote them into
   `manifest.json` at once, so the dependency-first order of `docs/getting-started.md`
   §1 and `docs/unity.md` § Installing, and what Package Manager reports without it, has
