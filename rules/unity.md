@@ -175,6 +175,20 @@ were invisible only because nothing had forced a clean recompile —
   configuration, not a fork. The store client ships its WebGL side —
   `Runtime/Unity/UnityWebRequestTransport.cs` — because one `UnityWebRequest` adapter
   is the whole of it; a consumer passes `UnityWebRequestTransport.Instance`.
+  The gateway's `WebGLHttpFetcher` is complete too, but lives in the `WebGL Transport`
+  sample beside the socket skeleton, so it has no approved-API listing and no `docs/api`
+  page. An imported sample is the consumer's copy and an upgrade does not touch it, so
+  when it changes, the tag message says what changed and that re-importing is how to get
+  it.
+- **In a WebGL player `redirectLimit` is 0 or ignored.** 0 refuses any redirect (the
+  Runtime transports read `network (0)`, nothing followed:
+  [the WebGL browser run](manual-verification.md#the-webgl-browser-run)). A limit of 5 was
+  ignored — Chrome followed a chain of six to its end, where a native player refused the
+  sixth ([The WebGL fetcher run](manual-verification.md#the-webgl-fetcher-run); 6000 only).
+  So a redirect bound meant to hold in a browser is 0 — `UnityWebRequestTransport`,
+  `AuthUnityWebRequestTransport`, `AssetUnityWebRequestTransport` and the sample's
+  fetcher all use it; the fetcher reports a refused redirect as an `IOException` where
+  the three hand back its `3xx`. `HttpFetcher.Default`'s 5 never runs in a browser.
 
 ## The Poll contract
 

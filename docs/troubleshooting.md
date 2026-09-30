@@ -135,8 +135,13 @@ the like), is a blocked main thread: await it instead
 - `InvalidOperationException` — called before `hello`. Await `ConnectAsync()` first.
 - `MapFetchException` — the URL answered a non-2xx status, which the exception carries.
   A `403`/`404` usually means the channel points at an asset version that was deleted;
-  re-point it with `yyt channels update <lobby> --map-url …`.
-- The channel has no map at all: `hello.MapUrl` is empty.
+  re-point it with `yyt channels update <lobby> --map-url …`. A `2xx` means the map was
+  too large ([Lobby § The map](lobby.md#the-map)).
+- The channel has no map at all: `hello.MapUrl` is empty, and the fetch fails on it.
+  Check it before calling `MapAsync`.
+- `IOException` `map fetch failed: ConnectionError`, from the WebGL Transport sample's
+  fetcher: about 30 s in, the timeout; at once, the browser console names the cause.
+  The exception names no URL on purpose ([Unity § WebGL](unity.md#webgl)).
 
 Where an `await MapAsync()` resumes is
 [Connection lifecycle § Threading](connection-lifecycle.md#threading).

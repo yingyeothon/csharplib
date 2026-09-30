@@ -62,7 +62,8 @@ A guard that is looser costs one refusal you already handle.
 
 ## Exceptions this SDK throws
 
-All of them are thrown **locally**, before anything reaches the wire.
+All of them are thrown **locally**, before anything reaches the wire — except the
+`await MapAsync()` rows, which report the map fetch.
 
 | Exception | Thrown by | When |
 | --- | --- | --- |
@@ -75,7 +76,8 @@ All of them are thrown **locally**, before anything reaches the wire.
 | `GatewayClientException` | `IGatewayGameClient.Send` | the frame's `type` is `enter` or `leave`. `Code` is `reserved_type` |
 | `InvalidOperationException` | `MapAsync` | called before `hello` arrived |
 | `GatewayStoppedException` | `await ConnectAsync()` | the connection ended before it became usable |
-| `MapFetchException` | `await MapAsync()` | the map URL answered a non-2xx status, which it carries |
+| `MapFetchException` | `await MapAsync()` | the map URL answered a non-2xx status, or a body too large ([Lobby § The map](lobby.md#the-map)); it carries the status |
+| anything else | `await MapAsync()` | what your `IHttpFetcher` threw, unchanged — `HttpFetcher.Default`'s are `HttpClient`'s; the WebGL Transport sample's are in its doc comment ([Unity § WebGL](unity.md#webgl)) |
 | `JsonKindException` | `JsonValue.AsString`, `AsNumber`, `AsArray`, … | the value is a different kind — a map body that was not JSON reaches you this way |
 | `JsonNumberException` | `JsonValue.AsInt32` | the number does not fit an `int` |
 | `JsonParseException` | `Json.Parse` | see [`Yingyeothon.Codec`](../packages/com.yingyeothon.codec/README.md) |

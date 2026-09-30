@@ -83,8 +83,10 @@ Same sections, in this order:
   `<summary>` even though `CS1591` is suppressed.
 - **Samples are code, and are compiled.** `tests/Yingyeothon.Samples.Build` builds the
   engine-free half of every `Samples~` folder, so a sample the docs point at cannot rot.
-  The `MonoBehaviour` wrappers sit next to it behind `#if UNITY_5_3_OR_NEWER`, exactly
-  as `Runtime/Unity/**` does. A sample also needs its entry in the package's
+  The engine-bound files — `MonoBehaviour` wrappers, the WebGL sample's
+  `UnityWebRequest` fetcher — sit next to it behind `#if UNITY_5_3_OR_NEWER`, exactly
+  as `Runtime/Unity/**` does, so no `dotnet` build compiles them: importing the samples in
+  the Unity scratch project is their only compile. A sample also needs its entry in the package's
   `package.json` `samples` array, or Unity shows no Samples tab at all.
 - When a dependency edge changes, update both the package table and the mermaid graph in
   the root `README.md`.

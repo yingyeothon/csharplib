@@ -197,8 +197,9 @@ the peer map is empty until the game re-sends `Pos`.
 `ClientWebSocket` and `HttpClient` do not work on WebGL, and there is no thread for a
 receive loop. Pass your own `WebSocketFactory` (for example an adapter over a
 `.jslib` socket) and `HttpFetcher` (over `UnityWebRequest`) through the client
-options; the rest of the SDK is unchanged. On every other platform the defaults work
-as they are.
+options; the rest of the SDK is unchanged — [Unity § WebGL](../../docs/unity.md#webgl)
+says what each needs, and what the `WebGL Transport` sample provides. On every other
+platform the defaults work as they are.
 
 ## Differences from `@yingyeothon/gamebase-client`
 

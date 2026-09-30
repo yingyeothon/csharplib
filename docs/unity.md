@@ -72,7 +72,7 @@ Import_. They land in `Assets/Samples/…` and are yours to edit.
 | --- | --- | --- |
 | gamebase-client | `Lobby Quickstart` | a variant of the client in [Getting started § 4](getting-started.md#4-create-the-client-and-poll-it): an engine-free `LobbySession` that also sends zone chat, and a `MonoBehaviour` over it |
 | gamebase-client | `Dungeon Run` | entry API → `q` socket → `Finished` / `Aborted` |
-| gamebase-client | `WebGL Transport` | the `IWebSocketFactory` / `IHttpFetcher` adapters |
+| gamebase-client | `WebGL Transport` | a skeleton `IWebSocketFactory` and a complete `IHttpFetcher` for WebGL |
 | auth-client | `Sign In` | both ways to get a channel JWT, and checking a kept one |
 | asset-client | `Asset Quickstart` | the manifest pattern: a manifest, a whole file, a range, a resumable download |
 | kvstore-client | `KvStore Quickstart` | announcements and a player's own record, from [Key-value store](kvstore.md) |
@@ -217,14 +217,13 @@ A WebGL build supplies its own transport through the same options every other bu
 uses — this is configuration, not a fork:
 
 ```csharp
-var lobby = GatewayLobbyClient.Create(new GatewayLobbyClientOptions
-{
-    Url = url,
-    ChannelId = channelId,
-    Token = channelJwt,
-    WebSocketFactory = new WebGLWebSocketFactory(),   // over a .jslib socket
-    HttpFetcher = new WebGLHttpFetcher(),             // over UnityWebRequest
-});
+// at the top of the file: using Yingyeothon.Gamebase.Client.Samples;
+var options = new GatewayLobbyClientOptions { Url = url, ChannelId = channelId, Token = channelJwt };
+#if UNITY_WEBGL && !UNITY_EDITOR
+options.WebSocketFactory = new WebGLWebSocketFactory();   // yours to finish, over a .jslib socket
+options.HttpFetcher = new WebGLHttpFetcher();             // complete, over UnityWebRequest
+#endif
+var lobby = GatewayLobbyClient.Create(options);
 ```
 
 What the seams require:
@@ -250,12 +249,20 @@ What the seams require:
   an over-size one as close `1009`.
 - **`IHttpFetcher.GetAsync`** is a credential-free GET returning
   `HttpFetchResult { Ok, Status, Text }`. Give it a timeout, a size cap and a small
-  redirect budget: the URL comes off the wire.
+  redirect budget: the URL comes off the wire. In a browser that budget can only be
+  none: `redirectLimit = 0` refuses every redirect, and a larger value is ignored while
+  the browser follows the chain itself.
 
-The `WebGL Transport` sample is the skeleton for both.
+The `WebGL Transport` sample holds both: a skeleton for the socket, whose `.jslib` half
+is yours to write, and a complete `WebGLHttpFetcher` to pass as it is. The fetcher's doc
+comment owns its bounds and what it throws. The sample compiles into `Assembly-CSharp`,
+which an asmdef cannot reference: if your scripts live in their own asmdef, move the
+sample's files into it. A sample imported from v0.2.0 or earlier declares a
+`WebGLHttpFetcher` stub in `WebGLTransport.cs`; delete that class, or that folder, when
+you import this one.
 
 The key-value store client has the same seam and, unlike the gateway, ships the WebGL
-side of it — see [Key-value store](#key-value-store) below. So does the auth client,
+side of it in the package rather than a sample — see [Key-value store](#key-value-store) below. So does the auth client,
 `AuthUnityWebRequestTransport.Instance`, although on WebGL its requests are blocked for
 now: see [Signing in](#signing-in). And so does the asset client,
 `AssetUnityWebRequestTransport.Instance`, which also switches itself to CORS-safe

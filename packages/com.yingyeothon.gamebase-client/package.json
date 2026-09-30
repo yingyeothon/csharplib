@@ -30,7 +30,7 @@
     },
     {
       "displayName": "WebGL Transport",
-      "description": "The IWebSocketFactory and IHttpFetcher a WebGL build must supply.",
+      "description": "A WebGL build's IWebSocketFactory skeleton, and a complete IHttpFetcher.",
       "path": "Samples~/WebGLTransport"
     }
   ]

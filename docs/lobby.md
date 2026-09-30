@@ -254,9 +254,11 @@ map is a frame hitch, so fetch it behind a loading screen.
 Three outcomes are worth knowing:
 
 - A non-2xx answer throws `MapFetchException`, carrying the status.
-- **A body over 16 MB of JSON also throws `MapFetchException`, carrying a 2xx status.**
-  Too big to parse has to fail rather than degrade; handing back one enormous string is
-  the silent breakage the limit exists to prevent.
+- **A body over 16 MB fails too.** The WebGL Transport sample's fetcher throws
+  `MapFetchException` carrying the 2xx status, and so does the parser for a longer body
+  from any other fetcher; `HttpFetcher.Default` stops reading at 16 MB and throws what
+  `HttpClient` throws. Too big to parse has to fail rather than degrade; handing back
+  one enormous string is the silent breakage the limit exists to prevent.
 - **A body that is not JSON is handed back as a JSON string, not refused.** The asset is
   the game's and this SDK only transports it. Reading a field off it then throws
   `JsonKindException`, so check `map.Kind == JsonKind.Object` if the map may be wrong.

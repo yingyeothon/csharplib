@@ -107,6 +107,13 @@ thread-pool thread (a test that installs its own context now can —
 [testing.md](testing.md)), two `double` differences, and a test harness Mono cannot host
 ([unity.md](unity.md)).
 
+**Never run two editors at once** — not `-createProject`, not `unity test`, not an
+`-executeMethod` build, not "both editors" of a recipe step. 2021.3 and 6000 start
+different `LicensingClient` versions, and the one launched second aborts before it opens
+the project: exit 199, and *IPC channel to LicensingClient doesn't exist; aborting* in its
+`-logFile`. (*Unsupported protocol version* also appears in runs that go on to succeed, so
+it alone is not the sign.) Rerun it once the other editor has exited.
+
 ### Which editor
 
 - **The floor is what matters.** `package.json` says `"unity": "2021.3"` and
@@ -146,7 +153,8 @@ Unity 6 has neither: it bundles .NET 6 and a newer build backend.
 ### The scratch project
 
 1. Build it **outside the repo**, in a scratch directory.
-   `<editor>/Editor/Unity -batchmode -nographics -quit -createProject <path>`.
+   `<editor>/Editor/Unity -batchmode -nographics -quit -createProject <path>`
+   ([one editor at a time](#in-unity)).
 2. **Copy** every `packages/com.yingyeothon.*` folder into `<project>/Packages/`.
    Do not use a `file:` UPM dependency and do not symlink: Unity writes into whatever
    it imports — a `.meta` for any asset that lacks one, a re-serialized one where its
@@ -250,7 +258,12 @@ batch-mode run reports zero warnings whether or not any exist, and reading that 
 "clean" is how 192 CS8632 warnings survived a previous verification. Force the rebuild
 by deleting `<project>/Library/ScriptAssemblies`, and confirm from the log that a
 compile actually happened (`CompileScripts`) — touching the sources is not enough on
-its own, because Unity re-hashes content. When a compiler flag is what you are
+its own, because Unity re-hashes content. `CompileScripts` is not enough for a package
+count either: the 2026-09-30 fetcher run recompiled only `Assembly-CSharp*` and copied the
+`Yingyeothon.*` assemblies from `Library/Bee` ([The WebGL fetcher run](#the-webgl-fetcher-run)).
+Before reporting a package warning count, find the compiler invocation for each
+`Yingyeothon.*` assembly in the log; if one is missing, say the count covers only what
+was compiled. When a compiler flag is what you are
 testing, take it away and watch the warnings return: **delete the rsp from the scratch
 project's `Packages/` copy, never from this repository**, and re-copy afterwards.
 
@@ -268,7 +281,8 @@ A build that succeeds proves nothing about stripping — the player has to run. 
 Have it also decrypt one conformance vector through an in-memory `IAssetTransport` (the
 asset crypto on that backend), and point each Unity transport at the `302` server in
 [the auth/asset run](#the-run-that-added-auth-client-and-asset-client): each must answer
-`http (302)` and the server must never see its redirect target.
+`http (302)` and the server must never see its redirect target. It also runs the
+`WebGLHttpFetcher` check of [the browser recipe](#run-the-webgl-player-in-a-browser).
 
 - **Mono** and **IL2CPP** `StandaloneLinux64`, both built and both run.
 - **WebGL** built, then **run in a browser** — below. A link alone is how every asset
@@ -292,7 +306,10 @@ project, outside the repo, like everything else under [In Unity](#in-unity).
    `-Expose-Headers: *`. The store and auth transports send headers that make the browser
    preflight, so without those a request fails on CORS, not on what is under test.
    `:18777` answers `302 → http://127.0.0.1:18777/elsewhere` and prints `FOLLOWED` when
-   `/elsewhere` is hit; `:18778` answers `404`. Extend the native probe's `302` server (in
+   `/elsewhere` is hit; `:18778` answers `404`, except three paths for the fetcher check
+   below: `/map.json` → `200` `{"w":3}`, `/big` → `200` with a body of 16 777 217 bytes
+   (one over the 16 MiB cap), and `/slow` → `200` headers with `Content-Length: 100`, one
+   byte, then nothing for 45 s. Extend the native probe's `302` server (in
    [the auth/asset run](#the-run-that-added-auth-client-and-asset-client)); one server on
    `:18777` serves both the players and the browser.
 3. **Run it headless.** The Chrome the browser extension drives may have **no WebGL at
@@ -332,6 +349,18 @@ and booleans, never a URL or a token — and you grep the log for `[PROBE]`:
   rather than an `await`; and both checks with the fetch and the handler written as `async`
   methods awaiting a `TaskCompletionSource` the probe completes from the next `Update`,
   never `Task.Delay`, which needs the pool;
+- the `WebGL Transport` sample's `WebGLHttpFetcher`, on **every** player, compiled from
+  the `Assets/Samples/…/WebGL Transport/` folder `SampleImport.ImportAll` wrote — never a
+  copy of the repository file, which no `dotnet` build compiles
+  ([documentation.md](documentation.md)). Await `GetAsync` directly and print the result
+  or the exception type: `:18778/map.json` → `ok=True status=200`; `:18778/missing` →
+  `ok=False status=404`; `:18777` → `IOException`, no `FOLLOWED`, and the `:18777`
+  server logged the request (print each path it serves, or the check passes with nothing
+  listening); `:18778/big` →
+  `MapFetchException`; `:18778/slow` → `IOException` about 30 s in; `file:///etc/hostname`
+  and a URL with user info → `ArgumentException`. Then a **new** lobby client over the fake
+  socket, `HttpFetcher = new WebGLHttpFetcher()`, whose `hello` names `:18778/map.json`:
+  `MapAsync` → an object;
 - each Unity transport against `:18777` → `network (0)`, and no `FOLLOWED`; against
   `:18778` → `kv` null, `auth http (404)`, `asset not_found (404)`. A control that reads
   `network (0)` means the servers, not the transports, are wrong;
@@ -407,6 +436,9 @@ One seam: in the first pass both Mono players printed `default-fetcher finished=
 changed; both players of each editor were rebuilt from the same `d8ce422` packages and
 printed `status=404 offMain=True` and every other line as before, so the run stays full.
 
+The recipe's `WebGLHttpFetcher` check was added after `d8ce422` and is not in this run
+([The WebGL fetcher run](#the-webgl-fetcher-run) is).
+
 Skipped from the recipe: the vector-key read ran in the default `CorsSafe` mode only,
 not in both; it tests the key, not the request plan the mode changes. Not called for, so
 not run: taking a `csc.rsp` away (no compiler flag changed), and pasting
@@ -437,6 +469,33 @@ run added a `csc.rsp` per asmdef, which is not a source change and which
 `NullableContextAttribute` and `EmbeddedAttribute` into the Unity-built assemblies. That
 is exactly the metadata `ManagedStrippingLevel.High` and `Runtime/link.xml` are tested
 against. A compiler flag is a build change even when no `.cs` moved.
+
+### The WebGL fetcher run
+
+**2026-09-30**, a partial run for the change that completed the `WebGL Transport`
+sample's `WebGLHttpFetcher` (on `77aed6f`, from the working tree's `packages/` copied into
+each scratch project, not from a bare clone): 2021.3.45f2 and 6000.0.25f1, headless
+Chrome 154, the servers of [the browser recipe](#run-the-webgl-player-in-a-browser).
+Both editors imported every sample (1 / 1 / 3 / 1 / 1 / 1 / 1) and compiled the samples
+and the probe clean (`ScriptAssemblies` deleted, `CompileScripts` seen, 0 errors, 0
+warnings from `Assets/Samples/`). **Deleting `ScriptAssemblies` recompiled only
+`Assembly-CSharp*`:** the `Yingyeothon.*` assemblies were copied from `Library/Bee`, and on
+6000 two came from Bee's global cache, so this run counts no package warnings. A package
+warning count needs a log that shows the compiler run for each of them. Each editor built
+a `StandaloneLinux64` Mono player and a WebGL player (IL2CPP) at stripping **High**, and
+all four printed the recipe's fetcher lines as expected: `ok=True status=200`,
+`ok=False status=404`, `:18777` → `IOException` with no `FOLLOWED`, `/big` →
+`MapFetchException` (200), `/slow` → `IOException` at 30 s, `file:` and user info →
+`ArgumentException`, `MapAsync` → an object. `:18777` logged one request per player. The
+control server saw no
+`Authorization` header; nothing had set a cookie, so its lack of one proves nothing.
+
+An earlier version of the fetcher, at `redirectLimit = 5` (6000 only), is where
+[unity.md](unity.md#webgl)'s redirect rule comes from: Chrome followed a chain of six
+`302`s to its end, and the native Mono player refused the sixth as a `ConnectionError`.
+
+Not run: an IL2CPP `StandaloneLinux64` player (WebGL is IL2CPP), and the real CDN from a
+browser. The next full run takes this check from the recipe.
 
 ### The first tag, installed
 
@@ -705,8 +764,9 @@ Not covered, and each is a real gap rather than a formality:
   §1 and `docs/unity.md` § Installing, and what Package Manager reports without it, has
   never been exercised. `UnityEditor.PackageManager.Client.Add` per URL through
   `-executeMethod` is the headless form of that click.
-- **A stalled server in a browser.** On WebGL only `UnityWebRequest.timeout` bounds a
-  request; no browser run has waited it out.
+- **A stalled server in a browser, for the Runtime transports.** On WebGL only
+  `UnityWebRequest.timeout` bounds a request; only the sample's fetcher has waited it out
+  ([The WebGL fetcher run](#the-webgl-fetcher-run)).
 - **The auth provider hop in a browser.** No dev auth channel has a provider, so the
   browser flow ran with a synthesized return; and the service calls fail as `network`
   there until the service sends CORS headers.

@@ -180,6 +180,11 @@ wrong.
   credentials: a timeout, a response-size cap, and a small redirect budget. Without
   them a channel can point the client at an arbitrary host for 100 seconds and two
   gigabytes, and hand the body to the game.
+- A fetcher over `UnityWebRequest` cannot cap the size before the reply is buffered — a
+  browser buffers it whole — so the WebGL sample's checks it afterwards and bounds only
+  what reaches the parser. Its memory bound is the console pinning `mapUrl` to https on
+  the team's own CDN origin (`services/console/src/channels.ts` in `service`). Say so
+  wherever that fetcher's cap is described; do not call it a memory bound.
 
 ## Review habit
 

@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Yingyeothon.Gamebase.Client.Samples
 {
@@ -10,11 +8,12 @@ namespace Yingyeothon.Gamebase.Client.Samples
     /// there and there is no thread to run a receive loop on.
     /// </summary>
     /// <remarks>
-    /// The bodies are left to the build: a <c>.jslib</c> socket behind
-    /// <see cref="IWebSocket"/> and <c>UnityWebRequest</c> behind
-    /// <see cref="IHttpFetcher"/>. What matters is the contract around them, and it is
+    /// The socket's bodies are left to the build — a <c>.jslib</c> socket behind
+    /// <see cref="IWebSocket"/>. What matters is the contract around them, and it is
     /// what the comments here record — every one of these rules was paid for by a
-    /// defect in the default transport.
+    /// defect in the default transport. The <see cref="IHttpFetcher"/> half,
+    /// <c>WebGLHttpFetcher</c> in the file next to this one, is complete: one
+    /// <c>UnityWebRequest</c> is the whole of it.
     /// </remarks>
     public sealed class WebGLWebSocketFactory : IWebSocketFactory
     {
@@ -103,25 +102,6 @@ namespace Yingyeothon.Gamebase.Client.Samples
 
             _closeReported = true;
             _sink.Post(SocketEvent.Closed(this, code, reason));
-        }
-    }
-
-    /// <summary>
-    /// A credential-free GET over <c>UnityWebRequest</c>, for <c>MapAsync</c>.
-    /// </summary>
-    /// <remarks>
-    /// The map asset is public and immutable, so the request carries no headers —
-    /// adding one would send the token to a CDN. The URL still comes off the wire, so
-    /// bound it anyway, as the default fetcher does: 30 seconds as
-    /// <c>UnityWebRequest.timeout</c>, 5 as <c>redirectLimit</c>, 16 MB in the download
-    /// handler — never a timer or a token, which do not fire in a WebGL player. Complete
-    /// the task however is convenient; the SDK continues from it on the main thread.
-    /// </remarks>
-    public sealed class WebGLHttpFetcher : IHttpFetcher
-    {
-        public Task<HttpFetchResult> GetAsync(string url, CancellationToken cancellationToken)
-        {
-            throw new NotImplementedException("bind this to UnityWebRequest");
         }
     }
 }

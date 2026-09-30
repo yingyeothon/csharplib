@@ -12,9 +12,9 @@
     scripts/check-coverage.sh both walk packages/*, and Unity imports anything under a
     package folder. It carries no tests, so it changes neither gate.
 
-    Only the engine-free files are listed. The MonoBehaviour wrappers next to them are
-    guarded by #if UNITY_5_3_OR_NEWER and are Unity's to compile, exactly as
-    Runtime/Unity/** is.
+    Only the engine-free files are meant to compile here. The engine-bound files next to
+    them (MonoBehaviour wrappers, the WebGL sample's UnityWebRequest fetcher) are guarded
+    by #if UNITY_5_3_OR_NEWER and are Unity's to compile, exactly as Runtime/Unity/** is.
   -->
   <PropertyGroup>
     <TargetFrameworks>netstandard2.1</TargetFrameworks>
