@@ -51,14 +51,17 @@ exist yet, and `check-docs.sh` refuses that — so the local tag has to exist be
 anything is pushed, and the commit and the tag then go together or not at all.
 
 1. **[agent]** `main` is green (the gate in [workflow.md](workflow.md)) and pushed.
-2. **[agent]** Run [manual-verification.md](manual-verification.md) in full **on the current
-   `main` tip** and record that sha in its *Last verified* row — the tag is compiled by
-   Unity's compiler on Unity's Mono, and that run is the only thing that has ever
-   caught the difference. The bump commit that follows may differ from the verified sha
-   in exactly three ways — `Directory.Build.props`, `packages/*/package.json`, and the
-   install URLs — none of which Unity compiles differently. Anything else landing
-   between the run and the tag means running it again. Name the verified sha in the tag
-   message.
+2. **[agent]** Step 2 is already satisfied, with no new run, when
+   [manual-verification.md](manual-verification.md)'s *Last verified* names a sha S and
+   `git diff --name-only S HEAD` lists only files under `rules/`. Otherwise run that file
+   in full **on the current `main` tip**, record it as its *Last verified* intro says, and
+   push that record (step 1). The tag is compiled by Unity's compiler on Unity's Mono, and
+   that run is the only thing that has ever caught the difference. Between S and the tag
+   may land only commits that touch nothing outside `rules/` (the one recording the run
+   among them) and the bump — `Directory.Build.props`, `packages/*/package.json`, and the
+   files step 4 edits — none of which Unity compiles differently. Check with
+   `git diff --name-only S HEAD` before step 3 and again before printing step 6's
+   commands; anything else means running it again. Name S in the tag message.
 3. **[agent]** Bump the version in all three: `Directory.Build.props` `<Version>`, every
    `packages/*/package.json` `"version"`, and every `com.yingyeothon.*` pin under
    those manifests' `"dependencies"`. `./scripts/validate-packages.sh` proves it.

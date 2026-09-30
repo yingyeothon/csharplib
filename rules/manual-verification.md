@@ -165,8 +165,9 @@ unity test <project> --mode EditMode --output <path>.xml --report-format nunit
 This is the strongest single check available — the same `packages/*/Tests` sources,
 compiled by Unity's compiler, run on Unity's Mono. Read the XML's counts; do not trust
 the exit code alone. `tests/Yingyeothon.PublicApi.Tests` lives outside `packages/` and
-is correctly absent. Eleven transport tests report **ignored**, with the reason: Mono's
-`HttpListener` cannot accept a WebSocket.
+is correctly absent. Twelve tests report **ignored**, each with its reason: eleven
+transport tests, because Mono's `HttpListener` cannot accept a WebSocket, and one asset
+test, because `File.CreateSymbolicLink` needs .NET 6.
 
 ### Install the way a consumer installs, not only the way this recipe does
 
@@ -194,7 +195,7 @@ scripts compile fine against a package that contributed no assemblies at all.
 Two facts this check establishes that the copied project cannot:
 
 - Unity **suppresses compiler warnings from an immutable package.** The same sources
-  that print 192 CS8632 as an embedded copy print none from `Library/PackageCache`. So
+  that printed 192 CS8632 as an embedded copy (four packages, 2026-09-01) print none from `Library/PackageCache`. So
   a warning count measured in the scratch project describes the *vendored* consumer,
   not the git-URL one — do not report it as "what a consumer sees" without saying
   which.
@@ -263,6 +264,10 @@ A build that succeeds proves nothing about stripping — the player has to run. 
 `Json.Parse`/`Stringify`, `LogWriters.FromAction`, and `GamebaseRunner.CreatePersistent`), build with
 `ManagedStrippingLevel.High`, then run the player with `-batchmode -nographics
 -logFile` and grep the log for what it printed. That is what tests `Runtime/link.xml`.
+Have it also decrypt one conformance vector through an in-memory `IAssetTransport` (the
+asset crypto on that backend), and point each Unity transport at the `302` server in
+[the auth/asset run](#the-run-that-added-auth-client-and-asset-client): each must answer
+`http (302)` and the server must never see its redirect target.
 
 - **Mono** and **IL2CPP** `StandaloneLinux64`, both built and both run.
 - **WebGL** built, then **run in a browser** — below. A link alone is how every asset
@@ -286,7 +291,9 @@ project, outside the repo, like everything else under [In Unity](#in-unity).
    `-Expose-Headers: *`. The store and auth transports send headers that make the browser
    preflight, so without those a request fails on CORS, not on what is under test.
    `:18777` answers `302 → http://127.0.0.1:18777/elsewhere` and prints `FOLLOWED` when
-   `/elsewhere` is hit; `:18778` answers `404`. Extend the native probe's server above.
+   `/elsewhere` is hit; `:18778` answers `404`. Extend the native probe's `302` server (in
+   [the auth/asset run](#the-run-that-added-auth-client-and-asset-client)); one server on
+   `:18777` serves both the players and the browser.
 3. **Run it headless.** The Chrome the browser extension drives may have **no WebGL at
    all** (`getContext('webgl')` and `'webgl2'` both null; a Unity page freezes the tab),
    so do not use it. Run a throwaway Chrome with software GL, which prints the page's
@@ -334,39 +341,72 @@ and booleans, never a URL or a token — and you grep the log for `[PROBE]`:
 
 **A check that never prints waited on a thread WebGL does not have**
 ([unity.md](unity.md#webgl)). Tell that from a slow network with a control that records,
-without waiting, whether `Task.Run`, `Task.Delay(1)` and `CancelAfter(1)` have run a
-couple of seconds later — `false` for all three confirms the player has no pool — and a
+without waiting, whether `Task.Run`, `Task.Delay(1)`, `CancelAfter(1)` and a `Task.WhenAny`
+over a `RunContinuationsAsynchronously` task (the actual hang) have run a
+couple of seconds later — `false` for all four confirms the player has no pool — and a
 per-check `start` line, so the last one printed names the check that hung.
 
 ### Last verified
 
-This subsection holds the last **full, two-editor** run, which is what a release needs;
-the dated runs after it are partial and say what they cover. Always record the
+This subsection holds the last **full, two-editor** run, which is what a release needs. Always record the
 **commit** as well as the date: a release asks whether this run
 covers the code being tagged, and a date alone cannot answer it
-([release.md](release.md)).
+([release.md](release.md)). Record the sha that was run in a commit after it that touches
+nothing outside `rules/`; a later commit touching anything else means a new run.
 
-**2026-09-01**, at commit `fbf7b6d` (its parent is `70c334d`), on Unity Personal,
-Ubuntu 24.04. The row was written in that commit and the sha filled in immediately
-after, which is the only way to satisfy "always record the commit" without a
-self-reference — do the same next time.
+A full run is every check in [In Unity](#in-unity) on both editors. The live sections
+([gateway](#against-a-real-gateway), [store](#against-the-dev-store),
+[CDN](#against-the-dev-cdn)) are rerun when a non-Unity source they exercise changed since
+their last dated run. A recipe step that was skipped is named in the record, and stops the
+run being full unless the record says why it does not matter for a tag. The dated
+sections after this one are either partial runs, which say what they cover, or pieces of
+an earlier full run, which say which one.
+
+**2026-09-30**, at commit `6ac4ccf`, on Unity Personal, Ubuntu 24.04, with the 2021.3
+workarounds above (the `bee_backend` wrapper was put back and its checksum matched). The
+commit that records this run changes only `rules/`, which no package ships and Unity never
+compiles: for [release.md](release.md) step 2 the verified sha is `6ac4ccf`, and the tag
+message names it. Everything ran from `git archive` of that commit (the embedded projects) and from a bare clone of it (the git-URL projects); the
+browser was headless Chrome 154 with SwiftShader against a dev CDN bundle made for it; the
+bundle, its key, the `BundleKey.cs` files, the builds and the Chrome profiles were deleted
+afterwards, as the recipe says.
 
 | Check | 2021.3.45f2 | 6000.0.25f1 |
 | --- | --- | --- |
-| Samples listed and imported | one per `samples[]` entry: 4 / 1 / 1 / 1 | same |
-| Imported samples compile in `Assets/` | 0 errors, 0 warnings from `Packages/`, `Assets/Samples/` and the pasted snippet | same |
-| Without `csc.rsp`, embedded | 192 CS8632 (158 `Runtime`, 34 `Tests`) | same |
-| `docs/getting-started.md` §4 pasted into a fresh script | compiles | same |
-| EditMode, all four packages | **0 failed**; ignored are exactly the eleven named above. 459/448/11 at this commit, not a threshold | same |
-| `StandaloneLinux64` Mono, stripping **High** | built, and the player ran and logged from every package | same |
-| `StandaloneLinux64` IL2CPP, stripping **High** | built, and the player ran the same | same |
-| WebGL | compiled and linked; the guard was not exercised in a browser | same |
+| EditMode, all seven packages, one per run | **0 failed**; 886 / 874 / 12 ignored — the twelve [named above](#run-the-package-tests-inside-the-editor) | same |
+| Bare-clone git-URL install | 7 in `Library/PackageCache`, 0 *immutable folder*, 7 `Yingyeothon*.dll`, each with `NullableContextAttribute` | same |
+| Samples listed and imported | 1 / 1 / 3 / 1 / 1 / 1 / 1 (codec, event-broker, gamebase, kvstore, auth, asset, logger) | same |
+| Clean compile of the git-URL project with the samples (`ScriptAssemblies` deleted) | `CompileScripts` seen, 0 errors, 0 warnings — an immutable install suppresses package warnings, so this counts the samples and the harness | same |
+| `StandaloneLinux64` Mono, stripping **High** | ran every package through its factories, decrypted an asset vector, and each Unity transport answered a `302` as `http (302)`; nothing followed it | same |
+| `StandaloneLinux64` IL2CPP, stripping **High** | same as Mono | same |
+| WebGL | linked; in the browser every check of [the recipe](#run-the-webgl-player-in-a-browser) printed what it expects (the browser's 3 redirects, 0 followed; with `CorsSafe` off both ranges `http (206)` `no Content-Range`, as the asset README documents). The canary was compiled but not placed in this scene, and neither build had the per-check `start` lines the recipe asks for | same, and the canary: none of the four ran |
 
-The two editors agreed on every row. When they do not, that is the finding — 2021.3 is
-the floor for a reason ([Which editor](#which-editor)).
+Not repeated from the previous full run (2026-09-01, at `fbf7b6d`, parent `70c334d`): the
+embedded project without `csc.rsp` — the six `csc.rsp` files added since are shown to apply
+by `NullableContextAttribute` in all seven assemblies, not by taking them away — and
+`docs/getting-started.md` pasted into a script; its §3 auth snippet has never been
+compiled in Unity. The two sections
+[The install path was broken](#the-install-path-was-broken-and-the-2026-09-01-run-is-what-found-it)
+and [Against the dev gateway, 2026-09-01](#against-the-dev-gateway-2026-09-01) belong to that
+run.
 
-**Do not carry a player row forward on "the sources did not change".** This run added a
-`csc.rsp` per asmdef, which is not a source change and which
+The live sections: [Against a real gateway](#against-a-real-gateway) was rerun on the
+`6ac4ccf` build (dev lobby: `hello` with `aoi`, one `snapshot` for a `pos`, a clean
+close). The store's, the CDN's and the auth service's were not: since their dated runs no
+non-Unity source of `kvstore-client` or `auth-client` has changed, and `asset-client`'s
+only change is `Race`, whose path without a synchronization context — the console app's —
+is the old one.
+
+Skipped, and why neither matters for a tag: the WebGL thread canary on 2021.3 and the
+per-check `start` lines are diagnostics for a check that never prints, and every check
+printed on both editors. The provider hop of the auth flow and a stalled server in a
+browser are in *Not covered* below.
+
+The two editors agreed on every row, the canary aside. When they do not, that is the
+finding — 2021.3 is the floor for a reason ([Which editor](#which-editor)).
+
+**Do not carry a player row forward on "the sources did not change".** The 2026-09-01
+run added a `csc.rsp` per asmdef, which is not a source change and which
 `git diff -- 'packages/**/Runtime/**'` cannot show at all while the files are untracked
 — and turning the nullable context on makes Roslyn emit `NullableAttribute`,
 `NullableContextAttribute` and `EmbeddedAttribute` into the Unity-built assemblies. That
@@ -382,7 +422,7 @@ commit that records it (its parent is `79f981d`). The first pass, at `79f981d`, 
 committed but for comments — copied into both scratch projects, with the asset EditMode
 suite first (**0 failed**, 109 / 108 / 1 skipped, on each editor; the ordering test
 `AnAnswerThatArrivedBeforeTheCancelWins` was added after it and runs in the full run). Only the WebGL rows are
-covered here; the full two-editor run on this commit is owed before a tag.
+covered here; the full two-editor run on `6ac4ccf` is [Last verified](#last-verified).
 
 | Check | at `79f981d`, both editors | with the fix, 2021.3.45f2 and 6000.0.25f1 |
 | --- | --- | --- |
@@ -397,8 +437,7 @@ covered here; the full two-editor run on this commit is owed before a tag.
 | `Task.Run`, `Task.Delay`, `CancelAfter`, `WhenAny` over an asynchronously completed task | — | none ran (6000.0.25f1); a plain `await` resumed |
 
 The hang is [unity.md](unity.md#webgl)'s: every asset read through the Unity transport
-waited on `Task.WhenAny`. The dev bundle stays for the full run owed here, which
-deletes it.
+waited on `Task.WhenAny`.
 
 ### The run that added `auth-client` and `asset-client`
 
@@ -409,14 +448,13 @@ and the non-asset EditMode runs used the Unity transports one revision before
 `ConnectionError` and to a request that did not time out). The Mono and IL2CPP players
 and the asset EditMode run were repeated on the final code, with the same results.
 EditMode compiles those transports but no test calls them, so the one thing unrun on the
-final code is the WebGL link.
+final code was the WebGL link (since run: [Last verified](#last-verified)).
 
-**This run does not satisfy [release.md](release.md) step 2**: `main` has moved past it,
-and 2021.3 was not run. A tag needs a new full run, on both editors, on the tip. **2021.3.45f2 was not run**: its
-`bee_backend` hang needs the wrapper in
-[Two things Ubuntu 24.04 breaks](#two-things-ubuntu-2404-breaks-in-unity-20213), and this
-session was not permitted to swap a binary inside the editor install. The floor is owed
-before a tag.
+**This run did not satisfy [release.md](release.md) step 2**: 2021.3.45f2 was not run,
+because that session was not permitted to swap a binary inside the editor install (the
+`bee_backend` wrapper of
+[Two things Ubuntu 24.04 breaks](#two-things-ubuntu-2404-breaks-in-unity-20213)). The full
+run it called for is [Last verified](#last-verified), at `6ac4ccf`.
 
 | Check | 6000.0.25f1 |
 | --- | --- |
@@ -475,7 +513,7 @@ a blocking `Assert.ThrowsAsync` over a yielding path deadlocked the whole run, a
 ([testing.md](testing.md)). The `HttpListener` transport tests run under Mono as
 plain HTTP; only the WebSocket half of the gateway's is ignored there.
 
-### The install path was broken, and this run is what found it
+### The install path was broken, and the 2026-09-01 run is what found it
 
 **A git-URL install of `70c334d` compiled nothing.** All four packages resolved, and then
 every asset in them was ignored — 448 log lines of *"has no meta file, but it's in an
@@ -500,8 +538,8 @@ lines, all five `Yingyeothon*.dll`, all eight samples imported (1 / 1 / 4 / 1 / 
 forced clean compile (`ScriptAssemblies` deleted, `CompileScripts` seen) with 0 errors
 and 0 warnings. **2021.3.45f2 was not run**: its `bee_backend` hang needs the wrapper in
 [Two things Ubuntu 24.04 breaks](#two-things-ubuntu-2404-breaks-in-unity-20213), and
-that session was not permitted to swap a binary inside the editor install. Run the floor
-before the tag.
+that session was not permitted to swap a binary inside the editor install. The floor ran
+at `6ac4ccf` ([Last verified](#last-verified)).
 
 The same install settles whether a `csc.rsp` is honoured from `Library/PackageCache`,
 which a warning count cannot — Unity suppresses warnings from an immutable package. The
@@ -509,7 +547,7 @@ metadata can: nullable context makes Roslyn emit `NullableContextAttribute`, and
 of the five `Yingyeothon*.dll` carried it while `Assembly-CSharp-Editor.dll`, which has
 no rsp, did not (`grep -a -c NullableContextAttribute <dll>`: 1 each, control 0).
 
-### Against the dev gateway, same date
+### Against the dev gateway, 2026-09-01
 
 Verified live on the `morpg` dev channels, with a console app that never printed the
 token. Read the channel's settings first — `yyt channels get <lobbyChannelId> --json`
@@ -563,11 +601,8 @@ Read from the source rather than observed, and marked so on purpose:
 
 Not covered, and each is a real gap rather than a formality:
 
-- **Every package at `d24488d` on the 2021.3 floor** — `auth-client` and `asset-client`
-  have never been compiled by it, and kvstore's Unity transport changed there too. Covered
-  on 6000.0.25f1 only
-  ([the run above](#the-run-that-added-auth-client-and-asset-client)). The asset client's
-  EditMode run reads the conformance vectors from
+- **The asset client's conformance vectors under a git-URL install.** Its EditMode run
+  reads them from
   `Packages/com.yingyeothon.asset-client/Tests/Fixtures`, which only an embedded (copied)
   package has — the recipe copies them, and a git-URL install does not compile its tests
   at all. Its wire half is in [Against the dev CDN](#against-the-dev-cdn); auth-client's
@@ -575,6 +610,7 @@ Not covered, and each is a real gap rather than a formality:
   (2026-09-30): config, verify (a live token and a forged one), a fake provider token
   (`401`), the wrong credential kind (`400`), and `/start` for a redirect off the
   allowlist (`403`) and on it with the nonce query (`302` to the provider).
+- **`docs/getting-started.md` §3 (auth) compiled in Unity** — never.
 - **A stalled server in a browser.** On WebGL only `UnityWebRequest.timeout` bounds a
   request; no browser run has waited it out.
 - **The auth provider hop in a browser.** No dev auth channel has a provider, so the

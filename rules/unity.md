@@ -64,7 +64,8 @@ dotnet build only**. An asmdef has no equivalent and there is no project-wide sw
 Unity compiles the same sources with nullable off and every reference-type `?` in them
 becomes a CS8632 — one per annotation, so the count tracks the annotations and is not a
 threshold. **The invariant is zero CS8632 with the rsp files in place.** For scale:
-with them removed, both 2021.3.45f2 and 6000.0.25f1 emitted 192 (158 `Runtime`, 34
+with them removed, both 2021.3.45f2 and 6000.0.25f1 emitted 192 over four packages
+(2026-09-01; 158 `Runtime`, 34
 `Tests`, the latter only in a project that lists the package under `testables`), and
 that is what a consumer who **vendors** the sources sees. A consumer who installs
 normally sees none of them either way — Unity suppresses warnings from an immutable

@@ -114,7 +114,7 @@ a page does not say survives every reading of it:
   samples put **12** CS8632 warnings in the consumer's console, from the three sample
   files that use a nullable annotation — a sample leaves the package's compiler settings
   behind when it lands in `Assets/`. Those three now carry `#nullable enable` and the
-  count is zero. Do not confuse that 12 with the **192** the packages themselves
+  count is zero. Do not confuse that 12 with the **192** the four packages themselves
   emitted: separate defect, separate fix ([unity.md](unity.md)). One sentence covering
   both would have been wrong about each. Nothing in the prose was wrong. Walk the
   instruction, do not only read it.
