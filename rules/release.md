@@ -35,7 +35,10 @@ mechanism: no registry, no publish step, no staging window, nothing to yank.
   `0.2.0`) and everything else the patch. `1.0.0` is a deliberate statement that the
   surface is stable, never a side effect of breaking it; from there, normal semver.
   The approved snapshot under `tests/Yingyeothon.PublicApi.Tests/Approved/` is the
-  evidence of whether a break happened — diff it against the previous tag first.
+  evidence of a source break — diff it against the previous tag first — but not the
+  only kind: a behaviour change that stops working consumer code (a call that now
+  deadlocks when blocked on, work that moves to another thread) breaks too, and the
+  tag message says why. v0.2.0 is the worked case: no snapshot change, and a minor.
 
 ## Release flow
 
@@ -71,7 +74,8 @@ anything is pushed, and the commit and the tag then go together or not at all.
    **No sentence names the version** (Versioning, above), so the URLs are all step 4
    moves; grep `v[0-9]+\.[0-9]+\.[0-9]+` across `README.md`, `docs/`, every
    `packages/*/README.md` and `rules/` to confirm
-   none crept in. v0.1.0 also retracted every pre-release claim — the "no release has
+   none crept in — other tools' versions (the `yyt` CLI, `unity`, tslib) and this
+   file's own examples and history are expected matches. The first release also retracted every pre-release claim — the "no release has
    been tagged yet" sentences and `CONVENTIONS.md`'s *"Nothing has been released yet"*
    paragraph. A rule file that states a fact a release invalidates has to be listed
    here, or it will not be found.
@@ -86,14 +90,16 @@ anything is pushed, and the commit and the tag then go together or not at all.
 6. **[user]** Finish it, on that commit:
 
    ```bash
-   git tag -a vX.Y.Z -m "<the release note>"     # local tag: check-docs.sh now passes
+   git tag -a vX.Y.Z -F <the release note file>  # local tag: check-docs.sh now passes
    git push --atomic origin main vX.Y.Z          # both land, or neither does
    ```
 
    The tag message is the only release note a consumer ever sees, so it says what
    changed on the public surface, what they must change on upgrade, and which Unity
-   editors *Last verified* names. There is deliberately no `CHANGELOG.md`: the tag
-   messages are the log, and `git tag -n99 -l` reads them.
+   editors *Last verified* names. The agent writes it to a file under `.claude/`
+   (git-ignored) and prints that path: a note with quotes does not survive `-m "…"`.
+   There is deliberately no `CHANGELOG.md`: the tag messages are the log, and
+   `git tag -n99 -l` reads them.
 7. **[after the user pushes — ask to be resumed]** Confirm the URL actually installs,
    from a **new** scratch Unity project. The tag is the product and nothing else tested
    it. Add it **by git URL** here, rather than by the folder copy
@@ -103,7 +109,10 @@ anything is pushed, and the commit and the tag then go together or not at all.
    would let Unity write into this working tree.) Note that the package ships the
    **whole** `packages/<name>/` directory, `Tests/` included — the
    `UNITY_INCLUDE_TESTS` define constraint on the test asmdefs is what keeps those from
-   compiling in a consumer's project, so check it survived.
+   compiling in a consumer's project, so check it survived. When a previous tag exists,
+   also walk the upgrade `docs/unity.md` § Installing describes: a new project with
+   every package at the previous tag, then every fragment moved to the new one in one
+   edit of `manifest.json` — and drop that item from *Not covered* once it has run.
 
 ## When a release half-lands
 

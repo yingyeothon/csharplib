@@ -379,7 +379,8 @@ an earlier full run, which say which one.
 
 **2026-09-30**, at commit `d8ce422`, on Unity Personal, Ubuntu 24.04, with the 2021.3
 workarounds above (the `bee_backend` wrapper was put back and its checksum matched).
-Everything ran from `git archive` of that commit and from a bare clone of it; the browser
+Everything in Unity ran from `git archive` of that commit and from a bare clone of it
+(the live gateway run below is the exception it names); the browser
 was headless Chrome 154 with SwiftShader against a dev CDN bundle made for it; the
 bundle, its key, the `BundleKey.cs` files, the builds, the projects' `Library` and the
 Chrome profiles were deleted afterwards, as the recipe says.
