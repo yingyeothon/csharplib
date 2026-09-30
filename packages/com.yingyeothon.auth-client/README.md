@@ -112,14 +112,21 @@ only. A task resumes on the caller's synchronization context.
 no request, but `FetchConfigAsync`, both exchanges and `VerifyAsync` are cross-origin
 calls, and the auth service answers them with no `Access-Control-Allow-Origin` (checked
 on dev, 2026-09-30), so the browser blocks every reply and each call fails as
-`network`. That is the service's to change. `AuthUnityWebRequestTransport.Instance` (in
-`Runtime/Unity`, behind `#if UNITY_5_3_OR_NEWER`) is the transport for a platform where
-`HttpClient` cannot send, and on WebGL it will carry those calls the day the service
-allows it. It follows no redirect (`redirectLimit = 0`) and on a native player hands a
-refused one back as its `3xx`, which the client reports as `http`; on WebGL, where Unity
-fails the request on a redirect, it is `network`. It checks its
-1 MiB cap only once the download finished, since `UnityWebRequest` buffers the whole
-reply.
+`network` — `FetchConfigAsync` did exactly that from a Chrome WebGL player. That is the
+service's to change. In the same player the client's half of the browser flow worked —
+`BuildStartUrl`, a same-tab navigation, the reloaded build reading query and fragment
+from `Application.absoluteURL`, and `ParseRedirect` — with the provider hop replaced by a
+synthesized return, since no dev channel has a provider configured. A real sign-in on
+WebGL, end to end, has not been run.
+
+`AuthUnityWebRequestTransport.Instance` (in `Runtime/Unity`, behind
+`#if UNITY_5_3_OR_NEWER`) is the transport for a platform where `HttpClient` cannot send,
+and on WebGL it will carry those calls the day the service allows it. It follows no
+redirect (`redirectLimit = 0`) and on a native player hands a refused one back as its
+`3xx`, which the client reports as `http`; on WebGL, where Unity fails the request on a
+redirect, it is `network` (both seen in players, 2026-09-30;
+[the browser run](../../rules/manual-verification.md#the-webgl-browser-run)). It checks its 1 MiB cap
+only once the download finished, since `UnityWebRequest` buffers the whole reply.
 
 ## Nothing sensitive leaves the client
 

@@ -101,9 +101,19 @@ when the player is in no party.
 ## Connecting throws on WebGL
 
 `WebSocketTransport.Default` throws on WebGL on purpose: `ClientWebSocket` is not
-supported there and there is no thread for a receive loop. Supply your own
+supported there and there is no thread for a receive loop. What you see is
+`ConnectAsync()` failing with `GatewayStoppedException` and the client `Closed`, not a
+`PlatformNotSupportedException`. Supply your own
 `WebSocketFactory` and `HttpFetcher` through the client options — see
 [Unity](unity.md) and the `WebGL Transport` sample.
+
+## An asset read never finishes in a browser
+
+No error and no timeout, only on WebGL: the package is pinned to a `main` from before the
+asset client stopped waiting on a thread a WebGL player does not have. See
+[asset-client § WebGL](../packages/com.yingyeothon.asset-client/README.md#webgl) for how to
+move the pin. The same symptom from your own `IHttpFetcher` or socket is
+[Unity § WebGL](unity.md#webgl): no thread pool, no timers.
 
 ## `MapAsync` throws
 

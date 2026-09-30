@@ -265,8 +265,78 @@ A build that succeeds proves nothing about stripping — the player has to run. 
 -logFile` and grep the log for what it printed. That is what tests `Runtime/link.xml`.
 
 - **Mono** and **IL2CPP** `StandaloneLinux64`, both built and both run.
-- **WebGL** as a compile-and-link check for the guarded default transport. Confirming
-  the guard actually throws needs a browser; say which of the two you did.
+- **WebGL** built, then **run in a browser** — below. A link alone is how every asset
+  read hung in a browser, unnoticed, until 2026-09-30 ([unity.md](unity.md#webgl)).
+
+### Run the WebGL player in a browser
+
+**A full run before a tag includes this**; any part of it that could not run is named in
+the run's record. The probe is **not in this repository**: write it in the scratch
+project, outside the repo, like everything else under [In Unity](#in-unity).
+
+1. **Build.** A method in `Assets/Editor/` that sets
+   `PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Disabled` (so a plain
+   static server works) and calls `BuildPipeline.BuildPlayer` for `BuildTarget.WebGL`
+   with stripping **High**, run with `-executeMethod`. The editor needs its WebGL module;
+   if it is missing, say so and ask before installing one.
+2. **Serve three origins.** The build on `127.0.0.1:18080`
+   (`python3 -m http.server 18080 --bind 127.0.0.1 -d <build>`); a redirect server on
+   `:18777` and a control on `:18778`, both answering every method — `OPTIONS` with `204` —
+   with `Access-Control-Allow-Origin: *`, `-Allow-Headers: *`, `-Allow-Methods: *` and
+   `-Expose-Headers: *`. The store and auth transports send headers that make the browser
+   preflight, so without those a request fails on CORS, not on what is under test.
+   `:18777` answers `302 → http://127.0.0.1:18777/elsewhere` and prints `FOLLOWED` when
+   `/elsewhere` is hit; `:18778` answers `404`. Extend the native probe's server above.
+3. **Run it headless.** The Chrome the browser extension drives may have **no WebGL at
+   all** (`getContext('webgl')` and `'webgl2'` both null; a Unity page freezes the tab),
+   so do not use it. Run a throwaway Chrome with software GL, which prints the page's
+   console to stderr as `…:INFO:CONSOLE(…)] "<text>"`:
+
+   ```bash
+   timeout 150 google-chrome --headless=new --user-data-dir=<scratch>/chrome --no-first-run \
+     --use-angle=swiftshader --enable-unsafe-swiftshader --enable-logging=stderr --v=0 \
+     http://127.0.0.1:18080/index.html > <log> 2>&1
+   ```
+
+   No `google-chrome`: try `chromium`. Neither, or a log with no WebGL context: do not
+   install a browser and do not fall back to the extension — record WebGL as *built, not
+   run in a browser* with the reason, and ask.
+
+The probe `MonoBehaviour` prints one `[PROBE] <check> <result>` line per check — codes
+and booleans, never a URL or a token — and you grep the log for `[PROBE]`:
+
+- the gateway guard: `ConnectAsync()` over the default factory fails
+  (`GatewayStoppedException`, state `Closed`);
+- each Unity transport against `:18777` → `network (0)`, and no `FOLLOWED`; against
+  `:18778` → `kv` null, `auth http (404)`, `asset not_found (404)`. A control that reads
+  `network (0)` means the servers, not the transports, are wrong;
+- `FetchConfigAsync` against `https://auth-dev.yyt.life` with an active `auth` channel from
+  `yyt --profile dev channels list --scope all --json` → `network (0)`, because the service
+  sends no CORS headers. A success means the service added them: that is a finding for
+  `auth-client`'s README § Threads and WebGL, not a probe failure;
+- a bundle made as [Against the dev CDN](#against-the-dev-cdn) makes it, in both `CorsSafe`
+  modes: the manifest, the file whole, a range over two segment boundaries, the tail, a
+  missing file, and the vector key (`asset_corrupt`). Resume-from-part and `NoCache` are
+  that section's, not this one's: a browser player has no file to resume. Get the key as
+  that section's step 2 does; if this session's permissions refuse `asset key show`, do
+  not work around it — hand the user a script that runs it with `umask 077` and writes
+  only `internal static class BundleKey { public const string Value = "…"; }` into each
+  scratch project's `Assets/`, never printing it, and wait. Never read the key back. After
+  the run delete the bundle, every `BundleKey.cs`, the key file, the WebGL build and
+  `<scratch>/chrome`. If the user declines, record the CDN check as not covered;
+- the auth browser flow's client half: `BuildStartUrl`, the nonce in `sessionStorage`
+  through a `.jslib` in the scratch project's `Assets/`, a same-tab
+  `window.location.assign` to a synthesized return URL, and `ParseRedirect` of
+  `Application.absoluteURL` after the reload, plus a foreign nonce → `nonce_mismatch`. The
+  fragment's token is a fixed fake (`eyJ.fake-token.sig`), **never** one minted with
+  `/debug/token`. The provider hop needs a channel with an OAuth app, which dev does not
+  have; say so in the record.
+
+**A check that never prints waited on a thread WebGL does not have**
+([unity.md](unity.md#webgl)). Tell that from a slow network with a control that records,
+without waiting, whether `Task.Run`, `Task.Delay(1)` and `CancelAfter(1)` have run a
+couple of seconds later — `false` for all three confirms the player has no pool — and a
+per-check `start` line, so the last one printed names the check that hung.
 
 ### Last verified
 
@@ -302,6 +372,33 @@ the floor for a reason ([Which editor](#which-editor)).
 `NullableContextAttribute` and `EmbeddedAttribute` into the Unity-built assemblies. That
 is exactly the metadata `ManagedStrippingLevel.High` and `Runtime/link.xml` are tested
 against. A compiler flag is a build change even when no `.cs` moved.
+
+### The WebGL browser run
+
+**2026-09-30**, Unity Personal, Ubuntu 24.04, headless Chrome 154 with SwiftShader, the
+recipe in [Run the WebGL player in a browser](#run-the-webgl-player-in-a-browser), in the
+commit that records it (its parent is `79f981d`). The first pass, at `79f981d`, found the
+`Task.WhenAny` hang; the second ran the fix this commit carries — its `AssetHttp.cs` as
+committed but for comments — copied into both scratch projects, with the asset EditMode
+suite first (**0 failed**, 109 / 108 / 1 skipped, on each editor; the ordering test
+`AnAnswerThatArrivedBeforeTheCancelWins` was added after it and runs in the full run). Only the WebGL rows are
+covered here; the full two-editor run on this commit is owed before a tag.
+
+| Check | at `79f981d`, both editors | with the fix, 2021.3.45f2 and 6000.0.25f1 |
+| --- | --- | --- |
+| Gateway guard | `GatewayStoppedException`, `Closed` | same |
+| kv / auth redirect | `network (0)` each, nothing followed | same |
+| asset redirect | **never finished**; nothing after it ran | `network (0)`, nothing followed |
+| `:18778` control | not reached | `kv` null, `auth http (404)`, `asset not_found (404)` |
+| dev auth config | not reached | `network (0)` |
+| dev CDN, `CorsSafe` on | not reached | manifest, whole, range over two boundaries, tail: all correct; missing `not_found (403)`; vector key `asset_corrupt` |
+| dev CDN, `CorsSafe` off | not reached | manifest and whole correct; both ranges `http (206)` `no Content-Range` |
+| auth browser flow, client half | not reached | reload kept query and fragment; `ParseRedirect` ok; foreign nonce `nonce_mismatch` |
+| `Task.Run`, `Task.Delay`, `CancelAfter`, `WhenAny` over an asynchronously completed task | — | none ran (6000.0.25f1); a plain `await` resumed |
+
+The hang is [unity.md](unity.md#webgl)'s: every asset read through the Unity transport
+waited on `Task.WhenAny`. The dev bundle stays for the full run owed here, which
+deletes it.
 
 ### The run that added `auth-client` and `asset-client`
 
@@ -478,19 +575,12 @@ Not covered, and each is a real gap rather than a formality:
   (2026-09-30): config, verify (a live token and a forged one), a fake provider token
   (`401`), the wrong credential kind (`400`), and `/start` for a redirect off the
   allowlist (`403`) and on it with the nonce query (`302` to the provider).
-- **A WebGL build on the final Unity transports** (see the seam above), and:
-- **Redirects on WebGL.** Unity documents a `redirectLimit` of 0 there as failing the
-  request on a redirect, so the three transports should report `network` rather than
-  `http (3xx)`; no browser has run it.
-- **`asset-client` through its Unity transport, successfully.** The players read a vector
-  through an in-memory transport and ran `AssetUnityWebRequestTransport` only against the
-  redirect probe.
-- **`asset-client` on WebGL.** The CORS-safe plan (a `HEAD`, `Range`-only requests, the
-  whole-file fallback) has only been driven from .NET against the real CDN and against a
-  fake that hides the headers a browser hides; it has not run in a browser.
-- **`auth-client` on WebGL.** The auth service sends no CORS headers (dev, 2026-09-30),
-  so from a browser only the redirect flow can work; the service calls fail as
-  `network` until the service changes. Neither half has been run in a browser.
+- **A stalled server in a browser.** On WebGL only `UnityWebRequest.timeout` bounds a
+  request; no browser run has waited it out.
+- **The auth provider hop in a browser.** No dev auth channel has a provider, so the
+  browser flow ran with a synthesized return; and the service calls fail as `network`
+  there until the service sends CORS headers.
+- **`CorsSafe` in Firefox and Safari.** Only Chrome has run it.
 - The provider exchange with a **real** GitHub access token. There is no provider
   credential here, so only its refusal path was exercised.
 - **The gateway actually sending `4002`.** Not reachable from a client for the reason
@@ -499,7 +589,6 @@ Not covered, and each is a real gap rather than a formality:
   fake socket delivers it: the `4002` case of `LobbyReconnectTests`' reconnect test
   (the backoff timing, a fresh `hello`, an empty peer map) and of `GameClientTests`'
   (a reconnect and a working `Send`; a `q` channel has neither `hello` nor peers).
-- The WebGL guard in a browser.
 
 ## Making states reachable without infrastructure
 

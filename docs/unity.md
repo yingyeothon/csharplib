@@ -183,7 +183,22 @@ If you add your own reflection over these types, add your own `link.xml` entries
 
 `ClientWebSocket` throws `PlatformNotSupportedException` on WebGL, `HttpClient` does not
 work, and there is no thread to run a receive loop on. `WebSocketTransport.Default`
-therefore throws there **on purpose**, rather than failing quietly at some later point.
+therefore throws there **on purpose**, rather than failing quietly at some later point;
+`ConnectAsync()` fails with `GatewayStoppedException`.
+
+**A WebGL player has no thread pool and no timer thread.** `Task.Run`, `Task.Delay` and a
+`CancellationTokenSource` with a timeout (`CancelAfter`) never run or fire there, and
+`Task.WhenAny` over a task completed with `RunContinuationsAsynchronously` never
+completes; a plain `await` does resume, on the main thread. So on WebGL:
+
+- A timeout is `UnityWebRequest.timeout`. The store, auth and asset transports set it
+  from the client's own timeout; a token you cancel on a timer does nothing.
+- Any task you hand the SDK — from an adapter you write (a socket, an `IHttpFetcher`) or
+  from an `EventBroker` handler — completes **on the main thread and without
+  `RunContinuationsAsynchronously`**. `MapAsync` and `EventBroker` continue from it with
+  `ConfigureAwait(false)`, which sends an asynchronously completed task's continuation to
+  the thread pool, and there is none. An `async` method's own task is fine; a raw
+  `TaskCompletionSource` needs care.
 
 A WebGL build supplies its own transport through the same options every other build
 uses — this is configuration, not a fork:

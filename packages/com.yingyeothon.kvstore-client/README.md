@@ -80,8 +80,8 @@ an `IHttpTransport` you write receives the credential in `HttpCall.Headers` and 
 keep the same rule. Neither shipped transport follows a redirect, which would carry the
 header — and a `PUT`'s body on a `307`/`308` — to whatever host it named. A `3xx` comes
 back as `http` with its status from either transport on a native player; on WebGL, where
-Unity fails the request on a redirect, it is `network` (documented, not yet run in a
-browser). The store sends none. (`UnityWebRequestTransport` followed redirects before
+Unity fails the request on a redirect, it is `network` (seen in a Chrome WebGL
+player: [the browser run](../../rules/manual-verification.md#the-webgl-browser-run)). The store sends none. (`UnityWebRequestTransport` followed redirects before
 2026-09-30.)
 
 ## Public API

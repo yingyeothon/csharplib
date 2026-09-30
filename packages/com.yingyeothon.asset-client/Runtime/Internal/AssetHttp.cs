@@ -217,12 +217,19 @@ namespace Yingyeothon.Assets
         }
 
         /// <summary>
-        /// <paramref name="work"/>, or an <see cref="OperationCanceledException"/> as soon as
+        /// <paramref name="work"/>, or an <see cref="OperationCanceledException"/> once
         /// <paramref name="cancellationToken"/> fires — the caller's cancellation or the
-        /// timeout already set on it — even if the work ignores the token. An abandoned
+        /// timeout already set on it; with a context, at its next turn — even if the work
+        /// ignores the token. An abandoned
         /// result is handed to <paramref name="late"/> (to release it) and a late failure is
         /// observed, so neither leaks. No timer of its own: the token's is the bound.
         /// </summary>
+        /// <remarks>
+        /// Never <c>Task.WhenAny</c>: a WebGL player has no thread pool, and a transport that
+        /// completes with <c>RunContinuationsAsynchronously</c> — the Unity one does — sends
+        /// WhenAny's continuation there, so the read never finishes. Both continuations run on
+        /// the caller's synchronization context when it has one, which is Unity's main loop.
+        /// </remarks>
         internal static async Task<T> Race<T>(Task<T> work, CancellationToken cancellationToken, Action<T>? late = null)
         {
             if (work.IsCompleted || !cancellationToken.CanBeCanceled)
@@ -230,14 +237,36 @@ namespace Yingyeothon.Assets
                 return await work;
             }
 
-            var fired = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            Task winner;
-            using (cancellationToken.Register(() => fired.TrySetResult(true)))
+            // With a context both sides decide there, in arrival order, so a main-loop hitch
+            // cannot hand an answer that already arrived to a timer that fired later; and the
+            // await then resumes inline, one frame per wait rather than two. Without one, a
+            // caller's synchronous Cancel() must not run the rest of the read inside itself.
+            var context = SynchronizationContext.Current;
+            var scheduler = context == null ? TaskScheduler.Default : TaskScheduler.FromCurrentSynchronizationContext();
+            var decided = new TaskCompletionSource<bool>(
+                context == null ? TaskCreationOptions.RunContinuationsAsynchronously : TaskCreationOptions.None);
+            bool finished;
+            using (cancellationToken.Register(() =>
             {
-                winner = await Task.WhenAny(work, fired.Task);
+                if (context == null)
+                {
+                    decided.TrySetResult(false);
+                }
+                else
+                {
+                    context.Post(_ => decided.TrySetResult(false), null);
+                }
+            }))
+            {
+                _ = work.ContinueWith(
+                    _ => decided.TrySetResult(true),
+                    CancellationToken.None,
+                    TaskContinuationOptions.ExecuteSynchronously,
+                    scheduler);
+                finished = await decided.Task;
             }
 
-            if (winner != work)
+            if (!finished)
             {
                 _ = work.ContinueWith(
                     t =>
@@ -251,7 +280,9 @@ namespace Yingyeothon.Assets
                             _ = t.Exception;
                         }
                     },
-                    TaskContinuationOptions.ExecuteSynchronously);
+                    CancellationToken.None,
+                    TaskContinuationOptions.ExecuteSynchronously,
+                    scheduler);
                 throw new OperationCanceledException(cancellationToken);
             }
 

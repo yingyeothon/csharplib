@@ -134,6 +134,27 @@ were invisible only because nothing had forced a clean recompile —
 - `ClientWebSocket` throws `PlatformNotSupportedException`, `HttpClient` does not
   work, and `Task.Run` has no thread. `WebSocketTransport.Default` throws there on
   purpose rather than failing quietly.
+- **A WebGL player has no thread pool and no timer thread.** Measured in a Chrome
+  player ([the browser run](manual-verification.md#the-webgl-browser-run)): `Task.Run`, `Task.Delay` and
+  `CancellationTokenSource.CancelAfter` never complete or fire, and neither does
+  `Task.WhenAny` over a task completed with `RunContinuationsAsynchronously` (every
+  Unity transport here completes that way), because its continuation is sent to the
+  pool. A plain `await` still resumes, through Unity's synchronization context. So on
+  any path a WebGL build reaches, a result must never *depend* on the pool or a timer:
+  no `WhenAny`, no `Task.Delay`, no `Task.Run`, and a `ContinueWith` the result waits
+  for runs `ExecuteSynchronously` on `TaskScheduler.FromCurrentSynchronizationContext()`
+  when there is a context (`AssetHttp.Race` is the pattern). A `CancelAfter` may stay
+  as the native bound — on WebGL it simply never fires — provided the Unity transport
+  also sets `UnityWebRequest.timeout`, which all three do. `GatewayLobbyClientImpl.ConnectAsync`
+  and `MapFetcher.Observe` use `ExecuteSynchronously` on `Default`, which runs inline
+  unless the antecedent was completed with `RunContinuationsAsynchronously`, and
+  `MapFetcher.CompleteAsync` and `EventBroker`'s fire loop `await … .ConfigureAwait(false)`
+  a task the consumer supplies, which goes to the pool the same way. Those are latent —
+  no shipped task reaches them that way — and `docs/unity.md` § WebGL tells the consumer;
+  removing that `ConfigureAwait(false)` changes native threading and is its own change. `asset-client`'s `Race` used `WhenAny`, so every read through
+  `AssetUnityWebRequestTransport` hung in a browser while every test and both native
+  players passed. The regression test pumps a context by hand and fails on any post
+  from another thread ([testing.md](testing.md)).
 - A WebGL build passes its own `WebSocketFactory` (over a `.jslib` socket) and
   `HttpFetcher` (over `UnityWebRequest`). Both are options on the client, so this is
   configuration, not a fork. The store client ships its WebGL side —

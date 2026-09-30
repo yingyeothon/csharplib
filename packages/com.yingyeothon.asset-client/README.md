@@ -123,7 +123,8 @@ served `no-cache` by the CDN, so a client with an HTTP cache revalidates it anyw
 `ResponseTimeout` (30 s) bounds the wait for each response's headers and
 `BodyIdleTimeout` (30 s) each wait for the next piece of a body, so a connection that
 went quiet ends as `network` rather than hanging. Both are enforced by the client itself,
-not only through the token it hands the transport. **With a transport that buffers the
+not only through the token it hands the transport — except in a WebGL player, which runs
+no timer ([WebGL](#webgl)). **With a transport that buffers the
 whole body before answering** — `AssetUnityWebRequestTransport` does — `ResponseTimeout`
 bounds the whole transfer: raise it to cover the largest file you read or download there. A plain body larger than any asset the
 platform accepts (the ciphertext ceiling, 268,566,664 bytes) is refused as `http`; a
@@ -167,6 +168,10 @@ the whole file` at `Warn` and reads that file with one plain `GET` (a request th
 out is `network`, never taken for that refusal). `CorsSafe` defaults to true in a WebGL
 player (`UNITY_WEBGL && !UNITY_EDITOR`) and false elsewhere — including Play mode in the
 editor with a WebGL target, so the CORS-safe plan is only exercised in a browser.
+**Do not turn it off in a browser**: the CDN does not expose `Content-Range` to a page, so
+with `CorsSafe = false` whole reads succeed and every range fails as `http (206)` with
+detail `no Content-Range`. With it on, Chrome sent `Range` without a preflight and every
+read succeeded; Firefox and Safari have not been tried.
 
 With `CorsSafe = false` the client does what the `yyt` CLI does: the total length from
 `Content-Range`, `If-Range` with the first answer's strong ETag, and a `206` without a
@@ -236,9 +241,21 @@ download holds **the whole file** in memory, writing it to disk saves none, and
 `ResponseTimeout` must cover the whole transfer. Elsewhere, prefer the default transport
 for large downloads. It follows no redirect; on a native player a refused one comes back
 as its `3xx` (`http`), on WebGL — where Unity fails the request — as `network`. Mono and
-IL2CPP players have compiled it and run it against a redirect; a successful read through
-it in a player, and anything in a browser, is not yet recorded
-([manual-verification](../../rules/manual-verification.md)).
+IL2CPP players have run it against a redirect, and a Chrome WebGL player built with
+6000.0.25f1 against a live dev bundle and a redirect
+([the browser run](../../rules/manual-verification.md#the-webgl-browser-run)).
+
+**Every `main` before the commit that rewrote `BodyReader.Race` (2026-09-30) hangs each
+read through it in a browser** — no error, no timeout. If `Packages/packages-lock.json`
+pins such a commit, delete this package's entry there (or re-add the git URL) so the
+Package Manager resolves again.
+
+On WebGL the client's own bounds do not run: the player has no timer thread, so
+`BodyIdleTimeout` and the client's copy of `ResponseTimeout` never fire, and neither does
+a `CancellationTokenSource` you give a timeout. The one bound there is `ResponseTimeout`
+as `UnityWebRequest.timeout` over the whole transfer; `BodyIdleTimeout` has nothing to
+bound, since the body arrives buffered. A stalled server has not yet been tried in a
+browser.
 
 ## What this does not do
 

@@ -147,6 +147,25 @@
   `task.IsCanceled` or `IsCompleted` right after the call that settles it: under
   dotnet the continuation ran inline, in the editor it was posted, and the assertion
   is one frame early. Await the task instead.
+- **A path a WebGL player runs must not need a second thread**, and dotnet cannot take
+  the thread pool away to prove it. Install a context the test pumps itself and that
+  counts every `Post` arriving from another thread (`PumpedContext` in
+  `AssetClientTests`), have the fake complete with `RunContinuationsAsynchronously` as
+  the Unity transports do, release and pump in a loop, and assert the task finished
+  **and** the foreign-post count is 0. Reading `IsCompleted` is safe here because the
+  test drained its own queue; restore the previous context in a `finally`. The test is
+  synchronous `void` so no framework context sits between it and the pump. Hold the
+  body reads as well as the response, or the per-chunk path takes the completed-task
+  shortcut and is never tested, and cancel from the pumping thread so the count stays a
+  clean 0. `AReadCompletesWithOnlyTheCallersContextPumped` and
+  `ACancelledReadReleasesItsLateResponseThroughTheCallersContext` both failed on the
+  `WhenAny` version ([unity.md](unity.md#webgl)); `AnAnswerThatArrivedBeforeTheCancelWins`
+  pins that both sides of the race decide on the context in arrival order. Do not test
+  `TaskScheduler.Current` after the await: an await continuation runs with the current
+  task cleared, so it reads `Default` whatever the continuation's scheduler was — such a
+  test cannot fail. The store and auth clients await their
+  transports directly and need no such test until a combinator or `ContinueWith` enters
+  their path.
 - The editor's NUnit has no `Count` constraint for an array behind `IReadOnlyList<T>`
   (`Has.Count.EqualTo` fails with "Property Count was not found" there and passes under
   dotnet). Assert `list.Count` with `Is.EqualTo` instead.

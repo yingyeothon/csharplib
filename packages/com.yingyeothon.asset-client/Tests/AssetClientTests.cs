@@ -956,5 +956,197 @@ namespace Yingyeothon.Assets.Tests
             Assert.Ignore("File.CreateSymbolicLink needs .NET 6; the editor's profile has none");
 #endif
         }
+
+        // ---- no thread but the caller's --------------------------------------------------
+
+        /// <summary>
+        /// A context the test pumps itself, counting every post that arrives from another
+        /// thread: dotnet has a thread pool to finish work the caller never pumps, a WebGL
+        /// player has none, so a foreign post is exactly the dependency that hangs there.
+        /// </summary>
+        private sealed class PumpedContext : SynchronizationContext
+        {
+            private readonly System.Collections.Concurrent.ConcurrentQueue<(SendOrPostCallback, object?)> _queue =
+                new System.Collections.Concurrent.ConcurrentQueue<(SendOrPostCallback, object?)>();
+
+            private readonly int _thread = Environment.CurrentManagedThreadId;
+
+            internal int ForeignPosts;
+
+            public override void Post(SendOrPostCallback d, object? state)
+            {
+                if (Environment.CurrentManagedThreadId != _thread)
+                {
+                    Interlocked.Increment(ref ForeignPosts);
+                }
+
+                _queue.Enqueue((d, state));
+            }
+
+            internal void Pump()
+            {
+                while (_queue.TryDequeue(out var item))
+                {
+                    item.Item1(item.Item2);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Answers each request, and each body read, only when the test releases it, and
+        /// completes them with <c>RunContinuationsAsynchronously</c> as the Unity transport does.
+        /// </summary>
+        private sealed class HeldTransport : IAssetTransport
+        {
+            private readonly FakeCdn _cdn;
+            private readonly System.Collections.Generic.List<Action> _held = new System.Collections.Generic.List<Action>();
+
+            internal HeldTransport(FakeCdn cdn) => _cdn = cdn;
+
+            internal int Held => _held.Count;
+
+            public Task<IAssetResponse> SendAsync(AssetHttpRequest request, CancellationToken cancellationToken)
+                => Hold(() => (IAssetResponse)new HeldBody(this, _cdn.SendAsync(request, CancellationToken.None).Result));
+
+            internal void Release()
+            {
+                var held = _held.ToArray();
+                _held.Clear();
+                foreach (var answer in held)
+                {
+                    answer();
+                }
+            }
+
+            private Task<T> Hold<T>(Func<T> answer)
+            {
+                var source = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
+                _held.Add(() => source.SetResult(answer()));
+                return source.Task;
+            }
+
+            private sealed class HeldBody : IAssetResponse
+            {
+                private readonly HeldTransport _owner;
+                private readonly IAssetResponse _inner;
+
+                internal HeldBody(HeldTransport owner, IAssetResponse inner)
+                {
+                    _owner = owner;
+                    _inner = inner;
+                }
+
+                public int Status => _inner.Status;
+
+                public string? GetHeader(string name) => _inner.GetHeader(name);
+
+                public Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+                    => _owner.Hold(() => _inner.ReadAsync(buffer, offset, count, CancellationToken.None).Result);
+
+                public void Dispose() => _inner.Dispose();
+            }
+        }
+
+        private static IAssetBundleClient HeldClient(HeldTransport transport)
+            => AssetBundleClient.Create(new AssetBundleClientOptions
+            {
+                BaseUrl = Base,
+                Key = Key.Text,
+                Transport = transport,
+                CorsSafe = true, // the plan a WebGL player runs: a HEAD, then plain ranged GETs
+            });
+
+        private static void WithContext(PumpedContext context, Action body)
+        {
+            var previous = SynchronizationContext.Current;
+            SynchronizationContext.SetSynchronizationContext(context);
+            try
+            {
+                body();
+            }
+            finally
+            {
+                SynchronizationContext.SetSynchronizationContext(previous);
+            }
+        }
+
+        [Test]
+        public void AReadCompletesWithOnlyTheCallersContextPumped()
+        {
+            var cdn = new FakeCdn();
+            var plain = Put(cdn, "a.bin", TestEncryptor.Pattern(20000));
+            var transport = new HeldTransport(cdn);
+            var context = new PumpedContext();
+
+            WithContext(context, () =>
+            {
+                var read = HeldClient(transport).ReadRangeAsync("a.bin", 100, 19000);
+                for (var i = 0; i < 200 && !read.IsCompleted; i++)
+                {
+                    transport.Release();
+                    context.Pump();
+                }
+
+                Assert.That(read.IsCompleted, Is.True);
+                Assert.That(read.Result, Is.EqualTo(plain.Skip(100).Take(18900).ToArray()));
+            });
+
+            Assert.That(context.ForeignPosts, Is.EqualTo(0));
+            Assert.That(cdn.OpenBodies, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void ACancelledReadReleasesItsLateResponseThroughTheCallersContext()
+        {
+            var cdn = new FakeCdn();
+            Put(cdn, "a.bin", TestEncryptor.Pattern(20000));
+            var transport = new HeldTransport(cdn);
+            var context = new PumpedContext();
+            var cancel = new CancellationTokenSource();
+
+            WithContext(context, () =>
+            {
+                var read = HeldClient(transport).ReadAsync("a.bin", cancellationToken: cancel.Token);
+                Assert.That(transport.Held, Is.EqualTo(1));
+
+                cancel.Cancel();
+                context.Pump();
+                Assert.That(read.IsCanceled, Is.True);
+
+                // The abandoned HEAD answers late: released only once the context runs again.
+                transport.Release();
+                Assert.That(cdn.OpenBodies, Is.EqualTo(1));
+                context.Pump();
+            });
+
+            Assert.That(cdn.OpenBodies, Is.EqualTo(0));
+            Assert.That(context.ForeignPosts, Is.EqualTo(0));
+        }
+
+
+        [Test]
+        public void AnAnswerThatArrivedBeforeTheCancelWins()
+        {
+            // Both reach the context in the order they happened: the HEAD answered first, so
+            // the read goes on to its ranged GET rather than dropping an answer it has.
+            var cdn = new FakeCdn();
+            Put(cdn, "a.bin", TestEncryptor.Pattern(20000));
+            var transport = new HeldTransport(cdn);
+            var context = new PumpedContext();
+            var cancel = new CancellationTokenSource();
+
+            WithContext(context, () =>
+            {
+                _ = HeldClient(transport).ReadRangeAsync("a.bin", 100, 200, cancellationToken: cancel.Token);
+                transport.Release();
+                cancel.Cancel();
+                context.Pump();
+
+                Assert.That(transport.Held, Is.EqualTo(1), "the ranged GET is waiting");
+            });
+
+            Assert.That(cdn.OpenBodies, Is.EqualTo(0));
+        }
+
     }
 }
