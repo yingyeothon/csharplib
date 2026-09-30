@@ -270,7 +270,9 @@ A build that succeeds proves nothing about stripping — the player has to run. 
 
 ### Last verified
 
-Always record the **commit** as well as the date: a release asks whether this run
+This subsection holds the last **full, two-editor** run, which is what a release needs;
+the dated runs after it are partial and say what they cover. Always record the
+**commit** as well as the date: a release asks whether this run
 covers the code being tagged, and a date alone cannot answer it
 ([release.md](release.md)).
 
@@ -304,11 +306,16 @@ against. A compiler flag is a build change even when no `.cs` moved.
 ### The run that added `auth-client` and `asset-client`
 
 **2026-09-30**, Unity Personal, Ubuntu 24.04, **6000.0.25f1 only**, for `8e4ad6f` (the
-commit that records this run; its parent carries the code). One seam: the IL2CPP and
-WebGL builds and the non-asset EditMode runs used the Unity transports one revision before
-`d24488d`'s last edit (the redirect exemption narrowed to `ConnectionError` and to a
-request that did not time out); the Mono player and the asset EditMode run were repeated
-on the final code. Repeat the IL2CPP player before a tag. **2021.3.45f2 was not run**: its
+commit that records this run; its parent carries the code). One seam: the WebGL build
+and the non-asset EditMode runs used the Unity transports one revision before
+`d24488d`'s last edit (the path that returns a refused `3xx` as `http` was narrowed to
+`ConnectionError` and to a request that did not time out). The Mono and IL2CPP players
+and the asset EditMode run were repeated on the final code, with the same results.
+EditMode compiles those transports but no test calls them, so the one thing unrun on the
+final code is the WebGL link.
+
+**This run does not satisfy [release.md](release.md) step 2**: `main` has moved past it,
+and 2021.3 was not run. A tag needs a new full run, on both editors, on the tip. **2021.3.45f2 was not run**: its
 `bee_backend` hang needs the wrapper in
 [Two things Ubuntu 24.04 breaks](#two-things-ubuntu-2404-breaks-in-unity-20213), and this
 session was not permitted to swap a binary inside the editor install. The floor is owed
@@ -459,7 +466,9 @@ Read from the source rather than observed, and marked so on purpose:
 
 Not covered, and each is a real gap rather than a formality:
 
-- **`auth-client` and `asset-client` on the 2021.3 floor.** Covered on 6000.0.25f1 only
+- **Every package at `d24488d` on the 2021.3 floor** — `auth-client` and `asset-client`
+  have never been compiled by it, and kvstore's Unity transport changed there too. Covered
+  on 6000.0.25f1 only
   ([the run above](#the-run-that-added-auth-client-and-asset-client)). The asset client's
   EditMode run reads the conformance vectors from
   `Packages/com.yingyeothon.asset-client/Tests/Fixtures`, which only an embedded (copied)
@@ -469,6 +478,7 @@ Not covered, and each is a real gap rather than a formality:
   (2026-09-30): config, verify (a live token and a forged one), a fake provider token
   (`401`), the wrong credential kind (`400`), and `/start` for a redirect off the
   allowlist (`403`) and on it with the nonce query (`302` to the provider).
+- **A WebGL build on the final Unity transports** (see the seam above), and:
 - **Redirects on WebGL.** Unity documents a `redirectLimit` of 0 there as failing the
   request on a redirect, so the three transports should report `network` rather than
   `http (3xx)`; no browser has run it.
