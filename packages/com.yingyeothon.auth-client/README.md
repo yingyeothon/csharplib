@@ -108,21 +108,25 @@ The client holds no state, so its calls may be made from any thread the transpor
 `AuthHttpClientTransport.Default` any, `AuthUnityWebRequestTransport` the main thread
 only. A task resumes on the caller's synchronization context.
 
-**On WebGL only the browser flow works today.** `BuildStartUrl` and `ParseRedirect` make
-no request, but `FetchConfigAsync`, both exchanges and `VerifyAsync` are cross-origin
-calls, and the auth service answers them with no `Access-Control-Allow-Origin` (checked
-on dev, 2026-09-30), so the browser blocks every reply and each call fails as
-`network` — `FetchConfigAsync` did exactly that from a Chrome WebGL player. That is the
-service's to change. In the same player the client's half of the browser flow worked —
-`BuildStartUrl`, a same-tab navigation, the reloaded build reading query and fragment
-from `Application.absoluteURL`, and `ParseRedirect` — with the provider hop replaced by a
-synthesized return, since no dev channel has a provider configured. A real sign-in on
-WebGL, end to end, has not been run.
+**On WebGL the service answers every call since 2026-10-01; no WebGL player has made
+them yet.** `FetchConfigAsync`, both exchanges and `VerifyAsync` are cross-origin calls,
+and the auth service answers any origin (the request's `Origin` echoed back in
+`Access-Control-Allow-Origin`, no credentials) on dev and prod. CORS only lets the
+browser read the reply: the redirect allowlist, the nonce check and the service's own
+cookie are as they were, and a page still needs a provider credential of its own before
+an exchange is an option, so the browser flow stays the usual sign-in on WebGL.
+`BuildStartUrl` and `ParseRedirect` make no request. In a Chrome WebGL player
+(2026-09-30, before the service sent CORS headers, when `FetchConfigAsync` failed as
+`network`) the client's half of the browser flow ran — a same-tab navigation, the
+reloaded build reading query and fragment from `Application.absoluteURL`,
+`ParseRedirect` — with a synthesized return, since no dev channel has a provider
+configured. A real sign-in end to end, and the three service calls from a browser, have
+not been run (the *Not covered* list in
+[rules/manual-verification.md](../../rules/manual-verification.md)).
 
 `AuthUnityWebRequestTransport.Instance` (in `Runtime/Unity`, behind
 `#if UNITY_5_3_OR_NEWER`) is the transport for a platform where `HttpClient` cannot send,
-and on WebGL it will carry those calls the day the service allows it. It follows no
-redirect (`redirectLimit = 0`) and on a native player hands a refused one back as its
+WebGL included. It follows no redirect (`redirectLimit = 0`) and on a native player hands a refused one back as its
 `3xx`, which the client reports as `http`; on WebGL, where Unity fails the request on a
 redirect, it is `network` (both seen in players, 2026-09-30;
 [the browser run](../../rules/manual-verification.md#the-webgl-browser-run)). It checks its 1 MiB cap

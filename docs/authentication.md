@@ -37,7 +37,13 @@ var auth = AuthClient.Create(new AuthClientOptions
     ChannelId = "auth_0123456789abcdef",
     // Transport = AuthUnityWebRequestTransport.Instance,   // on WebGL
 });
+```
 
+On WebGL pass `AuthUnityWebRequestTransport.Instance`; since 2026-10-01 the service
+answers the config fetch, the exchanges and `VerifyAsync` cross-origin on dev and prod.
+The package README § Threads and WebGL says what has and has not run in a browser.
+
+```csharp
 AuthChannelConfig config = await auth.FetchConfigAsync();   // the nine fields above
 ```
 
@@ -86,9 +92,7 @@ Two things a client must get right, and `ParseRedirect` does the first:
 - **Discard the returned URL** once read. Its fragment is a credential.
 
 **Receiving the redirect is your build's job** — an app link on a phone, the page
-itself on WebGL, a loopback page on desktop. On WebGL this flow is also the only one that
-works today: the exchange, `VerifyAsync` and the config fetch are cross-origin calls the
-auth service does not yet allow. [Unity § Signing in](unity.md#signing-in)
+itself on WebGL, a loopback page on desktop. [Unity § Signing in](unity.md#signing-in)
 has each of them and what goes on the allowlist.
 
 ## What the token contains

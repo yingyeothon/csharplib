@@ -365,9 +365,18 @@ and booleans, never a URL or a token — and you grep the log for `[PROBE]`:
   `:18778` → `kv` null, `auth http (404)`, `asset not_found (404)`. A control that reads
   `network (0)` means the servers, not the transports, are wrong;
 - `FetchConfigAsync` against `https://auth-dev.yyt.life` with an active `auth` channel from
-  `yyt --profile dev channels list --scope all --json` → `network (0)`, because the service
-  sends no CORS headers. A success means the service added them: that is a finding for
-  `auth-client`'s README § Threads and WebGL, not a probe failure;
+  `yyt --profile dev channels list --scope all --json` → `ok=True providers=<n>` (`n`
+  is 0 on dev, which has no provider; never print the config: it carries URLs). The
+  service answers any origin since 2026-10-01; before that this check printed
+  `network (0)`. For this check, a `network (0)` now means the browser refused to hand
+  over the reply. Run `curl -si -H 'Origin: https://x'
+  https://auth-dev.yyt.life/c/<id>/.well-known/config` from the shell (`<id>` is the
+  `id` of the active `kind: auth` row; keep the `-H` — without `Origin` the service
+  sends no CORS header): no reply or a `5xx` → the stack, not a finding; a `200`
+  without `access-control-allow-origin: https://x` → the service dropped CORS, a
+  finding for `auth-client`'s README § Threads and WebGL; a `200` with it → the probe
+  or the browser, read the Chrome console. The request is a bare `GET`, so there is
+  no preflight to refuse;
 - a bundle made as [Against the dev CDN](#against-the-dev-cdn) makes it, in both `CorsSafe`
   modes: the manifest, the file whole, a range over two segment boundaries, the tail, a
   missing file, and the vector key (`asset_corrupt`). Resume-from-part and `NoCache` are
@@ -429,7 +438,7 @@ Chrome profiles were deleted afterwards, as the recipe says.
 | Clean compile of the git-URL project with the samples (`ScriptAssemblies` deleted) | `CompileScripts` seen, 0 errors, 0 warnings — an immutable install suppresses package warnings, so this counts the samples and the harness | same |
 | `StandaloneLinux64` Mono, stripping **High** | ran every package through its factories, decrypted an asset vector, each Unity transport answered a `302` as `http (302)` and nothing followed it; the consumer checks all `finished=True` on the main thread; `HttpFetcher.Default` `status=404 offMain=True` | same |
 | `StandaloneLinux64` IL2CPP, stripping **High** | same as Mono | same |
-| WebGL | linked; in the browser every check of [the recipe](#run-the-webgl-player-in-a-browser) printed what it expects, the per-check `start` lines included: the four consumer checks `finished=True` on the main thread, 3 redirects and 0 followed, and with `CorsSafe` off both ranges `http (206)` `no Content-Range`, as the asset README documents; the no-pool control: all four `false`, as expected | same |
+| WebGL | linked; in the browser every check of [the recipe](#run-the-webgl-player-in-a-browser) printed what the recipe then expected, the per-check `start` lines included: the four consumer checks `finished=True` on the main thread, 3 redirects and 0 followed, and with `CorsSafe` off both ranges `http (206)` `no Content-Range`, as the asset README documents; the no-pool control: all four `false`, as expected — the dev auth config check printed `network (0)`, the expectation before the service sent CORS headers (2026-10-01) | same |
 
 One seam: in the first pass both Mono players printed `default-fetcher finished=False`
 — the probe waited by frames, which the recipe now forbids. Only the scratch probe
@@ -768,8 +777,14 @@ Not covered, and each is a real gap rather than a formality:
   `UnityWebRequest.timeout` bounds a request; only the sample's fetcher has waited it out
   ([The WebGL fetcher run](#the-webgl-fetcher-run)).
 - **The auth provider hop in a browser.** No dev auth channel has a provider, so the
-  browser flow ran with a synthesized return; and the service calls fail as `network`
-  there until the service sends CORS headers.
+  browser flow ran with a synthesized return.
+- **The service calls from a WebGL player since the service sends CORS headers**
+  (2026-10-01). Both browser runs that made the call ([Last verified](#last-verified)
+  at `d8ce422` and [The WebGL browser run](#the-webgl-browser-run)) predate that and
+  printed `network (0)`, the recipe's expectation then, so `FetchConfigAsync` →
+  `ok=True` is a recipe expectation no run has recorded; drop this once one does, and
+  rewrite the README § Threads and WebGL sentence that says no WebGL player has made
+  them.
 - **`CorsSafe` in Firefox and Safari.** Only Chrome has run it.
 - The provider exchange with a **real** GitHub access token. There is no provider
   credential here, so only its refusal path was exercised.

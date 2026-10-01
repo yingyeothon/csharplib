@@ -170,9 +170,14 @@ Whichever you use:
   fragment. The whole-URL
   post and the `Origin` check are what stop another page in the player's browser from
   racing a token of its own into the listener.
-- **On WebGL the service calls cannot be made yet.** `FetchConfigAsync`, the exchanges
-  and `VerifyAsync` are cross-origin, and the auth service sends no CORS headers, so the
-  browser blocks them; the browser flow above needs none of them.
+- **On WebGL the service answers the service calls since 2026-10-01.**
+  `FetchConfigAsync`, the exchanges and `VerifyAsync` are cross-origin, and the auth
+  service answers any origin without credentials (dev and prod); pass
+  `AuthUnityWebRequestTransport.Instance` as the transport. No WebGL player has made
+  them yet. CORS only lets the browser read the reply — the allowlist and the nonce
+  above are unchanged — and the browser flow needs none of these calls, so it stays
+  the usual sign-in there: a page has no provider credential to exchange unless the
+  provider's own web SDK hands it one.
 
 ## IL2CPP
 
@@ -263,8 +268,7 @@ you import this one.
 
 The key-value store client has the same seam and, unlike the gateway, ships the WebGL
 side of it in the package rather than a sample — see [Key-value store](#key-value-store) below. So does the auth client,
-`AuthUnityWebRequestTransport.Instance`, although on WebGL its requests are blocked for
-now: see [Signing in](#signing-in). And so does the asset client,
+`AuthUnityWebRequestTransport.Instance` ([Signing in](#signing-in)). And so does the asset client,
 `AssetUnityWebRequestTransport.Instance`, which also switches itself to CORS-safe
 requests in a WebGL player ([Asset bundles § On Unity](assets.md#on-unity)).
 
