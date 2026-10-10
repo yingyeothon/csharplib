@@ -29,6 +29,8 @@
 ## Required Rule Lookup
 
 - Before non-trivial work, open `rules/index.md` and the relevant rule files.
+- "Continue the remaining work" / "이어서 진행" starts from the git-ignored
+  `todo/index.md` — `rules/workflow.md` § Task tracker.
 - Keep this file short; put reusable lessons in `rules/`.
   (`AGENTS.md` is a symlink to this file — edit `CLAUDE.md` only.)
 - After each completed task, fold any **durable** lesson into the relevant `rules/*.md`

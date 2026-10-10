@@ -55,6 +55,23 @@
   disagree, `rules/` wins. Check its premise against `git log` and `git branch -a`
   before executing it; if the premise is gone, say so and delete it.
 
+## Task tracker — `todo/`
+
+- Remaining work lives in the git-ignored `todo/`: `todo/index.md` is the entry point
+  (ordered "Next up", session-start procedure, base commit, "Waiting on user"), and
+  each topic is one `todo/<kebab-topic>.md` with why, what to read first, the change
+  classification, ordered checkboxes with key paths, and done-criteria.
+- A session told only "continue the remaining work" / "이어서 진행" starts from
+  `todo/index.md`: confirm its base commit, reconcile the commits that landed since,
+  then follow this file's completion ritual.
+- Tick items when done. Delete a file when it is fully done and drop its index line.
+  Add a new file for newly found work. Never leave root-level todo files or scattered
+  `TODO` comments.
+- `todo/` is never committed, so it holds state and pointers only: facts, decisions
+  and lessons go to `docs/`, `rules/` or a package README. It may cite the private
+  `service/todo/**` and `service/local/**` paths; committed files may not
+  ([security.md](security.md)).
+
 ## Per-task completion ritual
 
 1. Make the change testable, then cover the new or changed behaviour

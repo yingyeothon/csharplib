@@ -8,7 +8,7 @@ entry point; `CONVENTIONS.md` at the repo root is the canonical API design docum
 | --- | --- |
 | [architecture.md](architecture.md) | Adding or changing any public symbol, package layout, or dependency edge |
 | [unity.md](unity.md) | Anything touching Unity, IL2CPP, WebGL, asmdefs, or the Poll contract |
-| [workflow.md](workflow.md) | Starting or finishing any task |
+| [workflow.md](workflow.md) | Starting or finishing any task, or resuming remaining work (`todo/`) |
 | [testing.md](testing.md) | Writing tests or touching the fakes |
 | [manual-verification.md](manual-verification.md) | Confirming a change works in a real consumer, after tests pass |
 | [release.md](release.md) | Versioning, cutting a tag, or anything a consumer installs by version |

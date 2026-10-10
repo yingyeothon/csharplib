@@ -39,3 +39,6 @@ Builds/
 !.env.example
 .envrc
 local/
+
+# The remaining-work tracker is machine-local (rules/workflow.md § Task tracker).
+/todo/
