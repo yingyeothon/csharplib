@@ -3,7 +3,8 @@
   "rootNamespace": "Yingyeothon.GameKit",
   "references": [
     "Yingyeothon.GameKit",
-    "Yingyeothon.Platform"
+    "Yingyeothon.Platform",
+    "Yingyeothon.Codec"
   ],
   "autoReferenced": true,
   "noEngineReferences": false
