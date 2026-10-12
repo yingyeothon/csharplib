@@ -1,6 +1,6 @@
 {
   "name": "com.yingyeothon.game-kit",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "displayName": "Yingyeothon.GameKit",
   "description": "Yingyeothon.GameKit client library for yyt.",
   "unity": "2021.3",
@@ -9,14 +9,14 @@
     "url": "https://github.com/yingyeothon"
   },
   "dependencies": {
-    "com.yingyeothon.platform-client": "0.2.0",
-    "com.yingyeothon.match-client": "0.2.0",
-    "com.yingyeothon.push-client": "0.2.0",
-    "com.yingyeothon.gamebase-client": "0.2.0",
-    "com.yingyeothon.auth-client": "0.2.0",
-    "com.yingyeothon.kvstore-client": "0.2.0",
-    "com.yingyeothon.codec": "0.2.0",
-    "com.yingyeothon.logger": "0.2.0"
+    "com.yingyeothon.platform-client": "0.3.0",
+    "com.yingyeothon.match-client": "0.3.0",
+    "com.yingyeothon.push-client": "0.3.0",
+    "com.yingyeothon.gamebase-client": "0.3.0",
+    "com.yingyeothon.auth-client": "0.3.0",
+    "com.yingyeothon.kvstore-client": "0.3.0",
+    "com.yingyeothon.codec": "0.3.0",
+    "com.yingyeothon.logger": "0.3.0"
   },
   "samples": [
     {

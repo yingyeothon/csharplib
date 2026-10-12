@@ -16,7 +16,7 @@ pattern.
 ## Install
 
 ```
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.asset-client#v0.2.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.asset-client#v0.3.0
 ```
 
 The fragment pins a release tag; keep the same one on every `com.yingyeothon.*` URL
@@ -255,8 +255,9 @@ On WebGL the client's own bounds do not run: the player has no timer thread, so
 `BodyIdleTimeout` and the client's copy of `ResponseTimeout` never fire, and neither does
 a `CancellationTokenSource` you give a timeout. The one bound there is `ResponseTimeout`
 as `UnityWebRequest.timeout` over the whole transfer; `BodyIdleTimeout` has nothing to
-bound, since the body arrives buffered. A stalled server has not yet been tried in a
-browser.
+bound, since the body arrives buffered. Browser stalled-response checks confirmed
+the transport timeout on both supported Unity editors; see the
+[current verification record](../../rules/manual-verification.md#last-verified).
 
 ## What this does not do
 

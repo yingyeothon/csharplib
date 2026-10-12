@@ -10,13 +10,17 @@ _Window → Package Manager → + → Add package from git URL_. A git-URL packa
 resolve its own dependencies, so add each one:
 
 ```
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.codec#v0.2.0
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.logger#v0.2.0
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.event-broker#v0.2.0
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.gamebase-client#v0.2.0
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.kvstore-client#v0.2.0
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.auth-client#v0.2.0
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.asset-client#v0.2.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.codec#v0.3.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.logger#v0.3.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.event-broker#v0.3.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.gamebase-client#v0.3.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.kvstore-client#v0.3.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.auth-client#v0.3.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.asset-client#v0.3.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.platform-client#v0.3.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.match-client#v0.3.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.push-client#v0.3.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.game-kit#v0.3.0
 ```
 
 Add a package's dependencies before the package itself, or Package Manager reports them
@@ -41,7 +45,8 @@ Every runtime asmdef here is `autoReferenced`, so a script in Unity's default
 asmdef**, reference the assemblies you use by name: `Yingyeothon.Gamebase.Client`,
 `Yingyeothon.KvStore`, `Yingyeothon.Auth`, `Yingyeothon.Assets`, `Yingyeothon.Codec` (needed for `JsonValue`,
 which is on every client's API), `Yingyeothon.Logger` (needed to set `Logger`),
-`Yingyeothon.EventBroker`.
+`Yingyeothon.EventBroker`, `Yingyeothon.Platform`, `Yingyeothon.Match`,
+`Yingyeothon.Push`, and `Yingyeothon.GameKit`.
 
 Every asset ships with its `.meta`, so a given version has the same GUIDs in every
 project that installs it. If you vendor the packages into `Packages/` instead of using a
@@ -263,7 +268,7 @@ The `WebGL Transport` sample holds both: a skeleton for the socket, whose `.jsli
 is yours to write, and a complete `WebGLHttpFetcher` to pass as it is. The fetcher's doc
 comment owns its bounds and what it throws. The sample compiles into `Assembly-CSharp`,
 which an asmdef cannot reference: if your scripts live in their own asmdef, move the
-sample's files into it. A sample imported from v0.2.0 or earlier declares a
+sample's files into it. An older imported sample may declare a
 `WebGLHttpFetcher` stub in `WebGLTransport.cs`; delete that class, or that folder, when
 you import this one.
 

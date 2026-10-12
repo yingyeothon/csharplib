@@ -84,6 +84,9 @@ anything is pushed, and the commit and the tag then go together or not at all.
    been tagged yet" sentences and `CONVENTIONS.md`'s *"Nothing has been released yet"*
    paragraph. A rule file that states a fact a release invalidates has to be listed
    here, or it will not be found.
+
+   The integrated purpose-client release also replaces asset-client README
+   § WebGL's obsolete stalled-browser claim with its current verification link.
 5. **[agent]** Commit the bump. **Do not push** — `check-docs.sh` fails while the URLs name a
    tag that does not exist, so `pre-push` would refuse it, correctly. In that window a
    clean bump fails only with check 4's *"pins vX.Y.Z, which is not a tag yet"*, once per
