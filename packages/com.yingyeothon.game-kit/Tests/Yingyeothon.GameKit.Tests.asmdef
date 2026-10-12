@@ -1,0 +1,29 @@
+{
+  "name": "Yingyeothon.GameKit.Tests",
+  "rootNamespace": "Yingyeothon.GameKit.Tests",
+  "references": [
+    "Yingyeothon.Platform",
+    "Yingyeothon.Match",
+    "Yingyeothon.Push",
+    "Yingyeothon.Gamebase.Client",
+    "Yingyeothon.Auth",
+    "Yingyeothon.KvStore",
+    "Yingyeothon.Codec",
+    "Yingyeothon.Logger",
+    "Yingyeothon.GameKit"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": true,
+  "autoReferenced": false,
+  "noEngineReferences": false,
+  "precompiledReferences": [
+    "nunit.framework.dll"
+  ],
+  "defineConstraints": [
+    "UNITY_INCLUDE_TESTS"
+  ]
+}

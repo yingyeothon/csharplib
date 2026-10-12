@@ -179,3 +179,14 @@ time:
 - `unity releases` needs `--limit` raised (default 20) to reach anything old, and its
   output pages by default — set `UNITY_NO_PAGER=1 UNITY_NON_INTERACTIVE=1` for every
   scripted call.
+
+## Formatting shared multi-target sources
+
+Before a mutating style formatter, save a copy of affected uncommitted sources. If
+dotnet format inserts "Unmerged change from project" comments or conflicting edits,
+stop formatting and recover from that copy, reviewing the result. If recovery is
+ambiguous, preserve the current files and report the uncertainty; never discard
+uncommitted work by restoring from Git or guessing. Do not commit the comments. Apply the required style fix
+in a scratch copy with one Runtime target framework, copy back only the intended
+source edits, then run the normal dual-target build and full verify-no-changes gate.
+Do not change the production target frameworks to make formatting pass.

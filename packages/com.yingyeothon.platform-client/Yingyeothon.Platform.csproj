@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+<PropertyGroup><AssemblyName>Yingyeothon.Platform</AssemblyName><RootNamespace>Yingyeothon.Platform</RootNamespace><PackageId>Yingyeothon.Platform</PackageId><Description>Yingyeothon.Platform client library</Description></PropertyGroup>
+<ItemGroup><Compile Include="Runtime/**/*.cs" Exclude="Runtime/Unity/**/*.cs" /></ItemGroup>
+<ItemGroup><ProjectReference Include="../com.yingyeothon.codec/Yingyeothon.Codec.csproj" /><ProjectReference Include="../com.yingyeothon.logger/Yingyeothon.Logger.csproj" /><ProjectReference Include="../com.yingyeothon.kvstore-client/Yingyeothon.KvStore.csproj" /></ItemGroup>
+</Project>

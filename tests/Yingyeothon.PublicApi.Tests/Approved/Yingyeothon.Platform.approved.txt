@@ -1,0 +1,71 @@
+  IPlatformBoard.InfoAsync(CancellationToken?) : Task<JsonValue>
+  IPlatformBoard.MeAsync(String, CancellationToken?) : Task<JsonValue>
+  IPlatformBoard.SubmitAsync(PlatformScoreOptions, CancellationToken?) : Task<JsonValue>
+  IPlatformBoard.TopAsync(PlatformBoardPageOptions, CancellationToken?) : Task<JsonValue>
+  IPlatformClient.Board(String) : IPlatformBoard
+  IPlatformClient.PresenceAsync(PlatformPresenceOptions, CancellationToken?) : Task<JsonValue>
+  IPlatformClient.Social : IPlatformSocial get
+  IPlatformClient.TimeAsync(CancellationToken?) : Task<Int64>
+  IPlatformHttpClient.RequestAsync(PlatformRequestOptions, CancellationToken?) : Task<JsonValue>
+  IPlatformHttpClient.RequestAsync(PlatformRequestOptions, Func<JsonValue, T>, CancellationToken?) : Task<T>
+  IPlatformSocial.AcceptAsync(String, CancellationToken?) : Task
+  IPlatformSocial.BlockAsync(String, CancellationToken?) : Task
+  IPlatformSocial.DeclineAsync(String, CancellationToken?) : Task
+  IPlatformSocial.FriendsAsync(CancellationToken?) : Task<JsonValue>
+  IPlatformSocial.ProfileAsync(CancellationToken?) : Task<JsonValue>
+  IPlatformSocial.ProfilesAsync(IReadOnlyList<String>, CancellationToken?) : Task<JsonValue>
+  IPlatformSocial.RemoveAsync(String, CancellationToken?) : Task
+  IPlatformSocial.RequestAsync(String, CancellationToken?) : Task<JsonValue>
+  IPlatformSocial.RequestsAsync(CancellationToken?) : Task<JsonValue>
+  IPlatformSocial.SetProfileAsync(PlatformProfileOptions, CancellationToken?) : Task<JsonValue>
+  IPlatformSocial.UnblockAsync(String, CancellationToken?) : Task
+  IPollable.Poll() : Void
+  PlatformBoardPageOptions.Limit : Int32 get set
+  PlatformBoardPageOptions.Offset : Int32 get set
+  PlatformBoardPageOptions.Period : String get set
+  PlatformBoardPageOptions.ctor()
+  PlatformClient.Create(PlatformClientOptions) : IPlatformClient
+  PlatformClientOptions.BaseUrl : String get set
+  PlatformClientOptions.Logger : ILogger get set
+  PlatformClientOptions.NowMillis : Func<Double> get set
+  PlatformClientOptions.Timeout : Nullable<TimeSpan> get set
+  PlatformClientOptions.Token : String get set
+  PlatformClientOptions.Transport : IHttpTransport get set
+  PlatformClientOptions.ctor()
+  PlatformException.Code : String get
+  PlatformException.Reason : String get
+  PlatformException.RetryAfterMillis : Nullable<Double> get
+  PlatformException.Status : Int32 get
+  PlatformException.ctor(Int32, String, String?, Nullable<Double>?)
+  PlatformHttpClient.Create(PlatformClientOptions) : IPlatformHttpClient
+  PlatformHttpClient.Query(String) : String
+  PlatformHttpClient.Segment(String) : String
+  PlatformPresenceOptions.ChannelId : String get set
+  PlatformPresenceOptions.UserIds : IReadOnlyList<String> get set
+  PlatformPresenceOptions.ctor()
+  PlatformProfileOptions.Avatar : String get set
+  PlatformProfileOptions.DisplayName : String get set
+  PlatformProfileOptions.ctor()
+  PlatformRequestOptions.Authenticated : Boolean get set
+  PlatformRequestOptions.Body : JsonValue get set
+  PlatformRequestOptions.Method : String get set
+  PlatformRequestOptions.MissingAsNull : Boolean get set
+  PlatformRequestOptions.Path : String get set
+  PlatformRequestOptions.ctor()
+  PlatformScoreOptions.Meta : String get set
+  PlatformScoreOptions.Score : Int64 get set
+  PlatformScoreOptions.ctor()
+class PlatformBoardPageOptions
+class PlatformClientOptions
+class PlatformException
+class PlatformPresenceOptions
+class PlatformProfileOptions
+class PlatformRequestOptions
+class PlatformScoreOptions
+interface IPlatformBoard
+interface IPlatformClient
+interface IPlatformHttpClient
+interface IPlatformSocial
+interface IPollable
+static class PlatformClient
+static class PlatformHttpClient

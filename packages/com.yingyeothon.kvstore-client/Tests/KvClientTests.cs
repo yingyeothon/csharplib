@@ -197,6 +197,9 @@ namespace Yingyeothon.KvStore.Tests
             Assert.That(info.MaxEntriesPerOwner, Is.EqualTo(100));
         }
 
+        [TestCase("server", KvScope.Server)]
+        [TestCase("future", KvScope.Unknown)]
+        [TestCase("", KvScope.Unknown)]
         [TestCase("team", KvScope.Team)]
         [TestCase("project", KvScope.Project)]
         public void EveryScopeParses(string wire, KvScope expected)
@@ -210,7 +213,8 @@ namespace Yingyeothon.KvStore.Tests
             Assert.That(info.ReadScope, Is.EqualTo(expected));
         }
 
-        [TestCase("{\"id\":\"kv_x\",\"name\":\"n\",\"readScope\":\"owner\",\"writeScope\":\"project\",\"encrypted\":false,\"maxEntries\":1,\"maxEntriesPerOwner\":1}", Description = "unknown scope")]
+        [TestCase("{\"id\":\"kv_x\",\"name\":\"n\",\"readScope\":3,\"writeScope\":\"project\",\"encrypted\":false,\"maxEntries\":1,\"maxEntriesPerOwner\":1}")]
+        [TestCase("{\"id\":\"kv_x\",\"name\":\"n\",\"writeScope\":\"project\",\"encrypted\":false,\"maxEntries\":1,\"maxEntriesPerOwner\":1}")]
         [TestCase("{\"name\":\"n\",\"readScope\":\"project\",\"writeScope\":\"project\",\"encrypted\":false,\"maxEntries\":1,\"maxEntriesPerOwner\":1}", Description = "no id")]
         [TestCase("{\"id\":\"kv_x\",\"name\":\"n\",\"readScope\":\"project\",\"writeScope\":\"project\",\"maxEntries\":1,\"maxEntriesPerOwner\":1}", Description = "no encrypted")]
         [TestCase("{\"id\":\"kv_x\",\"name\":\"n\",\"readScope\":\"project\",\"writeScope\":\"project\",\"encrypted\":false,\"maxEntries\":1.5,\"maxEntriesPerOwner\":1}", Description = "fractional cap")]

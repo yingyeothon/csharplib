@@ -100,6 +100,7 @@ The six operations on one namespace of entries.
 | `IncrAsync(String, Int64, KvIncrOptions?, CancellationToken?) : Task<KvIncrResult>` | Adds `delta` to a stored integer atomically, creating it from zero. Needs the read right as well as the write right; a stored value that is not an integer is a 409 with `NotANumber` . |
 | `ListAsync(KvListOptions?, CancellationToken?) : Task<KvPage>` | One page of entries, in key order. |
 | `PutAsync(String, JsonValue, KvPutOptions?, CancellationToken?) : Task<KvWriteResult>` | Stores `value` under `key` , as its compact JSON text, byte for byte. |
+| `TryDeleteAsync(String, KvDeleteOptions?, CancellationToken?) : Task<Boolean>` | Deletes an entry, returning false on a reader-visible 404. A write-only 204 cannot prove prior existence. |
 
 ## interface IKvStoreClient
 
@@ -108,6 +109,7 @@ A key-value store client bound to one base URL and one token.
 | Member | Summary |
 | --- | --- |
 | `Collection(String) : IKvCollection` | Addresses a collection by its name or its `kv_` id. Pure: nothing is sent until an operation is called. Throws `ArgumentException` for a segment that is neither an id nor a name the console could hold. |
+| `ServerTimeAsync(CancellationToken?) : Task<DateTimeOffset>` | Gets the platform UTC clock from GET /time without sending the token. |
 
 ## class KvCollectionInfo
 
@@ -117,11 +119,13 @@ A collection's shape, from `GET /kv/{col}` .
 | --- | --- |
 | `Encrypted : Boolean get` | Whether values are stored encrypted. Invisible to this client: the store decrypts on read. |
 | `Id : String get` | The collection id, `kv_…` , whichever way it was addressed. |
+| `IsPlayerMail : Boolean get` | Players can send create-only mail to another owner. |
+| `IsUserNamespace : Boolean get` | Entries use owner paths when either scope is user. |
 | `MaxEntries : Int32 get` | The cap on rows in the whole collection. |
 | `MaxEntriesPerOwner : Int32 get` | The cap on rows one player may hold in a user namespace. |
 | `Name : String get` | The collection name as the console holds it. |
 | `ReadScope : KvScope get` | Who may read entries. |
-| `WriteScope : KvScope get` | Who may write entries. `User` is what puts them under `Mine` . |
+| `WriteScope : KvScope get` | Who may write entries. Either user scope puts entries under owner namespaces. |
 | `ctor(String, String, KvScope, KvScope, Boolean, Int32, Int32)` |  |
 
 ## class KvDeleteOptions
@@ -140,9 +144,12 @@ One entry with its version, from `GetEntryAsync` .
 | Member | Summary |
 | --- | --- |
 | `ExpiresAt : Nullable<Int64> get` | When the entry expires, in Unix seconds, or null when it does not. |
+| `From : String get` | The authenticated writer, from X-KV-From; absent on shared entries. |
+| `UpdatedAt : Nullable<Int64> get` | The last write in Unix seconds, from X-KV-At. |
 | `Value : JsonValue get` | The stored value. A stored JSON `null` is `Null` , never a C# null. |
 | `Version : Int64 get` | The version, for `IfMatch` . It climbs on every write and never resets. |
 | `ctor(JsonValue, Int64, Nullable<Int64>)` |  |
+| `ctor(JsonValue, Int64, Nullable<Int64>, String, Nullable<Int64>)` | Creates an entry with its optional writer stamp. |
 
 ## static class KvErrorCodes
 
@@ -168,6 +175,8 @@ Options for `IncrAsync` .
 
 | Member | Summary |
 | --- | --- |
+| `Max : Nullable<Int64> get set` | Inclusive maximum for this increment only, within the safe integer range. |
+| `Min : Nullable<Int64> get set` | Inclusive minimum for this increment only, within the safe integer range. |
 | `Ttl : Nullable<Int32> get set` | Seconds until the counter expires, with the same meaning as `KvPutOptions.Ttl` . |
 | `ctor()` |  |
 
@@ -190,12 +199,14 @@ One row of a listing.
 | --- | --- |
 | `Bytes : Int64 get` | The value's size in UTF-8 bytes, as stored. |
 | `ExpiresAt : Nullable<Int64> get` | When the entry expires, in Unix seconds, or null. |
+| `From : String get` | The authenticated writer, absent on shared entries. |
 | `Key : String get` | The key. |
 | `Owner : String get` | The owner, only where owners are a namespace; null on a shared collection. |
 | `UpdatedAt : Int64 get` | When the entry was last written, in Unix seconds. |
 | `Value : JsonValue get` | The value when `Values` was set, else a C# null. A stored JSON null is `Null` . |
 | `Version : Int64 get` | The version. |
 | `ctor(String, String, Int64, Int64, Nullable<Int64>, Int64, JsonValue)` |  |
+| `ctor(String, String, Int64, Int64, Nullable<Int64>, Int64, JsonValue, String)` | Creates a list entry with its optional authenticated writer. |
 
 ## class KvListOptions
 
@@ -247,9 +258,12 @@ The `Reason` values the store attaches to a refusal.
 | `CollectionFull : String` | 409: the collection holds `maxEntries` rows already. |
 | `Encrypted : String` | 409: the console cannot write an encrypted collection. Not reachable from this client. |
 | `EncryptionNotConfigured : String` | 503: the stage has no usable key; every kv route answers this. |
+| `Exists : String` | 409: a create-only mail key already exists. |
 | `NotANumber : String` | 409 on `incr` : the stored value is not a safe integer. |
+| `OutOfRange : String` | 409: the counter result would cross a supplied bound. |
 | `Overflow : String` | 409 on `incr` : the result would leave the safe integer range. |
 | `OwnerFull : String` | 409: this owner holds `maxEntriesPerOwner` rows already. |
+| `SenderFull : String` | 409: this sender has filled its collection-wide allowance. |
 | `ValueUnreadable : String` | 503: one stored value would not open. |
 | `WrongNamespace : String` | 400: the shared path was used on a user-namespace collection, or the reverse. |
 
@@ -275,10 +289,12 @@ The store's own limits and grammars, so a caller can check before sending.
 
 ## enum KvScope
 
-Who may read or write a collection. A closed set on the server.
+Who may read or write a collection. Unknown future strings remain readable.
 
 - `Project` — Any credential of the collection's project: every player and the server key.
+- `Server` — Only a server credential may use this scope; never ship that credential in a game.
 - `Team` — The console and the CLI only. The API refuses, so this client never has the right.
+- `Unknown` — A future scope string the client does not recognize.
 - `User` — Each player on its own namespace; the server key on anyone's. Entries live under `/u/{ownerId}` .
 
 ## static class KvStoreClient
@@ -315,7 +331,7 @@ A store request that did not succeed.
 | `HasCurrentVersion : Boolean get` | Whether the reply carried `details.current` at all. |
 | `IsConflict : Boolean get` | A 409: a lost compare-and-set, a cap, or a value that is not a counter. |
 | `IsForbidden : Boolean get` | A 403: the collection's scope does not admit this caller, or a conditional write without the read right. |
-| `IsFull : Boolean get` | A 409 whose reason is `CollectionFull` or `OwnerFull` . |
+| `IsFull : Boolean get` | A 409 whose reason is `CollectionFull` or `OwnerFull` or `SenderFull` . |
 | `IsUnauthorized : Boolean get` | A 401: the token did not verify. |
 | `Reason : String get` | The server's `details.reason` , when it named one. See `KvReasons` . |
 | `Status : Int32 get` | The HTTP status, or 0 when no reply arrived ( `Network` , `Timeout` ). |

@@ -163,8 +163,12 @@ namespace Yingyeothon.KvStore
                     return KvScope.Project;
                 case "user":
                     return KvScope.User;
-                default:
+                case "server":
+                    return KvScope.Server;
+                case null:
                     throw BadBody(reply);
+                default:
+                    return KvScope.Unknown;
             }
         }
 

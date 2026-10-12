@@ -18,6 +18,10 @@
        excluded per package; this project has to declare its own. -->
   <ItemGroup>
     <Compile Include="*.cs" />
+    <ProjectReference Include="../../packages/com.yingyeothon.platform-client/Yingyeothon.Platform.csproj" />
+    <ProjectReference Include="../../packages/com.yingyeothon.match-client/Yingyeothon.Match.csproj" />
+    <ProjectReference Include="../../packages/com.yingyeothon.push-client/Yingyeothon.Push.csproj" />
+    <ProjectReference Include="../../packages/com.yingyeothon.game-kit/Yingyeothon.GameKit.csproj" />
   </ItemGroup>
 
   <ItemGroup>

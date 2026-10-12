@@ -4,7 +4,7 @@ using Yingyeothon.Codec;
 
 namespace Yingyeothon.KvStore
 {
-    /// <summary>Who may read or write a collection. A closed set on the server.</summary>
+    /// <summary>Who may read or write a collection. Unknown future strings remain readable.</summary>
     public enum KvScope
     {
         /// <summary>The console and the CLI only. The API refuses, so this client never has the right.</summary>
@@ -15,6 +15,12 @@ namespace Yingyeothon.KvStore
 
         /// <summary>Each player on its own namespace; the server key on anyone's. Entries live under <c>/u/{ownerId}</c>.</summary>
         User,
+
+        /// <summary>Only a server credential may use this scope; never ship that credential in a game.</summary>
+        Server,
+
+        /// <summary>A future scope string the client does not recognize.</summary>
+        Unknown,
     }
 
     /// <summary>A collection's shape, from <c>GET /kv/{col}</c>.</summary>
@@ -47,8 +53,14 @@ namespace Yingyeothon.KvStore
         /// <summary>Who may read entries.</summary>
         public KvScope ReadScope { get; }
 
-        /// <summary>Who may write entries. <see cref="KvScope.User"/> is what puts them under <see cref="IKvCollection.Mine"/>.</summary>
+        /// <summary>Who may write entries. Either user scope puts entries under owner namespaces.</summary>
         public KvScope WriteScope { get; }
+
+        /// <summary>Entries use owner paths when either scope is user.</summary>
+        public bool IsUserNamespace => ReadScope == KvScope.User || WriteScope == KvScope.User;
+
+        /// <summary>Players can send create-only mail to another owner.</summary>
+        public bool IsPlayerMail => ReadScope == KvScope.User && WriteScope == KvScope.Project;
 
         /// <summary>Whether values are stored encrypted. Invisible to this client: the store decrypts on read.</summary>
         public bool Encrypted { get; }
@@ -64,11 +76,25 @@ namespace Yingyeothon.KvStore
     public sealed class KvEntry
     {
         public KvEntry(JsonValue value, long version, long? expiresAt)
+            : this(value, version, expiresAt, null, null)
+        {
+        }
+
+        /// <summary>Creates an entry with its optional writer stamp.</summary>
+        public KvEntry(JsonValue value, long version, long? expiresAt, string? from, long? updatedAt)
         {
             Value = value ?? throw new ArgumentNullException(nameof(value));
             Version = version;
             ExpiresAt = expiresAt;
+            From = from;
+            UpdatedAt = updatedAt;
         }
+
+        /// <summary>The authenticated writer, from X-KV-From; absent on shared entries.</summary>
+        public string? From { get; }
+
+        /// <summary>The last write in Unix seconds, from X-KV-At.</summary>
+        public long? UpdatedAt { get; }
 
         /// <summary>The stored value. A stored JSON <c>null</c> is <see cref="JsonValue.Null"/>, never a C# null.</summary>
         public JsonValue Value { get; }
@@ -169,7 +195,14 @@ namespace Yingyeothon.KvStore
             long? expiresAt,
             long updatedAt,
             JsonValue? value)
+            : this(owner, key, version, bytes, expiresAt, updatedAt, value, null)
         {
+        }
+
+        /// <summary>Creates a list entry with its optional authenticated writer.</summary>
+        public KvListEntry(string? owner, string key, long version, long bytes, long? expiresAt, long updatedAt, JsonValue? value, string? from)
+        {
+            From = from;
             Owner = owner;
             Key = key ?? throw new ArgumentNullException(nameof(key));
             Version = version;
@@ -178,6 +211,9 @@ namespace Yingyeothon.KvStore
             UpdatedAt = updatedAt;
             Value = value;
         }
+
+        /// <summary>The authenticated writer, absent on shared entries.</summary>
+        public string? From { get; }
 
         /// <summary>The owner, only where owners are a namespace; null on a shared collection.</summary>
         public string? Owner { get; }
@@ -220,6 +256,12 @@ namespace Yingyeothon.KvStore
     /// <summary>Options for <see cref="IKvNamespace.IncrAsync"/>.</summary>
     public sealed class KvIncrOptions
     {
+        /// <summary>Inclusive minimum for this increment only, within the safe integer range.</summary>
+        public long? Min { get; set; }
+
+        /// <summary>Inclusive maximum for this increment only, within the safe integer range.</summary>
+        public long? Max { get; set; }
+
         /// <summary>Seconds until the counter expires, with the same meaning as <c>KvPutOptions.Ttl</c>.</summary>
         public int? Ttl { get; set; }
     }

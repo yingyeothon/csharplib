@@ -1,6 +1,6 @@
 # csharplib documentation
 
-The seven packages in this repository are the client half of the yyt platform. This
+The eleven packages in this repository are the client half of the yyt platform. This
 folder is the guide; the package READMEs are the per-package reference, and the
 `service` repository owns the wire protocol.
 
@@ -23,6 +23,10 @@ folder is the guide; the package READMEs are the per-package reference, and the
 | Handle drops, reconnects and shutdown | [Connection lifecycle](connection-lifecycle.md) |
 | Understand a refusal or a close code | [Errors and close codes](errors.md) |
 | Ship on Unity, IL2CPP or WebGL | [Unity](unity.md) |
+| Build purpose-shaped game modules | [Game kit](game-kit.md) |
+| Use platform routes | [Platform](platform.md) |
+| Find matches | [Matchmaking](matchmaking.md) |
+| Register Android push | [Push](push.md) |
 | Work out why nothing is happening | [Troubleshooting](troubleshooting.md) |
 | Read or build a JSON frame | [`Yingyeothon.Codec`](../packages/com.yingyeothon.codec/README.md) |
 | Log without leaking a token or a payload | [`Yingyeothon.Logger`](../packages/com.yingyeothon.logger/README.md) |
@@ -37,6 +41,14 @@ are the four that talk to the platform, and each stands on its own. `codec` is o
 four APIs — every frame, payload, stored value, raw config and manifest is a `JsonValue`
 — so you will read it whatever you build; `logger` and `event-broker` are optional.
 
+[`Yingyeothon.Platform`](../packages/com.yingyeothon.platform-client/README.md) adds the game module surface.
+
+[`Yingyeothon.Match`](../packages/com.yingyeothon.match-client/README.md) adds the game module surface.
+
+[`Yingyeothon.Push`](../packages/com.yingyeothon.push-client/README.md) adds the game module surface.
+
+[`Yingyeothon.GameKit`](../packages/com.yingyeothon.game-kit/README.md) adds the game module surface.
+
 ## Reference
 
 Generated from the assemblies themselves and gated in CI, so it cannot drift from the
@@ -45,6 +57,10 @@ code. Every public type and member, with the same summary your IDE shows:
 - [`Yingyeothon.Gamebase.Client`](api/Yingyeothon.Gamebase.Client.md)
 - [`Yingyeothon.KvStore`](api/Yingyeothon.KvStore.md)
 - [`Yingyeothon.Auth`](api/Yingyeothon.Auth.md)
+- [`Yingyeothon.Platform`](api/Yingyeothon.Platform.md)
+- [`Yingyeothon.Match`](api/Yingyeothon.Match.md)
+- [`Yingyeothon.Push`](api/Yingyeothon.Push.md)
+- [`Yingyeothon.GameKit`](api/Yingyeothon.GameKit.md)
 - [`Yingyeothon.Assets`](api/Yingyeothon.Assets.md)
 - [`Yingyeothon.Codec`](api/Yingyeothon.Codec.md)
 - [`Yingyeothon.Logger`](api/Yingyeothon.Logger.md)
@@ -89,3 +105,7 @@ all public, in [`yingyeothon/service`](https://github.com/yingyeothon/service):
 
 When this guide and the gateway README disagree, the gateway README is right — and
 that is a bug here worth reporting.
+
+The optional game-kit Unity and Firebase sample adapters compile in separate sample
+assemblies; their engine-facing types are documented in [Unity](unity.md#game-kit-runner)
+and [push](push.md), rather than the generated Runtime reference.

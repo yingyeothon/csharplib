@@ -195,6 +195,10 @@ were invisible only because nothing had forced a clean recompile —
 - Nothing a client received is observed until `Poll()` runs, and timeouts and
   reconnect delays only advance there. A client that is never polled never
   reconnects — say so wherever `Poll` is documented.
+- Start game-kit internal ordering observers inside its action queue so they capture
+  the kit synchronization context. Starting them at a public entry point captures
+  Unity's caller context and can stall a Poll-only host; ConfigureAwait(false) is not
+  a WebGL-safe repair. Verify lifecycle progress in both Unity and a WebGL player.
 - Call `Poll()` from `Update()` unconditionally, **before** any pause or
   `timeScale` check. A paused scene that skips it stalls the connection.
 - Use a client from one thread at a time. What is enforced is **concurrency**, not

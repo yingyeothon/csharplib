@@ -18,13 +18,16 @@ namespace Yingyeothon.KvStore
         /// for a segment that is neither an id nor a name the console could hold.
         /// </summary>
         IKvCollection Collection(string nameOrId);
+
+        /// <summary>Gets the platform UTC clock from GET /time without sending the token.</summary>
+        Task<System.DateTimeOffset> ServerTimeAsync(CancellationToken cancellationToken = default);
     }
 
     /// <summary>One collection: its shape, its shared namespace, and its owner namespaces.</summary>
     /// <remarks>
     /// The collection itself is the <b>shared</b> namespace (<c>/kv/{col}/entries</c>),
-    /// which is right for a collection whose write scope is <c>project</c>. A collection
-    /// whose write scope is <c>user</c> keeps one namespace per owner, reached through
+    /// when neither scope is <c>user</c>. A collection
+    /// whose read or write scope is <c>user</c> keeps one namespace per owner, reached through
     /// <see cref="Mine"/> or <see cref="Owner"/>; using the wrong one is a 400 with
     /// <see cref="KvReasons.WrongNamespace"/>.
     /// </remarks>
@@ -74,6 +77,9 @@ namespace Yingyeothon.KvStore
 
         /// <summary>Deletes an entry. A <c>404</c> — no such key, or no such collection — is treated as done.</summary>
         Task DeleteAsync(string key, KvDeleteOptions? options = null, CancellationToken cancellationToken = default);
+
+        /// <summary>Deletes an entry, returning false on a reader-visible 404. A write-only 204 cannot prove prior existence.</summary>
+        Task<bool> TryDeleteAsync(string key, KvDeleteOptions? options = null, CancellationToken cancellationToken = default);
 
         /// <summary>One page of entries, in key order.</summary>
         Task<KvPage> ListAsync(KvListOptions? options = null, CancellationToken cancellationToken = default);

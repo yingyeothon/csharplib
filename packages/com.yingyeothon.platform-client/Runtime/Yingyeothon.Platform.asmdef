@@ -1,0 +1,15 @@
+{
+  "name": "Yingyeothon.Platform",
+  "rootNamespace": "Yingyeothon.Platform",
+  "references": [
+    "Yingyeothon.Codec",
+    "Yingyeothon.Logger",
+    "Yingyeothon.KvStore"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "autoReferenced": true,
+  "noEngineReferences": true
+}

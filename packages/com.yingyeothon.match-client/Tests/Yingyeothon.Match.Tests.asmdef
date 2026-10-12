@@ -1,0 +1,26 @@
+{
+  "name": "Yingyeothon.Match.Tests",
+  "rootNamespace": "Yingyeothon.Match.Tests",
+  "references": [
+    "Yingyeothon.Platform",
+    "Yingyeothon.Gamebase.Client",
+    "Yingyeothon.Codec",
+    "Yingyeothon.Logger",
+    "Yingyeothon.KvStore",
+    "Yingyeothon.Match"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": true,
+  "autoReferenced": false,
+  "noEngineReferences": false,
+  "precompiledReferences": [
+    "nunit.framework.dll"
+  ],
+  "defineConstraints": [
+    "UNITY_INCLUDE_TESTS"
+  ]
+}

@@ -173,8 +173,9 @@ Whichever you use:
 - **On WebGL the service answers the service calls since 2026-10-01.**
   `FetchConfigAsync`, the exchanges and `VerifyAsync` are cross-origin, and the auth
   service answers any origin without credentials (dev and prod); pass
-  `AuthUnityWebRequestTransport.Instance` as the transport. No WebGL player has made
-  them yet. CORS only lets the browser read the reply — the allowlist and the nonce
+  `AuthUnityWebRequestTransport.Instance` as the transport. A Unity 6 Chrome WebGL
+  player recorded `FetchConfigAsync` → `ok=True` on 2026-10-12
+  ([the run](../rules/manual-verification.md#the-game-kit-browser-and-dev-run)). CORS only lets the browser read the reply — the allowlist and the nonce
   above are unchanged — and the browser flow needs none of these calls, so it stays
   the usual sign-in there: a page has no provider credential to exchange unless the
   provider's own web SDK hands it one.
@@ -323,3 +324,12 @@ behavioural reason.
 Frames allocate per parse. The gateway coalesces positions into one batch per `tick`
 (200 ms by default), so this is tick-rate work rather than frame-rate work — measure
 before pooling. Avoid LINQ in handlers you expect to run every tick.
+
+## Game kit runner
+
+Create the kit with the KV UnityWebRequestTransport and the auth Unity transport,
+then import Game Kit Quickstart and bind it to GameKitRunner. Its separate Unity
+assembly drives Poll and foreground state. Scene destruction transfers the kit to
+a temporary persistent runner until ShutdownAsync completes.
+The optional Firebase Messaging sample in game-kit has a separate asmdef and needs
+YYT_FIREBASE_MESSAGING plus the Firebase Unity SDK. See [push](push.md).

@@ -1,0 +1,24 @@
+{
+  "name": "Yingyeothon.Platform.Tests",
+  "rootNamespace": "Yingyeothon.Platform.Tests",
+  "references": [
+    "Yingyeothon.Codec",
+    "Yingyeothon.Logger",
+    "Yingyeothon.KvStore",
+    "Yingyeothon.Platform"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": true,
+  "autoReferenced": false,
+  "noEngineReferences": false,
+  "precompiledReferences": [
+    "nunit.framework.dll"
+  ],
+  "defineConstraints": [
+    "UNITY_INCLUDE_TESTS"
+  ]
+}

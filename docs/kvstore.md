@@ -34,8 +34,8 @@ A collection is a project resource, created on the project's page in the
 | `feedback` | `team` | `project` | the console only | every player — a write-only inbox |
 
 The scopes are `team` (console and CLI; the API refuses), `project` (any credential of
-the project) and `user` (each player on its own namespace, the server key on
-anyone's). A `writeScope` of `user` is what puts entries under `/u/{ownerId}`; the
+the project), `server` (server credentials only) and `user` (each player on its own
+namespace, the server key on anyone's). Either scope being `user` puts entries under `/u/{ownerId}`; the
 matrix and the `encrypted` flag are in `service/docs/kvstore.md`. `InfoAsync` reads a
 collection's shape back, which is how a client learns whether to use the shared
 namespace or `Mine` before it guesses wrong.
@@ -169,3 +169,18 @@ only `GET` its own row. For state a player writes itself, use a `user`-scoped
 collection: its own entries, versioned, with `IfMatch` for a compare-and-set. **A
 player-writable collection is not the place for state the server must vouch for**
 (currency, inventory) — a game server writes that to `/s/*` directly.
+
+## 8. Server scopes and mail
+
+Collection metadata tolerates future scopes as `KvScope.Unknown`; this grants no
+permission. `Server` is a server-only scope. Never embed a server credential in a game.
+Use `KvCollectionInfo.IsUserNamespace` to identify owner paths when either scope is
+user, including player mail (`readScope: user`, `writeScope: project`).
+
+For player mail, put a new `senderId:letterId` key in `Owner(recipient)` without
+conditional headers. The server stamps the authenticated writer, enforces create-only
+writes and refuses `exists` or `sender_full`. Read `KvEntry.From` / `UpdatedAt` or
+`KvListEntry.From` for the stamp. The SDK does not substitute a claimed sender for it.
+
+Counter `Min` / `Max` bounds apply only to the current increment; `out_of_range`
+means no write occurred. `ServerTimeAsync` reads UTC platform time without a bearer.

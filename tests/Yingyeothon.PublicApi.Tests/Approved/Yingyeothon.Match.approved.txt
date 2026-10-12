@@ -1,0 +1,45 @@
+  DeferredMatchClient.Create(DeferredMatchClientOptions) : IDeferredMatchClient
+  DeferredMatchClientOptions.ChannelId : String get set
+  DeferredMatchClientOptions.Http : PlatformClientOptions get set
+  DeferredMatchClientOptions.ctor()
+  IDeferredMatchClient.AcceptAsync(CancellationToken?) : Task<MatchTicket>
+  IDeferredMatchClient.CancelAsync(CancellationToken?) : Task
+  IDeferredMatchClient.DeclineAsync(CancellationToken?) : Task<MatchTicket>
+  IDeferredMatchClient.StatusAsync(CancellationToken?) : Task<MatchTicket>
+  IDeferredMatchClient.SubmitAsync(CancellationToken?) : Task<MatchTicket>
+  ILiveMatchClient.Cancel() : Void
+  ILiveMatchClient.FindAsync(CancellationToken?) : Task<MatchResult>
+  LiveMatchClient.Create(LiveMatchClientOptions) : ILiveMatchClient
+  LiveMatchClientOptions.ChannelId : String get set
+  LiveMatchClientOptions.Clock : IClock get set
+  LiveMatchClientOptions.TimeoutMillis : Double get set
+  LiveMatchClientOptions.Token : String get set
+  LiveMatchClientOptions.Url : String get set
+  LiveMatchClientOptions.WebSocketFactory : IWebSocketFactory get set
+  LiveMatchClientOptions.ctor()
+  MatchResult.MatchId : String get
+  MatchResult.Members : IReadOnlyList<String> get
+  MatchResult.Partial : Boolean get
+  MatchResult.Raw : JsonValue get
+  MatchResult.Result : JsonValue get
+  MatchResult.ctor(JsonValue)
+  MatchTicket.Raw : JsonValue get
+  MatchTicket.Result : MatchResult get
+  MatchTicket.State : MatchTicketState get
+  MatchTicket.ctor(JsonValue)
+  MatchTicketState.Confirmed : MatchTicketState
+  MatchTicketState.Declined : MatchTicketState
+  MatchTicketState.Expired : MatchTicketState
+  MatchTicketState.Failed : MatchTicketState
+  MatchTicketState.Proposed : MatchTicketState
+  MatchTicketState.Waiting : MatchTicketState
+  MatchTicketState.value__ : Int32
+class DeferredMatchClientOptions
+class LiveMatchClientOptions
+class MatchResult
+class MatchTicket
+enum MatchTicketState
+interface IDeferredMatchClient
+interface ILiveMatchClient
+static class DeferredMatchClient
+static class LiveMatchClient

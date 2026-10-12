@@ -1,0 +1,16 @@
+{
+  "name": "com.yingyeothon.platform-client",
+  "version": "0.2.0",
+  "displayName": "Yingyeothon.Platform",
+  "description": "Yingyeothon.Platform client library for yyt.",
+  "unity": "2021.3",
+  "author": {
+    "name": "yingyeothon",
+    "url": "https://github.com/yingyeothon"
+  },
+  "dependencies": {
+    "com.yingyeothon.codec": "0.2.0",
+    "com.yingyeothon.logger": "0.2.0",
+    "com.yingyeothon.kvstore-client": "0.2.0"
+  }
+}

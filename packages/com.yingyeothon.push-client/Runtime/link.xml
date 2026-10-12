@@ -1,0 +1,6 @@
+<linker>
+  <assembly fullname="Yingyeothon.Platform" preserve="all" />
+  <assembly fullname="Yingyeothon.Codec" preserve="all" />
+  <assembly fullname="Yingyeothon.KvStore" preserve="all" />
+  <assembly fullname="Yingyeothon.Push" preserve="all" />
+</linker>

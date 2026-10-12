@@ -186,3 +186,13 @@ so in the same message.
   client** — `docs/kvstore.md` § 7 says what a game uses instead.
 - The gateway wire protocol is owned by the `service` repository. When it changes,
   this SDK follows it — never the other way round.
+
+## Purpose-shaped clients (2026-10-12)
+
+The user approved separate platform-client, match-client, push-client and game-kit
+packages, plus opt-in Firebase Unity samples. Use player credentials only; server
+send APIs remain outside the client surface. New pumped clients settle their public
+tasks and events inside Poll. Game-kit owns its lower-level pumps. The user approved
+implementing all C# waves defined in `service/docs/game-kit-design.md` § Delivery
+(the integration guide is `docs/game-kit.md`) before one integrated release without waiting on the other
+language repositories' wave tags.

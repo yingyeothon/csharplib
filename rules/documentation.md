@@ -40,6 +40,10 @@ Current owners, so a new page does not take one over by accident:
 - `assets.md` — asset bundles: their shapes, the manifest pattern and the console's path
   rule, a ranged read and a change under it, the Unity specifics, and *why* a game meets
   each error code; what each code means is the package README's
+- `platform.md` — wire clients for time, boards, social and presence
+- `matchmaking.md` — live/deferred matchmaking integration and polling
+- `push.md` — Android registration, topic lifecycle and SDK adapter setup
+- `game-kit.md` — purpose modules, pump lifecycle, conditional save and turns recovery
 - `troubleshooting.md` — symptom → the one check → the link. Not a second explanation
 
 ## Package READMEs

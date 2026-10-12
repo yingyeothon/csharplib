@@ -108,8 +108,9 @@ The client holds no state, so its calls may be made from any thread the transpor
 `AuthHttpClientTransport.Default` any, `AuthUnityWebRequestTransport` the main thread
 only. A task resumes on the caller's synchronization context.
 
-**On WebGL the service answers every call since 2026-10-01; no WebGL player has made
-them yet.** `FetchConfigAsync`, both exchanges and `VerifyAsync` are cross-origin calls,
+**The service has answered cross-origin calls since 2026-10-01.** A Unity 6
+Chrome WebGL player recorded `FetchConfigAsync` → `ok=True` on 2026-10-12
+([the run](../../rules/manual-verification.md#the-game-kit-browser-and-dev-run)). `FetchConfigAsync`, both exchanges and `VerifyAsync` are cross-origin calls,
 and the auth service answers any origin (the request's `Origin` echoed back in
 `Access-Control-Allow-Origin`, no credentials) on dev and prod. CORS only lets the
 browser read the reply: the redirect allowlist, the nonce check and the service's own

@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+<PropertyGroup><AssemblyName>Yingyeothon.GameKit</AssemblyName><RootNamespace>Yingyeothon.GameKit</RootNamespace><PackageId>Yingyeothon.GameKit</PackageId><Description>Yingyeothon.GameKit client library</Description></PropertyGroup>
+<ItemGroup><Compile Include="Runtime/**/*.cs" Exclude="Runtime/Unity/**/*.cs" /></ItemGroup>
+<ItemGroup><ProjectReference Include="../com.yingyeothon.platform-client/Yingyeothon.Platform.csproj" /><ProjectReference Include="../com.yingyeothon.match-client/Yingyeothon.Match.csproj" /><ProjectReference Include="../com.yingyeothon.push-client/Yingyeothon.Push.csproj" /><ProjectReference Include="../com.yingyeothon.gamebase-client/Yingyeothon.Gamebase.Client.csproj" /><ProjectReference Include="../com.yingyeothon.auth-client/Yingyeothon.Auth.csproj" /><ProjectReference Include="../com.yingyeothon.kvstore-client/Yingyeothon.KvStore.csproj" /><ProjectReference Include="../com.yingyeothon.codec/Yingyeothon.Codec.csproj" /><ProjectReference Include="../com.yingyeothon.logger/Yingyeothon.Logger.csproj" /></ItemGroup>
+</Project>

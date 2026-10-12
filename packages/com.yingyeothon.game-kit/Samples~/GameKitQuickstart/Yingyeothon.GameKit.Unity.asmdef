@@ -1,0 +1,10 @@
+{
+  "name": "Yingyeothon.GameKit.Unity",
+  "rootNamespace": "Yingyeothon.GameKit",
+  "references": [
+    "Yingyeothon.GameKit",
+    "Yingyeothon.Platform"
+  ],
+  "autoReferenced": true,
+  "noEngineReferences": false
+}

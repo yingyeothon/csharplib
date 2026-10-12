@@ -1,0 +1,16 @@
+{
+  "name": "com.yingyeothon.push-client",
+  "version": "0.2.0",
+  "displayName": "Yingyeothon.Push",
+  "description": "Yingyeothon.Push client library for yyt.",
+  "unity": "2021.3",
+  "author": {
+    "name": "yingyeothon",
+    "url": "https://github.com/yingyeothon"
+  },
+  "dependencies": {
+    "com.yingyeothon.platform-client": "0.2.0",
+    "com.yingyeothon.codec": "0.2.0",
+    "com.yingyeothon.kvstore-client": "0.2.0"
+  }
+}

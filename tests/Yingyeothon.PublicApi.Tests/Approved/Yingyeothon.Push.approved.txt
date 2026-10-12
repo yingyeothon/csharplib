@@ -1,0 +1,18 @@
+  IPushClient.RegisterAsync(PushRegisterOptions, CancellationToken?) : Task
+  IPushClient.UnregisterAsync(String, CancellationToken?) : Task
+  PushClient.Classify(IReadOnlyDictionary<String, String>) : PushMessageKind
+  PushClient.Create(PushClientOptions) : IPushClient
+  PushClientOptions.ChannelId : String get set
+  PushClientOptions.Http : PlatformClientOptions get set
+  PushClientOptions.ctor()
+  PushMessageKind.Match : PushMessageKind
+  PushMessageKind.Message : PushMessageKind
+  PushMessageKind.value__ : Int32
+  PushRegisterOptions.Project : String get set
+  PushRegisterOptions.Token : String get set
+  PushRegisterOptions.ctor()
+class PushClientOptions
+class PushRegisterOptions
+enum PushMessageKind
+interface IPushClient
+static class PushClient

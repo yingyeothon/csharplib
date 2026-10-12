@@ -46,7 +46,7 @@ await mine.PutAsync("settings", Json.Object().Set("volume", 0.5).Build());
 
 A collection is addressed by its **name** or its `kv_` id, resolved within the
 project the token belongs to. The collection itself is the shared namespace; a
-collection whose write scope is `user` keeps one namespace per owner, reached through
+collection whose read or write scope is `user` keeps one namespace per owner, reached through
 `Mine` (the player the token names) or `Owner(id)` (a server key acting for a player
 or a group such as `party:raid-7`).
 
@@ -86,14 +86,14 @@ player: [the browser run](../../rules/manual-verification.md#the-webgl-browser-r
 
 ## Public API
 
-- `KvStoreClient.Create(KvStoreClientOptions)` → `IKvStoreClient`: `Collection(nameOrId)`.
+- `KvStoreClient.Create(KvStoreClientOptions)` → `IKvStoreClient`: `Collection(nameOrId)`, `ServerTimeAsync` (UTC, no token).
   Options: `BaseUrl`, `Token`, `Transport`, `Logger`, `Timeout` (default
   `KvStoreClient.DefaultTimeout`, 15 s).
 - `IKvCollection : IKvNamespace` — `Ref`, `InfoAsync` → `KvCollectionInfo` (`Id`,
   `Name`, `ReadScope`, `WriteScope` as `KvScope`, `Encrypted`, `MaxEntries`,
-  `MaxEntriesPerOwner`), `Mine`, `Owner(ownerId)`.
+  `MaxEntriesPerOwner`, `IsUserNamespace`, `IsPlayerMail`), `Mine`, `Owner(ownerId)`.
 - `IKvNamespace` — `GetAsync`, `GetEntryAsync` → `KvEntry`, `PutAsync(key, value,
-  KvPutOptions?)` → `KvWriteResult`, `DeleteAsync(key, KvDeleteOptions?)`,
+  KvPutOptions?)` → `KvWriteResult`, `DeleteAsync(key, KvDeleteOptions?)`, `TryDeleteAsync` (false on reader-visible 404),
   `ListAsync(KvListOptions?)` → `KvPage` of `KvListEntry` (`KvOrder`),
   `IncrAsync(key, delta, KvIncrOptions?)` → `KvIncrResult`. Every method takes a
   `CancellationToken`.
@@ -139,3 +139,22 @@ message and the `kv request` log line — is tslib's. What differs:
 One importable sample ships with this package: _Package Manager → the package →
 Samples → Import_. `KvStoreSession` is the engine-free half; `KvStoreQuickstart` is the
 `MonoBehaviour`.
+
+## Server scopes, mail and guarded counters
+
+`KvScope.Server` restricts access to server credentials; never ship one in a game.
+A future scope string reads as `KvScope.Unknown`, preserving collection-info reads
+without granting a right. Missing or non-string scopes still fail as `bad_body`.
+
+A mail collection has read scope `user`, and write scope `project` (player mail)
+or `server`. Either user scope puts entries under owner paths. Send player mail
+with `Owner(recipient).PutAsync(senderId + ":" + letterId, value)`: the server
+requires the authenticated sender prefix and makes cross-owner writes create-only.
+Do not add `IfNoneMatch` to that write-only request. Existing keys answer `exists`;
+the sender's collection-wide allowance answers `sender_full`. These are `KvReasons`.
+`KvEntry.From` and `UpdatedAt` read the writer headers; `KvListEntry.From` reads
+the same stamp on list rows. Existing constructors remain available.
+
+`KvIncrOptions.Min` and `Max` are inclusive safe-integer bounds for one operation,
+not stored invariants. Crossing them answers `KvReasons.OutOfRange` without writing.
+Lists have no min/max filter in the service contract.

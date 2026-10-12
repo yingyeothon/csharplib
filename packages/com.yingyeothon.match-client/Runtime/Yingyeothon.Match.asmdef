@@ -1,0 +1,17 @@
+{
+  "name": "Yingyeothon.Match",
+  "rootNamespace": "Yingyeothon.Match",
+  "references": [
+    "Yingyeothon.Platform",
+    "Yingyeothon.Gamebase.Client",
+    "Yingyeothon.Codec",
+    "Yingyeothon.Logger",
+    "Yingyeothon.KvStore"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "autoReferenced": true,
+  "noEngineReferences": true
+}

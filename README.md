@@ -35,6 +35,8 @@ void Update() => lobby.Poll();          // or nothing happens
 | [Errors](docs/errors.md) / [Troubleshooting](docs/troubleshooting.md) | every refusal, close code and symptom |
 | [Key-value store](docs/kvstore.md) | announcements and a player's own record, with the same token |
 | [Asset bundles](docs/assets.md) | files the game ships beside its build, encrypted or not |
+| [Game kit](docs/game-kit.md) | purpose-shaped game modules and pumped lifecycle |
+| [Platform](docs/platform.md) / [Matchmaking](docs/matchmaking.md) / [Push](docs/push.md) | platform routes, tickets and Android registration |
 | [API reference](docs/api/) | generated from the assemblies, gated in CI |
 
 ## Packages
@@ -48,6 +50,10 @@ void Update() => lobby.Poll();          // or nothing happens
 | [com.yingyeothon.kvstore-client](packages/com.yingyeothon.kvstore-client) | `Yingyeothon.KvStore` | Client for the yyt key-value store (`doc.yyt.life/kv/*`) |
 | [com.yingyeothon.auth-client](packages/com.yingyeothon.auth-client) | `Yingyeothon.Auth` | Client for a yyt auth channel: sign-in URL, redirect, exchange, verify |
 | [com.yingyeothon.asset-client](packages/com.yingyeothon.asset-client) | `Yingyeothon.Assets` | Reader for yyt asset bundles on the CDN, decrypting `yyt-enc v1` |
+| [com.yingyeothon.platform-client](packages/com.yingyeothon.platform-client) | `Yingyeothon.Platform` | Pumped game platform client |
+| [com.yingyeothon.match-client](packages/com.yingyeothon.match-client) | `Yingyeothon.Match` | Pumped game platform client |
+| [com.yingyeothon.push-client](packages/com.yingyeothon.push-client) | `Yingyeothon.Push` | Pumped game platform client |
+| [com.yingyeothon.game-kit](packages/com.yingyeothon.game-kit) | `Yingyeothon.GameKit` | Pumped game platform client |
 
 ```mermaid
 graph LR
@@ -59,6 +65,25 @@ graph LR
   auth-client --> logger
   asset-client --> codec
   asset-client --> logger
+  platform-client --> codec
+  platform-client --> kvstore-client
+  match-client --> codec
+  match-client --> kvstore-client
+  push-client --> codec
+  push-client --> kvstore-client
+  game-kit --> codec
+  game-kit --> kvstore-client
+  platform-client --> logger
+  match-client --> platform-client
+  match-client --> gamebase-client
+  match-client --> logger
+  push-client --> platform-client
+  game-kit --> platform-client
+  game-kit --> match-client
+  game-kit --> push-client
+  game-kit --> gamebase-client
+  game-kit --> auth-client
+  game-kit --> logger
   logger --> codec
 ```
 

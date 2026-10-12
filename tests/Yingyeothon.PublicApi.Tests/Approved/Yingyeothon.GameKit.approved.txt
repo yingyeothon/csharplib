@@ -1,0 +1,177 @@
+  GameKit.Create(GameKitOptions) : IGameKit
+  GameKitOptions.AuthTransport : IAuthTransport get set
+  GameKitOptions.Clock : IClock get set
+  GameKitOptions.Config : JsonValue get set
+  GameKitOptions.ContentPollMillis : Double get set
+  GameKitOptions.LoginAdapter : IKitLoginAdapter get set
+  GameKitOptions.MatchCallback : Boolean get set
+  GameKitOptions.MatchPollMillis : Double get set
+  GameKitOptions.MergePolicies : IReadOnlyDictionary<String, Func<JsonValue, JsonValue, JsonValue>> get set
+  GameKitOptions.OfflineQueue : IKitQueueStorage get set
+  GameKitOptions.Provider : String get set
+  GameKitOptions.PushTopics : IKitPushTopics get set
+  GameKitOptions.RedirectUrl : Uri get set
+  GameKitOptions.SocialPollMillis : Double get set
+  GameKitOptions.TokenStorage : IKitTokenStorage get set
+  GameKitOptions.Transport : IHttpTransport get set
+  GameKitOptions.WebSocketFactory : IWebSocketFactory get set
+  GameKitOptions.ctor()
+  IGameKit.Board(String) : IKitBoard
+  IGameKit.Content : IKitContent get
+  IGameKit.Friends : IKitFriends get
+  IGameKit.Mail : IKitMail get
+  IGameKit.Matchmaking : IKitMatchmaking get
+  IGameKit.Push : IKitPush get
+  IGameKit.Room : IKitRoom get
+  IGameKit.Save : IKitSave get
+  IGameKit.Session : IKitSession get
+  IGameKit.SetForeground(Boolean) : Void
+  IGameKit.ShutdownAsync() : Task
+  IGameKit.Turns : IKitTurns get
+  IKitBoard.AroundAsync(String, Int32, CancellationToken?) : Task<JsonValue>
+  IKitBoard.InfoAsync(CancellationToken?) : Task<JsonValue>
+  IKitBoard.MeAsync(String, CancellationToken?) : Task<JsonValue>
+  IKitBoard.SubmitAsync(PlatformScoreOptions, CancellationToken?) : Task<JsonValue>
+  IKitBoard.TopAsync(PlatformBoardPageOptions, CancellationToken?) : Task<JsonValue>
+  IKitContent.GetAsync(String, CancellationToken?) : Task<JsonValue>
+  IKitContent.ListAsync(String?, CancellationToken?) : Task<IReadOnlyList<KvListEntry>>
+  IKitContent.Subscribe(String, Action<JsonValue>) : IDisposable
+  IKitFriends.AcceptAsync(String, CancellationToken?) : Task
+  IKitFriends.BlockAsync(String, CancellationToken?) : Task
+  IKitFriends.DeclineAsync(String, CancellationToken?) : Task
+  IKitFriends.InviteAsync(String, CancellationToken?) : Task
+  IKitFriends.ListAsync(CancellationToken?) : Task<JsonValue>
+  IKitFriends.ProfileAsync(CancellationToken?) : Task<JsonValue>
+  IKitFriends.ProfilesAsync(IReadOnlyList<String>, CancellationToken?) : Task<JsonValue>
+  IKitFriends.RemoveAsync(String, CancellationToken?) : Task
+  IKitFriends.RequestAsync(String, CancellationToken?) : Task
+  IKitFriends.RequestsAsync(CancellationToken?) : Task<JsonValue>
+  IKitFriends.SetProfileAsync(PlatformProfileOptions, CancellationToken?) : Task<JsonValue>
+  IKitFriends.UnblockAsync(String, CancellationToken?) : Task
+  IKitFriends.event Requested : Action<JsonValue>
+  IKitLoginAdapter.OpenAsync(Uri, CancellationToken) : Task<Uri>
+  IKitMail.ClaimAsync(String, CancellationToken?) : Task<KvEntry>
+  IKitMail.ListAsync(CancellationToken?) : Task<IReadOnlyList<KvListEntry>>
+  IKitMail.ReadAsync(String, CancellationToken?) : Task<KvEntry>
+  IKitMail.RemoveAsync(String, CancellationToken?) : Task
+  IKitMail.SendAsync(KitMailSendOptions, CancellationToken?) : Task
+  IKitMail.event Arrived : Action<KvListEntry>
+  IKitMatchmaking.AcceptAsync(CancellationToken?) : Task<MatchTicket>
+  IKitMatchmaking.CancelAsync(CancellationToken?) : Task
+  IKitMatchmaking.DeclineAsync(CancellationToken?) : Task<MatchTicket>
+  IKitMatchmaking.FindAsync(CancellationToken?) : Task<MatchResult>
+  IKitMatchmaking.StatusAsync(CancellationToken?) : Task<MatchTicket>
+  IKitMatchmaking.SubmitAsync(CancellationToken?) : Task<MatchTicket>
+  IKitMatchmaking.event StateChanged : Action<MatchTicket>
+  IKitPush.Receive(IReadOnlyDictionary<String, String>) : Void
+  IKitPush.RegisterAsync(PushRegisterOptions, CancellationToken?) : Task
+  IKitPush.UnregisterAsync(CancellationToken?) : Task
+  IKitPush.event MessageReceived : Action<IReadOnlyDictionary<String, String>>
+  IKitPushTopics.SubscribeAsync(String, CancellationToken) : Task
+  IKitPushTopics.UnsubscribeAsync(String, CancellationToken) : Task
+  IKitQueueStorage.LoadAsync(String, CancellationToken) : Task<IReadOnlyList<JsonValue>>
+  IKitQueueStorage.StoreAsync(String, IReadOnlyList<JsonValue>, CancellationToken) : Task
+  IKitRoom.AcceptAsync(String, CancellationToken?) : Task
+  IKitRoom.ConnectAsync(CancellationToken?) : Task
+  IKitRoom.CreateAsync(CancellationToken?) : Task
+  IKitRoom.DeclineAsync(String, CancellationToken?) : Task
+  IKitRoom.Host : String get
+  IKitRoom.Id : String get
+  IKitRoom.InviteAsync(String, CancellationToken?) : Task
+  IKitRoom.IsHost : Boolean get
+  IKitRoom.LastKnown : JsonValue get
+  IKitRoom.LeaveAsync(CancellationToken?) : Task
+  IKitRoom.Members : IReadOnlyList<PartyMember> get
+  IKitRoom.PublishAsync(JsonValue, CancellationToken?) : Task
+  IKitRoom.SendAsync(String, JsonValue, CancellationToken?) : Task
+  IKitRoom.WhisperAsync(String, String, JsonValue, CancellationToken?) : Task
+  IKitRoom.event BecomeHost : Action<JsonValue>
+  IKitRoom.event EventReceived : Action<KitRoomEvent>
+  IKitRoom.event HostChanged : Action<String>
+  IKitRoom.event Invited : Action<PartyInviteFrame>
+  IKitRoom.event MemberJoined : Action<PartyMember>
+  IKitRoom.event MemberLeft : Action<PartyMember>
+  IKitRoom.event MemberOnline : Action<PartyMember>
+  IKitRoom.event Refused : Action<KitException>
+  IKitRoom.event StateReceived : Action<JsonValue>
+  IKitSave.AddAsync(String, Int64, KvIncrOptions?, CancellationToken?) : Task<Int64>
+  IKitSave.ClaimOnceAsync(String, Int32, CancellationToken?) : Task<Boolean>
+  IKitSave.FlushAsync(CancellationToken?) : Task
+  IKitSave.LoadAsync(String, CancellationToken?) : Task<JsonValue>
+  IKitSave.PendingCount : Int32 get
+  IKitSave.RemoveAsync(String, CancellationToken?) : Task
+  IKitSave.StoreAsync(String, JsonValue, KitSaveOptions?, CancellationToken?) : Task
+  IKitSave.UpdateAsync(String, Func<JsonValue, JsonValue>, KitSaveOptions?, CancellationToken?) : Task
+  IKitSession.ExpiresAt : Nullable<Int64> get
+  IKitSession.FromTokenAsync(String, CancellationToken?) : Task
+  IKitSession.Now() : Double
+  IKitSession.RestoreAsync(CancellationToken?) : Task
+  IKitSession.SignInAsync(CancellationToken?) : Task
+  IKitSession.SignOutAsync(CancellationToken?) : Task
+  IKitSession.Token : String get
+  IKitSession.UserId : String get
+  IKitSession.event Expiring : Action
+  IKitSession.event SignedOut : Action
+  IKitTokenStorage.ClearAsync(CancellationToken) : Task
+  IKitTokenStorage.LoadAsync(CancellationToken) : Task<String>
+  IKitTokenStorage.StoreAsync(String, CancellationToken) : Task
+  IKitTurnGame.Elapsed : IReadOnlyDictionary<String, Double> get
+  IKitTurnGame.FinishAsync(JsonValue, CancellationToken?) : Task
+  IKitTurnGame.Frozen : Boolean get
+  IKitTurnGame.GameId : String get
+  IKitTurnGame.Index : Int32 get
+  IKitTurnGame.ResyncAsync(CancellationToken?) : Task
+  IKitTurnGame.State : JsonValue get
+  IKitTurnGame.SubmitAsync(JsonValue, CancellationToken?) : Task
+  IKitTurnGame.event Mismatch : Action
+  IKitTurnGame.event PersistenceFailed : Action<KitException>
+  IKitTurnGame.event Turn : Action<JsonValue>
+  IKitTurns.StartAsync(KitTurnsOptions, CancellationToken?) : Task<IKitTurnGame>
+  KitException.Code : String get
+  KitException.Module : String get
+  KitException.Retryable : Boolean get
+  KitException.ctor(String, String)
+  KitJson.Canonicalize(JsonValue) : String
+  KitJson.Hash(JsonValue) : String
+  KitMailSendOptions.To : String get set
+  KitMailSendOptions.Ttl : Nullable<Int32> get set
+  KitMailSendOptions.Value : JsonValue get set
+  KitMailSendOptions.ctor()
+  KitRoomEvent.Data : JsonValue get
+  KitRoomEvent.From : String get
+  KitRoomEvent.Name : String get
+  KitRoomEvent.ctor(String, String, JsonValue)
+  KitSaveOptions.Merge : Func<JsonValue, JsonValue, JsonValue> get set
+  KitSaveOptions.Ttl : Nullable<Int32> get set
+  KitSaveOptions.ctor()
+  KitTurnsOptions.Apply : Func<JsonValue, JsonValue, String, JsonValue> get set
+  KitTurnsOptions.Initial : JsonValue get set
+  KitTurnsOptions.LogTtlSeconds : Int32 get set
+  KitTurnsOptions.MaxLogBytes : Int32 get set
+  KitTurnsOptions.Persist : Boolean get set
+  KitTurnsOptions.Players : IReadOnlyList<String> get set
+  KitTurnsOptions.ctor()
+class GameKitOptions
+class KitException
+class KitMailSendOptions
+class KitRoomEvent
+class KitSaveOptions
+class KitTurnsOptions
+interface IGameKit
+interface IKitBoard
+interface IKitContent
+interface IKitFriends
+interface IKitLoginAdapter
+interface IKitMail
+interface IKitMatchmaking
+interface IKitPush
+interface IKitPushTopics
+interface IKitQueueStorage
+interface IKitRoom
+interface IKitSave
+interface IKitSession
+interface IKitTokenStorage
+interface IKitTurnGame
+interface IKitTurns
+static class GameKit
+static class KitJson

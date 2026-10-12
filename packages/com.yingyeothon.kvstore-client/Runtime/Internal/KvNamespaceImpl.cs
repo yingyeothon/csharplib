@@ -33,7 +33,11 @@ namespace Yingyeothon.KvStore
             }
 
             var version = KvReplies.VersionOf(reply) ?? throw KvReplies.BadBody(reply);
-            return new KvEntry(KvReplies.Json(reply), version, KvReplies.ExpiresAtOf(reply));
+            var from = KvReplies.Header(reply, "X-KV-From");
+            var at = KvReplies.Header(reply, "X-KV-At");
+            return new KvEntry(KvReplies.Json(reply), version, KvReplies.ExpiresAtOf(reply),
+                string.IsNullOrEmpty(from) ? null : from,
+                at == null ? null : KvReplies.Digits(at.Trim()) ?? throw KvReplies.BadBody(reply));
         }
 
         public async Task<KvWriteResult> PutAsync(
@@ -95,6 +99,9 @@ namespace Yingyeothon.KvStore
         }
 
         public async Task DeleteAsync(string key, KvDeleteOptions? options = null, CancellationToken cancellationToken = default)
+            => await TryDeleteAsync(key, options, cancellationToken);
+
+        public async Task<bool> TryDeleteAsync(string key, KvDeleteOptions? options = null, CancellationToken cancellationToken = default)
         {
             CheckKey(key);
             var headers = new List<KeyValuePair<string, string>>(1);
@@ -112,6 +119,7 @@ namespace Yingyeothon.KvStore
             {
                 throw KvReplies.Error(reply);
             }
+            return reply.Status != 404;
         }
 
         public async Task<KvPage> ListAsync(KvListOptions? options = null, CancellationToken cancellationToken = default)
@@ -170,7 +178,8 @@ namespace Yingyeothon.KvStore
                     KvReplies.Integer(reply, row, "bytes"),
                     KvReplies.OptionalInteger(reply, row, "expiresAt"),
                     KvReplies.Integer(reply, row, "updatedAt"),
-                    value);
+                    value,
+                    row.GetString("from"));
             }
 
             return new KvPage(entries, body.GetString("nextCursor"));
@@ -190,7 +199,27 @@ namespace Yingyeothon.KvStore
             }
 
             var ttl = options == null ? null : CheckTtl(options.Ttl, nameof(options));
-            var body = Json.Stringify(Json.Object().Set("incr", (double)delta).Build());
+            var min = options?.Min;
+            var max = options?.Max;
+            if (min < -KvRules.MaxSafeInteger || min > KvRules.MaxSafeInteger
+                || max < -KvRules.MaxSafeInteger || max > KvRules.MaxSafeInteger
+                || (min != null && max != null && min > max))
+            {
+                throw new ArgumentException("Min/Max must be safe integers with Min <= Max", nameof(options));
+            }
+
+            var builder = Json.Object().Set("incr", (double)delta);
+            if (min != null)
+            {
+                builder.Set("min", (double)min.Value);
+            }
+
+            if (max != null)
+            {
+                builder.Set("max", (double)max.Value);
+            }
+
+            var body = Json.Stringify(builder.Build());
             var reply = await _client.SendAsync(
                 "PATCH",
                 KvRoutes.Incr,

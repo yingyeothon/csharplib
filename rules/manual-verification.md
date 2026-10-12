@@ -228,10 +228,9 @@ public static class SampleImport
 {
     public static void ImportAll()
     {
-        foreach (var package in new[] { "com.yingyeothon.codec", "com.yingyeothon.event-broker",
-                                        "com.yingyeothon.gamebase-client", "com.yingyeothon.kvstore-client",
-                                        "com.yingyeothon.auth-client", "com.yingyeothon.asset-client",
-                                        "com.yingyeothon.logger" })
+        foreach (var package in UnityEditor.PackageManager.PackageInfo.GetAllRegisteredPackages()
+                     .Where(p => p.name.StartsWith("com.yingyeothon.", System.StringComparison.Ordinal))
+                     .Select(p => p.name))
         {
             var samples = Sample.FindByPackage(package, string.Empty).ToList();
             Debug.Log($"[SAMPLES] {package} count={samples.Count}");
@@ -778,13 +777,6 @@ Not covered, and each is a real gap rather than a formality:
   ([The WebGL fetcher run](#the-webgl-fetcher-run)).
 - **The auth provider hop in a browser.** No dev auth channel has a provider, so the
   browser flow ran with a synthesized return.
-- **The service calls from a WebGL player since the service sends CORS headers**
-  (2026-10-01). Both browser runs that made the call ([Last verified](#last-verified)
-  at `d8ce422` and [The WebGL browser run](#the-webgl-browser-run)) predate that and
-  printed `network (0)`, the recipe's expectation then, so `FetchConfigAsync` →
-  `ok=True` is a recipe expectation no run has recorded; drop this once one does, and
-  rewrite the README § Threads and WebGL sentence that says no WebGL player has made
-  them.
 - **`CorsSafe` in Firefox and Safari.** Only Chrome has run it.
 - The provider exchange with a **real** GitHub access token. There is no provider
   credential here, so only its refusal path was exercised.
@@ -807,3 +799,40 @@ Use the injection seams rather than standing up servers:
 
 Never add a verification-only member to the public API. If a state is unreachable
 through the public surface, that is a design finding.
+
+## The game-kit browser and dev run
+
+**2026-10-12**, working tree based on `3e4bfd3`, Ubuntu 24.04, Unity Personal.
+This is a partial verification record, not the full release matrix. Scratch copies
+never symlinked the packages. Every run prints booleans/codes only.
+
+- Unity 2021.3.45f2: the first KV extension EditMode run passed 897, failed 0,
+  ignored 12. A later run including the new clients passed 987, failed 0, ignored 12.
+- Unity 6000.0.25f1: final new-client EditMode run passed 1017, failed 0, ignored 12;
+  the Game Kit Quickstart sample compiled in its own Unity assembly after adding
+  its explicit Platform reference. The final Unity 2021 run also passed 1017,
+  failed 0, ignored 12. Both include the lifecycle regressions and kit-context observer.
+- Unity 6 standalone Mono and IL2CPP, stripping High: built and ran. Both printed
+  `FetchConfigAsync ok=True`, `KvTime ok=True`, `PlatformTime ok=True`,
+  `KitTime ok=True`, `KitHash ok=True`, `Shutdown ok=True`, and DONE.
+  The refreshed Mono, IL2CPP and WebGL probes also passed `PushLifecycle ok=True`
+  for register, unregister and same-device registration inside Poll.
+  `-nographics` crashed in Unity's X11 input-driver check; Xvfb + llvmpipe and
+  `PlayerSettings.runInBackground = true` ran the probe to completion.
+- Unity 6 WebGL, stripping High, Chrome with SwiftShader: the same checks
+  printed true and DONE. This closes the previously unrecorded post-CORS
+  FetchConfigAsync browser call, but not provider exchange or provider redirect hops.
+- SDK console against existing dev channels: anonymous server time, collection
+  metadata, guarded counter refusal and writer stamps passed. Temporary KV keys
+  were deleted. Game-kit session/time/save, live matched.members, two-member room
+  formation, host snapshot and turns replication, social requests GET, leaderboard
+  info/submit/rank and push deletion of a nonexistent synthetic device token passed.
+  Lobby memberships and KV keys were cleaned. One synthetic leaderboard score remains
+  awaiting a writable dev console profile; global admin deletion was refused.
+- Existing deferred dev channel: two synthetic players submitted, reached proposed,
+  accepted and read confirmed with the same two members. Tickets were canceled and
+  clients shut down. No infrastructure/channel configuration was changed.
+
+Not verified by this partial run: actual Android/Firebase receipt, Firefox/Safari,
+real provider credentials, real CDN from a browser, and the remaining recipe checks
+listed under Not covered. No release tag is implied by this record.

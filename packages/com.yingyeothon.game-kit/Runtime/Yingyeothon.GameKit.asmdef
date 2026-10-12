@@ -1,0 +1,20 @@
+{
+  "name": "Yingyeothon.GameKit",
+  "rootNamespace": "Yingyeothon.GameKit",
+  "references": [
+    "Yingyeothon.Platform",
+    "Yingyeothon.Match",
+    "Yingyeothon.Push",
+    "Yingyeothon.Gamebase.Client",
+    "Yingyeothon.Auth",
+    "Yingyeothon.KvStore",
+    "Yingyeothon.Codec",
+    "Yingyeothon.Logger"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "autoReferenced": true,
+  "noEngineReferences": true
+}

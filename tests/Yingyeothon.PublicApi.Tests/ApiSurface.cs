@@ -35,6 +35,10 @@ namespace Yingyeothon.PublicApi.Tests
                 yield return new TestCaseData("Yingyeothon.KvStore", "com.yingyeothon.kvstore-client");
                 yield return new TestCaseData("Yingyeothon.Auth", "com.yingyeothon.auth-client");
                 yield return new TestCaseData("Yingyeothon.Assets", "com.yingyeothon.asset-client");
+                yield return new TestCaseData("Yingyeothon.GameKit", "com.yingyeothon.game-kit");
+                yield return new TestCaseData("Yingyeothon.Push", "com.yingyeothon.push-client");
+                yield return new TestCaseData("Yingyeothon.Match", "com.yingyeothon.match-client");
+                yield return new TestCaseData("Yingyeothon.Platform", "com.yingyeothon.platform-client");
             }
         }
 

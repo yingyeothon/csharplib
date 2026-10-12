@@ -21,9 +21,13 @@
   IKvNamespace.IncrAsync(String, Int64, KvIncrOptions?, CancellationToken?) : Task<KvIncrResult>
   IKvNamespace.ListAsync(KvListOptions?, CancellationToken?) : Task<KvPage>
   IKvNamespace.PutAsync(String, JsonValue, KvPutOptions?, CancellationToken?) : Task<KvWriteResult>
+  IKvNamespace.TryDeleteAsync(String, KvDeleteOptions?, CancellationToken?) : Task<Boolean>
   IKvStoreClient.Collection(String) : IKvCollection
+  IKvStoreClient.ServerTimeAsync(CancellationToken?) : Task<DateTimeOffset>
   KvCollectionInfo.Encrypted : Boolean get
   KvCollectionInfo.Id : String get
+  KvCollectionInfo.IsPlayerMail : Boolean get
+  KvCollectionInfo.IsUserNamespace : Boolean get
   KvCollectionInfo.MaxEntries : Int32 get
   KvCollectionInfo.MaxEntriesPerOwner : Int32 get
   KvCollectionInfo.Name : String get
@@ -33,9 +37,12 @@
   KvDeleteOptions.IfMatch : Nullable<Int64> get set
   KvDeleteOptions.ctor()
   KvEntry.ExpiresAt : Nullable<Int64> get
+  KvEntry.From : String get
+  KvEntry.UpdatedAt : Nullable<Int64> get
   KvEntry.Value : JsonValue get
   KvEntry.Version : Int64 get
   KvEntry.ctor(JsonValue, Int64, Nullable<Int64>)
+  KvEntry.ctor(JsonValue, Int64, Nullable<Int64>, String, Nullable<Int64>)
   KvErrorCodes.BadBody : String
   KvErrorCodes.BadRequest : String
   KvErrorCodes.Conflict : String
@@ -47,6 +54,8 @@
   KvErrorCodes.Timeout : String
   KvErrorCodes.Unauthorized : String
   KvErrorCodes.Unavailable : String
+  KvIncrOptions.Max : Nullable<Int64> get set
+  KvIncrOptions.Min : Nullable<Int64> get set
   KvIncrOptions.Ttl : Nullable<Int32> get set
   KvIncrOptions.ctor()
   KvIncrResult.ExpiresAt : Nullable<Int64> get
@@ -55,12 +64,14 @@
   KvIncrResult.ctor(Int64, Int64, Nullable<Int64>)
   KvListEntry.Bytes : Int64 get
   KvListEntry.ExpiresAt : Nullable<Int64> get
+  KvListEntry.From : String get
   KvListEntry.Key : String get
   KvListEntry.Owner : String get
   KvListEntry.UpdatedAt : Int64 get
   KvListEntry.Value : JsonValue get
   KvListEntry.Version : Int64 get
   KvListEntry.ctor(String, String, Int64, Int64, Nullable<Int64>, Int64, JsonValue)
+  KvListEntry.ctor(String, String, Int64, Int64, Nullable<Int64>, Int64, JsonValue, String)
   KvListOptions.Cursor : String get set
   KvListOptions.Limit : Nullable<Int32> get set
   KvListOptions.Order : Nullable<KvOrder> get set
@@ -80,9 +91,12 @@
   KvReasons.CollectionFull : String
   KvReasons.Encrypted : String
   KvReasons.EncryptionNotConfigured : String
+  KvReasons.Exists : String
   KvReasons.NotANumber : String
+  KvReasons.OutOfRange : String
   KvReasons.Overflow : String
   KvReasons.OwnerFull : String
+  KvReasons.SenderFull : String
   KvReasons.ValueUnreadable : String
   KvReasons.WrongNamespace : String
   KvRules.IsCollectionId(String) : Boolean
@@ -99,7 +113,9 @@
   KvRules.MinListLimit : Int32
   KvRules.MinTtlSeconds : Int32
   KvScope.Project : KvScope
+  KvScope.Server : KvScope
   KvScope.Team : KvScope
+  KvScope.Unknown : KvScope
   KvScope.User : KvScope
   KvScope.value__ : Int32
   KvStoreClient.Create(KvStoreClientOptions) : IKvStoreClient

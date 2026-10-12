@@ -1,0 +1,8 @@
+<linker>
+  <assembly fullname="Yingyeothon.Platform" preserve="all" />
+  <assembly fullname="Yingyeothon.Gamebase.Client" preserve="all" />
+  <assembly fullname="Yingyeothon.Codec" preserve="all" />
+  <assembly fullname="Yingyeothon.Logger" preserve="all" />
+  <assembly fullname="Yingyeothon.KvStore" preserve="all" />
+  <assembly fullname="Yingyeothon.Match" preserve="all" />
+</linker>

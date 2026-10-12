@@ -1,0 +1,16 @@
+{
+  "name": "Yingyeothon.GameKit.Firebase",
+  "rootNamespace": "Yingyeothon.GameKit.Samples",
+  "references": [
+    "Yingyeothon.GameKit",
+    "Yingyeothon.Push",
+    "Firebase.App",
+    "Firebase.Messaging",
+    "Yingyeothon.Platform"
+  ],
+  "defineConstraints": [
+    "YYT_FIREBASE_MESSAGING"
+  ],
+  "autoReferenced": true,
+  "noEngineReferences": false
+}

@@ -1,0 +1,24 @@
+{
+  "name": "Yingyeothon.Push.Tests",
+  "rootNamespace": "Yingyeothon.Push.Tests",
+  "references": [
+    "Yingyeothon.Platform",
+    "Yingyeothon.Codec",
+    "Yingyeothon.KvStore",
+    "Yingyeothon.Push"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": true,
+  "autoReferenced": false,
+  "noEngineReferences": false,
+  "precompiledReferences": [
+    "nunit.framework.dll"
+  ],
+  "defineConstraints": [
+    "UNITY_INCLUDE_TESTS"
+  ]
+}

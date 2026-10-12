@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+<PropertyGroup><AssemblyName>Yingyeothon.Push</AssemblyName><RootNamespace>Yingyeothon.Push</RootNamespace><PackageId>Yingyeothon.Push</PackageId><Description>Yingyeothon.Push client library</Description></PropertyGroup>
+<ItemGroup><Compile Include="Runtime/**/*.cs" Exclude="Runtime/Unity/**/*.cs" /></ItemGroup>
+<ItemGroup><ProjectReference Include="../com.yingyeothon.platform-client/Yingyeothon.Platform.csproj" /><ProjectReference Include="../com.yingyeothon.codec/Yingyeothon.Codec.csproj" /><ProjectReference Include="../com.yingyeothon.kvstore-client/Yingyeothon.KvStore.csproj" /></ItemGroup>
+</Project>

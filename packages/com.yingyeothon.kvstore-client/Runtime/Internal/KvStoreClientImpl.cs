@@ -47,6 +47,23 @@ namespace Yingyeothon.KvStore
             return new KvCollectionImpl(this, nameOrId);
         }
 
+        public async Task<DateTimeOffset> ServerTimeAsync(CancellationToken cancellationToken = default)
+        {
+            var reply = await SendAsync("GET", "time", "/time", null, null, cancellationToken);
+            if (!KvReplies.IsSuccess(reply))
+            {
+                throw KvReplies.Error(reply);
+            }
+
+            var milliseconds = KvReplies.Integer(reply, KvReplies.Json(reply), "epochMs");
+            if (milliseconds <= 0 || milliseconds > 253402300799999L)
+            {
+                throw KvReplies.BadBody(reply);
+            }
+
+            return DateTimeOffset.FromUnixTimeMilliseconds(milliseconds);
+        }
+
         /// <summary>
         /// Sends one request with the credential attached and returns whatever the
         /// store answered. A throw from the transport, or a timeout, becomes a
@@ -62,9 +79,12 @@ namespace Yingyeothon.KvStore
         {
             cancellationToken.ThrowIfCancellationRequested();
             var all = new List<KeyValuePair<string, string>>(3 + (headers?.Count ?? 0))
+            ;
+            if (route != "time")
             {
-                new KeyValuePair<string, string>("Authorization", _authorization),
-            };
+                all.Add(new KeyValuePair<string, string>("Authorization", _authorization));
+            }
+
             if (body != null)
             {
                 all.Add(new KeyValuePair<string, string>("Content-Type", "application/json"));

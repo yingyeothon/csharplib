@@ -47,6 +47,15 @@ namespace Yingyeothon.KvStore
     /// <summary>The <see cref="KvStoreException.Reason"/> values the store attaches to a refusal.</summary>
     public static class KvReasons
     {
+        /// <summary>409: a create-only mail key already exists.</summary>
+        public const string Exists = "exists";
+
+        /// <summary>409: this sender has filled its collection-wide allowance.</summary>
+        public const string SenderFull = "sender_full";
+
+        /// <summary>409: the counter result would cross a supplied bound.</summary>
+        public const string OutOfRange = "out_of_range";
+
         /// <summary>409: the collection holds <c>maxEntries</c> rows already.</summary>
         public const string CollectionFull = "collection_full";
 
@@ -138,8 +147,8 @@ namespace Yingyeothon.KvStore
         /// <summary>A 401: the token did not verify.</summary>
         public bool IsUnauthorized => Status == 401;
 
-        /// <summary>A 409 whose reason is <see cref="KvReasons.CollectionFull"/> or <see cref="KvReasons.OwnerFull"/>.</summary>
+        /// <summary>A 409 whose reason is <see cref="KvReasons.CollectionFull"/> or <see cref="KvReasons.OwnerFull"/> or <see cref="KvReasons.SenderFull"/>.</summary>
         public bool IsFull => Status == 409
-            && (Reason == KvReasons.CollectionFull || Reason == KvReasons.OwnerFull);
+            && (Reason == KvReasons.CollectionFull || Reason == KvReasons.OwnerFull || Reason == KvReasons.SenderFull);
     }
 }
