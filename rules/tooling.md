@@ -190,3 +190,14 @@ uncommitted work by restoring from Git or guessing. Do not commit the comments. 
 in a scratch copy with one Runtime target framework, copy back only the intended
 source edits, then run the normal dual-target build and full verify-no-changes gate.
 Do not change the production target frameworks to make formatting pass.
+
+## Editor Package Manager scripts
+
+Persist sequential Client.Add progress in SessionState and resume through
+InitializeOnLoad. Package installation recompiles scripts and reloads the domain,
+which clears ordinary static fields and update handlers. Before exiting a headless
+install probe, verify that every expected package is registered.
+
+Terminate scratch processes by exact executable/argument matching, never by a broad
+substring over ps output: the invoking shell contains the cleanup script in its
+arguments and can match itself. Exclude the cleanup process and its parent.

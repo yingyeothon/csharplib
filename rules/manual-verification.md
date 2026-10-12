@@ -421,6 +421,69 @@ run being full unless the record says why it does not matter for a tag. The date
 sections after this one are either partial runs, which say what they cover, or pieces of
 an earlier full run, which say which one.
 
+**2026-10-12**, at commit `41ac320`, Unity Personal, Ubuntu 24.04,
+Unity 2021.3.45f2 and Unity 6000.0.25f1. Embedded test projects came from
+`git archive 41ac320`; consumer projects installed all eleven packages from a bare
+clone pinned to that SHA. The 2021.3 OpenSSL workaround and temporary bee wrapper
+were used. Native players used Xvfb, llvmpipe and runInBackground; the earlier Unity 6
+`-nographics` launch failed in Unity's X11 input-driver check.
+
+| Check | Both editors |
+| --- | --- |
+| EditMode, archived sources and git-URL sources | 1017 passed, 0 failed, 12 named ignored tests |
+| Bare-clone install | 11 packages in PackageCache, 11 Runtime DLLs with NullableContextAttribute markers, 0 immutable-folder omissions |
+| Samples listed/imported | codec 1, event-broker 1, gamebase 3, KV 1, auth 1, asset 1, logger 1, game-kit 2; platform/match/push 0, matching their manifests |
+| Clean sample compile | ScriptAssemblies and Bee removed first; 0 package/sample C# warnings or errors. Only scratch harness warnings remained (nullable annotations and Unity 6 obsolete editor APIs) |
+| Mono and IL2CPP, stripping High | All package factories, an in-memory asset vector, the three Unity transport 302 refusals and 404 controls, four map/broker consumer task shapes, and imported WebGLHttpFetcher checks completed. Default MapAsync printed status=404 offMain=True |
+| WebGL, stripping High, Chrome/SwiftShader | Same factory/vector and consumer task checks; imported fetcher 200/404, size cap, slow-response timeout, redirect and URL refusals, and MapAsync passed. Runtime transports refused redirects as network(0), their 404 controls passed, and 0 redirect targets were followed |
+| Browser Runtime stalled responses | KV/Auth IOException and Asset TimeoutException at roughly two seconds, all bounded=True; the subsequent checks reached DONE |
+| Browser auth client half | BuildStartUrl, nonce in sessionStorage through a jslib, same-tab synthesized return, ParseRedirect of Application.absoluteURL, and foreign nonce refusal passed |
+| Browser no-pool controls | Task.Run, Task.Delay, CancelAfter and WhenAny over an asynchronous-continuation task all remained false; subsequent SDK checks still completed |
+| Browser live encrypted CDN | Both CorsSafe modes: manifest/whole, missing file and wrong-key asset_corrupt passed. CorsSafe true range across two boundaries and tail matched; false ranges/tail refused as http(206), matching the documented unexposed Content-Range behaviour |
+| New pumped-client/kit player checks | Dev FetchConfigAsync, anonymous KV/platform time, adopted kit time, RFC hash, register/unregister/same-device registration and Shutdown all printed true and DONE |
+
+Unity 6 also added every package URL sequentially through Client.Add, retaining
+progress across domain reload; all eleven registered. The git-URL EditMode runs
+exercised the asset conformance vectors in the immutable install. Supplementary broker-only
+probes explicitly separated direct Task-returning and async handlers with ordinary
+and asynchronous continuations. All four combinations ran on the main thread in
+both editors' Mono, IL2CPP and WebGL players; their conclusions are scoped to broker
+results, and the full-player DONE results above come from the complete probe runs.
+
+The changed wire paths ran against existing dev services: KV scope metadata, guarded
+counter refusal, writer stamps and TryDelete present/absent; kit session/time/save,
+live matched.members, room/snapshot/turn replication, social requests GET,
+leaderboard info/submit/rank, nonexistent-device push DELETE and deferred
+submit/propose/accept/confirmed/cancel. KV keys and lobby memberships were cleaned.
+One synthetic score in a different shared team's board still needs that team's active
+owner/member credential for deletion; platform admin override was refused.
+
+Explicit limits: no real Android/Firebase SDK compilation or device receipt (host
+setup unavailable); no actual OAuth provider hop or real provider credential (dev
+has no provider configured); no Safari run on this Linux host. Android/Firebase, real provider flow/credentials
+and Safari remain unverified. The optional Firebase sample remains disabled until its host
+imports/configures that SDK. The browser synthesized return uses a fixed fake token.
+Firefox 157.0.1 also ran the Unity 6 WebGL probe under Xvfb: both CDN modes, nonce
+roundtrip, no-pool controls and DONE passed.
+No previous player row was carried forward because its source was unchanged.
+
+An additional, non-required native Unity 6 Mono CDN attempt failed at certificate
+validation (UnityTls 7/network 0); OpenSSL verified the chain and the .NET asset
+client decrypted the live manifest. No certificate-validation bypass was added.
+The native CDN read is not claimed verified; investigate this separately from the
+passing native vector/redirect checks and browser CDN run.
+
+The temporary encrypted bundle, private key sources, key files, builds, Libraries
+and browser profiles are removed after the run; the original 2021.3 bee backend is
+restored. The remaining recipe gaps below remain explicit.
+
+### The earlier full run
+
+The non-Unity auth wire run on 2026-09-30 used the real AuthHttpClientTransport
+against dev: config, verify with a live and forged token, fake provider token (401),
+wrong credential kind (400), and start with an off-allowlist redirect (403) and an
+allowed nonce-bearing redirect (302). The browser provider hop remains unverified.
+
 **2026-09-30**, at commit `d8ce422`, on Unity Personal, Ubuntu 24.04, with the 2021.3
 workarounds above (the `bee_backend` wrapper was put back and its checksum matched).
 Everything in Unity ran from `git archive` of that commit and from a bare clone of it
@@ -464,8 +527,8 @@ store's and the auth service's live runs were not repeated: `kvstore-client` and
 `asset-client`'s one change outside `Runtime/Unity/` since is `BodyReader.Race`
 (`6ac4ccf`), whose path without a synchronization context — the console app's — keeps
 the old behaviour and is covered by the asset tests; its context path is the WebGL row.
-The provider hop of the auth flow and a stalled server in a browser are in *Not covered*
-below.
+The provider hop remains in *Not covered* below. The stalled Runtime browser
+check was subsequently covered by the current [Last verified](#last-verified) run.
 
 The two editors agreed on every row. When they do not, that is the
 finding — 2021.3 is the floor for a reason ([Which editor](#which-editor)).
@@ -556,7 +619,7 @@ a handler, each completed a frame later both plainly and with
 (`Task.Run completes=False`). The cause is in [unity.md](unity.md#webgl): under
 `ConfigureAwait(false)` the runtime will not inline a continuation on a thread with a
 synchronization context, so it went to the pool. The fix's own run is
-[Last verified](#last-verified), at `d8ce422`.
+[earlier full run](#the-earlier-full-run), at `d8ce422`.
 
 ### The WebGL browser run
 
@@ -746,15 +809,6 @@ Read from the source rather than observed, and marked so on purpose:
 
 Not covered, and each is a real gap rather than a formality:
 
-- **The asset client's conformance vectors under a git-URL install.** Its EditMode run
-  reads them from
-  `Packages/com.yingyeothon.asset-client/Tests/Fixtures`, which only an embedded (copied)
-  package has — the recipe copies them, and a git-URL install does not compile its tests
-  at all. Its wire half is in [Against the dev CDN](#against-the-dev-cdn); auth-client's
-  was checked against `auth-dev` with the real `AuthHttpClientTransport` as committed
-  (2026-09-30): config, verify (a live token and a forged one), a fake provider token
-  (`401`), the wrong credential kind (`400`), and `/start` for a redirect off the
-  allowlist (`403`) and on it with the nonce query (`302` to the provider).
 - **`docs/getting-started.md`'s code compiled in Unity** — only as of the first tag
   ([The first tag, installed](#the-first-tag-installed)). A later edit to its code blocks
   is uncompiled until pasted into a scratch project again. The rest of `docs/` — the
@@ -764,20 +818,9 @@ Not covered, and each is a real gap rather than a formality:
   adds a package the old tag lacked.** The one upgrade run
   ([The second tag, installed](#the-second-tag-installed-and-the-upgrade-to-it)) reopened
   the project in batch mode, with the same seven packages on both tags.
-- **The probe's cancellable-token and `async`-method shapes**
-  ([the WebGL recipe](#run-the-webgl-player-in-a-browser)). No run has recorded them;
-  drop this once one does.
-- **Adding the URLs one at a time in Package Manager.** Every run wrote them into
-  `manifest.json` at once, so the dependency-first order of `docs/getting-started.md`
-  §1 and `docs/unity.md` § Installing, and what Package Manager reports without it, has
-  never been exercised. `UnityEditor.PackageManager.Client.Add` per URL through
-  `-executeMethod` is the headless form of that click.
-- **A stalled server in a browser, for the Runtime transports.** On WebGL only
-  `UnityWebRequest.timeout` bounds a request; only the sample's fetcher has waited it out
-  ([The WebGL fetcher run](#the-webgl-fetcher-run)).
 - **The auth provider hop in a browser.** No dev auth channel has a provider, so the
   browser flow ran with a synthesized return.
-- **`CorsSafe` in Firefox and Safari.** Only Chrome has run it.
+- **`CorsSafe` in Safari.** Chrome and Firefox have run it; Safari is unavailable on this Linux host.
 - The provider exchange with a **real** GitHub access token. There is no provider
   credential here, so only its refusal path was exercised.
 - **The gateway actually sending `4002`.** Not reachable from a client for the reason
@@ -828,7 +871,7 @@ never symlinked the packages. Every run prints booleans/codes only.
   formation, host snapshot and turns replication, social requests GET, leaderboard
   info/submit/rank and push deletion of a nonexistent synthetic device token passed.
   Lobby memberships and KV keys were cleaned. One synthetic leaderboard score remains
-  awaiting a writable dev console profile; global admin deletion was refused.
+  awaiting an active seat in that probe's team; platform admin override was refused.
 - Existing deferred dev channel: two synthetic players submitted, reached proposed,
   accepted and read confirmed with the same two members. Tickets were canceled and
   clients shut down. No infrastructure/channel configuration was changed.

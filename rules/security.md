@@ -196,3 +196,12 @@ wrong.
   a refusal prints the payload; logging a close reason prints what the peer chose;
   logging an exception message built from the input prints the input. Log the decision,
   not the object that carried it.
+
+## Live verification identities
+
+Use resources in a team where the configured console identity has an active seat
+with the operation's required standing. Check that seat before writes whose cleanup
+needs a console secret. Platform admin visibility alone cannot access secrets; an
+active owner seat still works for a globally admin account. Do not diagnose this
+from the global role or repeat login blindly. Prefer owned ephemeral resources, and
+verify cleanup access before writing scores into a shared project's board.
