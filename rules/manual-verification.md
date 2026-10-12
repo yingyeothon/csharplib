@@ -31,8 +31,18 @@ never write to it from here ([workflow.md](workflow.md)).
    `config.mapUrl` and the rest of its settings. If no lobby is active, **ask; never
    create one** — dev channels are shared. (A `morpg-channels.dev.json` this step used to
    name is gone; the CLI is the source.) Never print the token or commit it.
-4. Force a reconnect (close the socket from the other side, or restart the gateway)
-   and watch the backoff and the fresh `hello` arrive.
+4. Force a reconnect through an authorized test connection and watch the backoff
+   and fresh `hello`. To observe the real idle `4002` without changing shared
+   infrastructure, inject a scratch transport that performs a normal validated TLS
+   WebSocket handshake but suppresses protocol pong and sends no application traffic.
+   Delegate the next connection to `WebSocketTransport.Default`. Require an observed
+   `Code == 4002`, `WillReconnect == true`, and a new `hello` connection id; a
+   locally injected close is not live evidence. Read the idle interval from
+   `conn.DefaultLimits` in the gateway source. Run a default-transport control without
+   Poll beyond that interval, then resume Poll and require no close or reconnect and
+   a working application Ping/Pong. Bound both runs; if the handshake fails or the
+   expected state never arrives, clean up, retain the gap and report the failure.
+   Keep credentials outside the repository and close both test connections.
 
 ## Against the dev store
 
@@ -809,26 +819,13 @@ Read from the source rather than observed, and marked so on purpose:
 
 Not covered, and each is a real gap rather than a formality:
 
-- **`docs/getting-started.md`'s code compiled in Unity** — only as of the first tag
-  ([The first tag, installed](#the-first-tag-installed)). A later edit to its code blocks
-  is uncompiled until pasted into a scratch project again. The rest of `docs/` — the
-  alias in `docs/unity.md` § Logging to the editor console among them — has never been
-  pasted at all; only the samples stand in for it.
-- **The upgrade in a running editor, through the Package Manager window, or one that
-  adds a package the old tag lacked.** The one upgrade run
-  ([The second tag, installed](#the-second-tag-installed-and-the-upgrade-to-it)) reopened
-  the project in batch mode, with the same seven packages on both tags.
-- **The auth provider hop in a browser.** No dev auth channel has a provider, so the
-  browser flow ran with a synthesized return.
-- **`CorsSafe` in Safari.** Chrome and Firefox have run it; Safari is unavailable on this Linux host.
-- The provider exchange with a **real** GitHub access token. There is no provider
-  credential here, so only its refusal path was exercised.
-- **The gateway actually sending `4002`.** Not reachable from a client for the reason
-  above, and this repository does not own the gateway to restart it. What the client
-  does with the close is covered through the public `IWebSocketFactory` seam, where a
-  fake socket delivers it: the `4002` case of `LobbyReconnectTests`' reconnect test
-  (the backoff timing, a fresh `hello`, an empty peer map) and of `GameClientTests`'
-  (a reconnect and a working `Send`; a `q` channel has neither `hello` nor peers).
+- **`CorsSafe` in Safari.** Chrome and Firefox have run it; Safari is unavailable
+  on this Linux host.
+
+The documentation compilation, real OAuth redirect and provider exchange, and live
+idle close were subsequently exercised in
+[The verification-gap run](#the-verification-gap-run). The running-editor upgrade
+is recorded there separately from the older batch-mode upgrade.
 
 ## Making states reachable without infrastructure
 
@@ -879,3 +876,51 @@ never symlinked the packages. Every run prints booleans/codes only.
 Not verified by this partial run: actual Android/Firebase receipt, Firefox/Safari,
 real provider credentials, real CDN from a browser, and the remaining recipe checks
 listed under Not covered. No release tag is implied by this record.
+
+## The verification-gap run
+
+**2026-10-13**, source `04334b4` (`v0.3.0`), Ubuntu 24.04, Unity Personal.
+This supplements [Last verified](#last-verified); it is not a new full release matrix.
+No Runtime source, public API, package version or release tag changed.
+
+- All 37 C# blocks in the ten consumer guide pages that contain C# blocks compiled
+  in Unity 2021.3.45f2 and 6000.0.25f1. Scratch projects used copies of all eleven
+  packages and the shipped WebGL transport sample, with typed fields and UI stubs
+  for the surrounding game. Property-only illustration lines were assigned to
+  discards. A second Editor compile on both versions locally defined `UNITY_WEBGL`
+  and undefined `UNITY_EDITOR` in the one WebGL-guarded snippet, so its two transport
+  assignments were also type-checked against the shipped sample types. This is
+  compile-only coverage, not a player build or execution. No SDK API was mocked,
+  and the blocks were not executed. Generated `docs/api/` pages were outside this
+  compilation scope.
+- Both editors upgraded the same running process from seven git-URL packages at
+  `v0.2.0` to all eleven at `v0.3.0`, with the Package Manager window visible.
+  Sequential `Client.Add` calls updated the existing seven and added Platform,
+  Match, Push and Game Kit. SessionState preserved progress across domain reloads;
+  both final checks reported eleven packages, all at `0.3.0`, and the original PID.
+  Both package lock files pinned every SDK package to release commit `04334b4`.
+  The final assemblies compiled; screenshots confirmed the visible Package Manager.
+  This exercises the editor Package Manager API, not manual entry in its Add dialog.
+- A real GitHub login and consent in Chrome returned through the auth service to
+  a private loopback callback. `ParseRedirect` and `VerifyAsync` agreed on user and expiry;
+  a foreign nonce was refused. The returned URI was consumed by the real .NET auth
+  client; this did not add a Unity WebGL provider integration run. A token issued
+  by the same GitHub OAuth application's Device Flow also passed `ExchangeAccessTokenAsync` and `VerifyAsync`.
+- A fresh test identity connected to the existing dev lobby. The first injected
+  transport used a real TLS WebSocket and deliberately ignored protocol pings,
+  without application traffic. The gateway sent `4002` after two ignored pings;
+  the SDK reported `WillReconnect = true`, switched to its default transport and
+  received a fresh connection id in `hello`. No gateway restart or configuration
+  change was needed. This exercises the live close through the public transport
+  seam; it does not establish browser or Unity-native idle timing. A default-transport
+  control remained connected after 85 seconds without Poll and then answered an
+  application Ping with Pong, with no close or reconnect, confirming that a
+  stalled game pump alone does not reproduce the protocol-pong suppression.
+- The earlier synthetic leaderboard score was deleted from both configured periods;
+  both subsequent reads returned `not_found`. No other player's score was changed.
+
+Scratch credentials and the private callback server were removed; test sockets
+were closed and the original Unity 2021 bee backend checksum matched after restoration.
+
+Safari remains unavailable on this host. The native CDN TLS, Android/Firebase and
+live content/mail policy gaps tracked separately were outside this run.
