@@ -136,12 +136,29 @@ someone else reads. The service repository owns the recipe (its
 A browser player is not a check yet: the ingest answers a CORS preflight `405`
 (`curl -X OPTIONS` shows it), so a WebGL build is compiled, not run.
 
-Run 2026-11-08, working tree before the tracer-client commit: console app (event with
-exception frames, PNG, breadcrumbs, linked feedback, typed log attributes; wrong key →
-`Stopped`, `unauthorized=3`), and probe players of 2021.3.45f2 and 6000.0.25f1, Mono and
-IL2CPP, stripping High, under `xvfb-run`: event, a 198 KB screenshot, `unity.log` and
-`log` breadcrumbs, device/OS contexts and log lines all read back, `drops` empty. WebGL
-6000 built with stripping High, not run.
+**A partial run, 2026-11-08, at `d2bc8b9`** (the commit that added `tracer-client`) —
+not a *Last verified* run, and no tag may rest on it. Unity Personal, Ubuntu 24.04,
+2021.3.45f2 and 6000.0.25f1 (OpenSSL workaround and temporary bee wrapper on 2021.3,
+restored after):
+
+- EditMode from `git archive d2bc8b9`, both editors: 1117 — 1105 passed, 0 failed, the
+  12 named ignored.
+- Bare clone pinned to `d2bc8b9`, both editors: 12 packages in PackageCache, 12
+  Runtime DLLs, 0 immutable-folder omissions, 0 `error CS`, no Tests DLL.
+- Samples imported (tracer-client 1) into copied packages and recompiled with
+  ScriptAssemblies removed: 0 errors. No per-assembly warning count was taken.
+- `tracer-client` probe players, both editors, Mono and IL2CPP, stripping High, under
+  `xvfb-run`, built from a copy of the working tree that `diff -r` showed identical to
+  `d2bc8b9`: event with frames, a 198 KB screenshot, `unity.log` and `log` breadcrumbs,
+  device/OS contexts and log lines read back from a local tracer; `drops` empty. The
+  console app also read back linked feedback and typed attributes, and a wrong key left
+  the client `Stopped`.
+- WebGL built on 6000 only with stripping High, not run (no CORS answer).
+
+What a release still needs: the full matrix above on both editors with all twelve
+packages in one probe player — no row carried on "sources unchanged" — including the
+WebGL browser run, which cannot deliver to tracer until the service answers CORS (say so
+in that record rather than skipping the rest of the browser probe).
 
 ## In Unity
 

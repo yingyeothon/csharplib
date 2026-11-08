@@ -46,7 +46,7 @@ asmdef**, reference the assemblies you use by name: `Yingyeothon.Gamebase.Client
 `Yingyeothon.KvStore`, `Yingyeothon.Auth`, `Yingyeothon.Assets`, `Yingyeothon.Codec` (needed for `JsonValue`,
 which is on every client's API), `Yingyeothon.Logger` (needed to set `Logger`),
 `Yingyeothon.EventBroker`, `Yingyeothon.Platform`, `Yingyeothon.Match`,
-`Yingyeothon.Push`, and `Yingyeothon.GameKit`.
+`Yingyeothon.Push`, `Yingyeothon.GameKit`, and `Yingyeothon.Tracer`.
 
 Every asset ships with its `.meta`, so a given version has the same GUIDs in every
 project that installs it. If you vendor the packages into `Packages/` instead of using a

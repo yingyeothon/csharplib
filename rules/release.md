@@ -23,6 +23,8 @@ mechanism: no registry, no publish step, no staging window, nothing to yank.
   manifest's `"dependencies"` pins on its sibling packages.
   `scripts/validate-packages.sh` fails on any disagreement. The third is the one a
   bump forgets, and it leaves a manifest demanding a version that no longer exists.
+  A fourth copy, `TracerClient.SdkVersion`, goes on tracer's wire; the script does not
+  check it, `TheSdkVersionIsThePackageVersion` does (step 3).
 - `check-docs.sh` check 4 compares every install URL against the cut tag, asking the
   **remote** whether it is cut, and checks 4 and 6 read which packages it ships from the
   tag's tree, which must be **local** — so the CI checkout's `fetch-tags` is required,
@@ -60,13 +62,25 @@ anything is pushed, and the commit and the tag then go together or not at all.
    push that record (step 1). The tag is compiled by Unity's compiler on Unity's Mono, and
    that run is the only thing that has ever caught the difference. Between S and the tag
    may land only commits that touch nothing outside `rules/` (the one recording the run
-   among them) and the bump — `Directory.Build.props`, `packages/*/package.json`, and the
-   files step 4 edits — none of which Unity compiles differently. Check with
+   among them) and the bump — `Directory.Build.props`, `packages/*/package.json`, the
+   files step 4 edits, and tracer's `SdkVersion` literal and golden (step 3) — none of
+   which Unity compiles differently, the literal aside; for it, step 3's EditMode rerun. Check with
    `git diff --name-only S HEAD` before step 3 and again before printing step 6's
    commands; anything else means running it again. Name S in the tag message.
 3. **[agent]** Bump the version in all three: `Directory.Build.props` `<Version>`, every
    `packages/*/package.json` `"version"`, and every `com.yingyeothon.*` pin under
    those manifests' `"dependencies"`. `./scripts/validate-packages.sh` proves it.
+   The version is also in tracer's wire bytes: set `TracerClient.SdkVersion`
+   (`packages/com.yingyeothon.tracer-client/Runtime/ITracerClient.cs`; a test fails until
+   it equals `package.json`) and regenerate its golden
+   (`UPDATE_GOLDEN=1 dotnet test packages/com.yingyeothon.tracer-client/Yingyeothon.Tracer.Tests.csproj --filter GoldenTests`,
+   then run it again without `UPDATE_GOLDEN` — on the first run
+   `TheGoldenDecodesToWhatTracerStores` reads the stale build copy and fails). The literal
+   is Runtime source: run EditMode on both editors from the bump's tree and put the
+   counts in the tag message; that message is the run's record, so the release stays
+   one commit. The service's
+   `tracer/testdata/envelopes/yyt-csharp/report.envelope` is a copy of that golden; it is
+   the user's to update there ([workflow.md](workflow.md)).
 4. **[agent]** Pin every install URL to `#vX.Y.Z` — in every file
    `grep -rlF 'csharplib.git?path=' README.md docs packages/*/README.md` lists; the summary line of a green `check-docs.sh` prints the
    count, and while the URLs pin an uncut tag it prints nothing. `./scripts/check-docs.sh` fails when a URL and the version

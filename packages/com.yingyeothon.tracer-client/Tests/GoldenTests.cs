@@ -13,7 +13,8 @@ namespace Yingyeothon.Tracer.Tests
     /// The golden envelope of this library. Its bytes are also the service repository's
     /// <c>tracer/testdata/envelopes/yyt-csharp/report.envelope</c>, where tracer's own tests
     /// ingest it. Regenerate with <c>UPDATE_GOLDEN=1 dotnet test --filter GoldenTests</c>,
-    /// then copy the file there unchanged.
+    /// then run again without it; the service's copy is updated in that repository by its
+    /// owner (<c>rules/release.md</c> step 3).
     /// </summary>
     [TestFixture]
     public class GoldenTests

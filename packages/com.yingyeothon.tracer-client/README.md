@@ -7,8 +7,8 @@ throws into the game, and is off when the DSN is empty. In Unity, `TracerRunner`
 it, turns Unity's log messages and scene loads into breadcrumbs and log lines, and
 captures the screenshot.
 
-The wire contract is the `service` repository's `docs/tracer.md`, _Wire contract for
-client libraries_; tracer's `tracer/internal/` there is the reference implementation.
+The wire contract is the [`service`](https://github.com/yingyeothon/service)
+repository's `docs/tracer.md`, _Wire contract for client libraries_; tracer's `tracer/internal/` there is the reference implementation.
 It is debug tooling, not crash reporting: nothing here claims to catch a crash.
 
 ## Install
@@ -60,8 +60,9 @@ public sealed class Diagnostics : MonoBehaviour
 ```
 
 Read reports back with `yyt tracer events <res> --since 10m`, log lines with
-`yyt tracer logs <res>`, or the `tracer-debug` skill (`yyt tracer dsn` needs a resource
-the console created; `--profile dev` for a dev one). Release builds normally leave the
+`yyt tracer logs <res>`, or the `tracer-debug` skill (`yyt tracer` ships in the CLI from
+`cli/v0.20.0`; `yyt tracer dsn` needs a resource the console created; `--profile dev`
+for a dev one). Release builds normally leave the
 DSN empty; the team decides per build. **Leave it empty in a WebGL build** — see
 [Unity](#unity).
 
