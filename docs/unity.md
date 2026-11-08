@@ -62,7 +62,7 @@ nothing warns you about either:
   into `Assets/` to patch, and an imported sample you extend, compile under *your*
   project's settings. If the file uses `string?` and your assembly has no nullable
   context, you get `CS8632` on every annotation. Adding `#nullable enable` at the top of
-  that file is the fix; the six samples that need it already have it.
+  that file is the fix; the twelve sample files that need it already have it.
 - **Your own assembly is yours to configure.** Signatures copied out of the
   [API reference](README.md#reference) carry `?`, so an asmdef of your own that uses them
   wants the same one-line `csc.rsp` beside it, or `#nullable disable` and no
@@ -84,6 +84,7 @@ Import_. They land in `Assets/Samples/…` and are yours to edit.
 | codec | `Json Basics` | building and reading frames |
 | logger | `Unity Logging` | routing the logger to the editor console |
 | event-broker | `Typed Events` | the type-keyed broker |
+| tracer-client | `Tracer Quickstart` | a client from a build-time DSN, `TracerRunner`, and a report with a screenshot and linked feedback |
 
 ## Polling
 
@@ -193,7 +194,7 @@ stripper removes what it cannot see being used and fails at runtime, in a shippe
 player, rather than at build time. Wire types parse and build themselves by hand.
 
 `Runtime/link.xml` in each client package (gamebase-client, kvstore-client, auth-client,
-asset-client) preserves
+asset-client, tracer-client) preserves
 its own assembly plus `Yingyeothon.Codec` and `Yingyeothon.Logger` wholesale, since they
 are reached through interfaces and generic factories. It is picked up automatically. Managed stripping at **High** is verified before each
 release with a player that actually runs and touches every package.
@@ -206,6 +207,10 @@ If you add your own reflection over these types, add your own `link.xml` entries
 work, and there is no thread to run a receive loop on. `WebSocketTransport.Default`
 therefore throws there **on purpose**, rather than failing quietly at some later point;
 `ConnectAsync()` fails with `GatewayStoppedException`.
+
+**tracer is not reachable from a browser player today**: its ingest answers no CORS
+preflight, and the client's `X-Sentry-Auth` header forces one. Leave the tracer DSN empty
+in a WebGL build ([tracer-client README](../packages/com.yingyeothon.tracer-client/README.md#unity)).
 
 **A WebGL player has no thread pool and no timer thread.** `Task.Run`, `Task.Delay` and a
 `CancellationTokenSource` with a timeout (`CancelAfter`) never run or fire there, and

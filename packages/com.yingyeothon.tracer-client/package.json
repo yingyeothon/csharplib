@@ -1,0 +1,22 @@
+{
+  "name": "com.yingyeothon.tracer-client",
+  "version": "0.3.0",
+  "displayName": "Yingyeothon.Tracer",
+  "description": "Client for tracer, the yyt platform's debug-data collector: breadcrumbs, logs, reports with a screenshot, feedback.",
+  "unity": "2021.3",
+  "author": {
+    "name": "yingyeothon",
+    "url": "https://github.com/yingyeothon"
+  },
+  "dependencies": {
+    "com.yingyeothon.codec": "0.3.0",
+    "com.yingyeothon.logger": "0.3.0"
+  },
+  "samples": [
+    {
+      "displayName": "Tracer Quickstart",
+      "description": "A client from a build-time DSN, a runner, and a report with a screenshot.",
+      "path": "Samples~/TracerQuickstart"
+    }
+  ]
+}

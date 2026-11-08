@@ -1,0 +1,2 @@
+# A golden envelope with a PNG inside: a diff of it is noise.
+*.envelope -diff

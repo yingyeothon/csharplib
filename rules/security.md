@@ -33,7 +33,17 @@ wrong.
   key that merely starts with those bytes). `.gitleaks.toml` also carries the service's
   `yak1.` rule, so any other bundle key is refused: no source may hold `yak1.` followed
   by 43 base64url characters, and a test that needs a non-canonical one builds it at run
-  time.
+  time. The tracer fixture key `fixturewritekeyfixturewritekey00` (resource
+  `trc_fixture01`) is the service's golden-envelope value (its `testdata/envelopes/`
+  README), used in `tracer-client`'s tests; the `yyt-tracer-dsn` rule refuses any other key in a
+  `…://<key>@<host>/…/trc_…` DSN, and the global allowlist entry `://fixturewritekey`
+  clears only a DSN whose key starts with `fixturewritekey` — console keys are 32 hex
+  characters and never do. The local gitleaks ignored a `[rules.allowlist]` for this
+  rule (2026-11-08); before moving the entry there, prove it with
+  `gitleaks detect --no-git --source <scratch dir> --config .gitleaks.toml` over one file
+  holding the fixture DSN (must pass) and one with any other 16-character key (must
+  fail). A real DSN reaches a game through its build configuration, never a
+  file here.
 - **Defenses, all required, none optional:**
   - `.gitignore` — build output, a `.meta` outside `packages/`, `.env*`, `.envrc`,
     `local/`.

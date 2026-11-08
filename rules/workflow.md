@@ -181,7 +181,10 @@ so in the same message.
   date. So far: `auth-client` (flutterlib's
   `yingyeothon_auth_client`, 2026-09-30) and `asset-client` (tslib's newer
   `@yingyeothon/asset-client` and flutterlib's `yingyeothon_asset_client`, 2026-09-30;
-  it carries no credential at all — the bundle key only decrypts what is public). The worked counter-example is the doc store
+  it carries no credential at all — the bundle key only decrypts what is public), and
+  `tracer-client` (flutterlib's `yingyeothon_tracer_client`, owner-directed 2026-11-08;
+  its write key is write-only to one tracer resource and is meant to ship in a debug
+  build). The worked counter-example is the doc store
   (`/s/*`): its writes take the channel's doc apiKey, so it fails the test and has **no
   client** — `docs/kvstore.md` § 7 says what a game uses instead.
 - The gateway wire protocol is owned by the `service` repository. When it changes,

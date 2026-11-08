@@ -32,6 +32,7 @@
     <ProjectReference Include="../../packages/com.yingyeothon.kvstore-client/Yingyeothon.KvStore.csproj" />
     <ProjectReference Include="../../packages/com.yingyeothon.auth-client/Yingyeothon.Auth.csproj" />
     <ProjectReference Include="../../packages/com.yingyeothon.asset-client/Yingyeothon.Assets.csproj" />
+    <ProjectReference Include="../../packages/com.yingyeothon.tracer-client/Yingyeothon.Tracer.csproj" />
   </ItemGroup>
 
   <ItemGroup>

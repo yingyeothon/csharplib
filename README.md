@@ -54,6 +54,7 @@ void Update() => lobby.Poll();          // or nothing happens
 | [com.yingyeothon.match-client](packages/com.yingyeothon.match-client) | `Yingyeothon.Match` | Pumped game platform client |
 | [com.yingyeothon.push-client](packages/com.yingyeothon.push-client) | `Yingyeothon.Push` | Pumped game platform client |
 | [com.yingyeothon.game-kit](packages/com.yingyeothon.game-kit) | `Yingyeothon.GameKit` | Pumped game platform client |
+| [com.yingyeothon.tracer-client](packages/com.yingyeothon.tracer-client) | `Yingyeothon.Tracer` | Pumped client for tracer, the platform's debug-data collector |
 
 ```mermaid
 graph LR
@@ -84,6 +85,8 @@ graph LR
   game-kit --> gamebase-client
   game-kit --> auth-client
   game-kit --> logger
+  tracer-client --> codec
+  tracer-client --> logger
   logger --> codec
 ```
 

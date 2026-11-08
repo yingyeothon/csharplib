@@ -15,7 +15,9 @@ disagree, that document is right; for the store it is `services/state/README.md`
 code wins ([architecture.md](architecture.md)); for sign-in it is
 `services/auth/README.md`, and again the code (`services/auth/src/app.ts`) over it; for
 assets it is `docs/asset-encryption.md` with its vectors, and `cli/internal/assetcrypt`
-where the text and the Go disagree (the vectors settle it).
+where the text and the Go disagree (the vectors settle it); for tracer it is
+`docs/tracer.md` _Wire contract for client libraries_, and tracer's `tracer/internal/`
+where the text and the Go disagree.
 
 ## `docs/` — the guide
 

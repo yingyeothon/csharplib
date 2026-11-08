@@ -107,6 +107,42 @@ substitute another bundle: record the gap under *Not covered* below and ask.
 `asset-client` (rerun after its review round changed the timeout paths); the bundle was
 deleted and its key removed.
 
+## Against a local tracer
+
+`tracer-client` is checked against the real collector run locally, never a dev resource
+someone else reads. The service repository owns the recipe (its
+`rules/manual-verification.md` "tracer" section); in short:
+
+1. From this repo's root: `cd ../service/tracer && PATH=/usr/local/go/bin:$PATH go build -o /tmp/tracer-local ./cmd/tracer`.
+2. In a temp dir, a `tracer.json` of one made-up resource and read token
+   (`{"resources":[{"id":"trc_<1–40 of [0-9a-z]>","writeKey":"<≥16 chars>"}],"readToken":"yyt_<48 lowercase hex>"}`).
+   Check the port is free (`ss -ltnp | grep <port>` prints nothing — a stale server
+   would answer instead), then run `TRACER_LISTEN=127.0.0.1:<port> TRACER_DATA_DIR=<dir>
+   TRACER_LOCAL_CONFIG=<file> TRACER_DISK_MAX_PCT=99 /tmp/tracer-local serve` as a
+   long-running process of its own (the Bash tool's `run_in_background`) — a
+   `nohup … &` inside one shell call dies with that call. Stop it by its PID or task id
+   when done. **`TRACER_DUMP_DIR` dumps instead
+   of storing**: a run with it writes the request files and the read API then shows
+   nothing. Use it only to capture bytes.
+3. Send from a scratch console app over the built assemblies (DSN from the environment,
+   `AllowHttpLoopback = true`), and from Mono and IL2CPP players of a scratch Unity project
+   whose probe uses `TracerUnityWebRequestTransport` and `TracerRunner`, run under
+   `xvfb-run` so `ScreenCapture` has a frame. Print ids, states and counts only.
+4. Read back with `curl -H "Authorization: Bearer <readToken>"` on `/v1/<trc>/events`,
+   `/events/<id>`, `/logs`, `/attachments/<id>` and `/drops`. A wrong key must leave the
+   client `Stopped` with `unauthorized` in the client's own `Stats.Dropped` (the server's
+   `/drops` does not count a 401).
+
+A browser player is not a check yet: the ingest answers a CORS preflight `405`
+(`curl -X OPTIONS` shows it), so a WebGL build is compiled, not run.
+
+Run 2026-11-08, working tree before the tracer-client commit: console app (event with
+exception frames, PNG, breadcrumbs, linked feedback, typed log attributes; wrong key →
+`Stopped`, `unauthorized=3`), and probe players of 2021.3.45f2 and 6000.0.25f1, Mono and
+IL2CPP, stripping High, under `xvfb-run`: event, a 198 KB screenshot, `unity.log` and
+`log` breadcrumbs, device/OS contexts and log lines all read back, `drops` empty. WebGL
+6000 built with stripping High, not run.
+
 ## In Unity
 
 `dotnet build` proves nothing about the compiler Unity uses, about IL2CPP's stripper,
@@ -821,6 +857,8 @@ Not covered, and each is a real gap rather than a formality:
 
 - **`CorsSafe` in Safari.** Chrome and Firefox have run it; Safari is unavailable
   on this Linux host.
+- **`tracer-client` in a browser.** tracer answers no CORS preflight, so a WebGL
+  player is only built ([Against a local tracer](#against-a-local-tracer)).
 
 The documentation compilation, real OAuth redirect and provider exchange, and live
 idle close were subsequently exercised in

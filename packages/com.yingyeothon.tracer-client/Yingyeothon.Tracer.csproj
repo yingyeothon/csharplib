@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+<PropertyGroup><AssemblyName>Yingyeothon.Tracer</AssemblyName><RootNamespace>Yingyeothon.Tracer</RootNamespace><PackageId>Yingyeothon.Tracer</PackageId><Description>Yingyeothon.Tracer client library</Description></PropertyGroup>
+<ItemGroup><Compile Include="Runtime/**/*.cs" Exclude="Runtime/Unity/**/*.cs" /></ItemGroup>
+<ItemGroup><ProjectReference Include="../com.yingyeothon.codec/Yingyeothon.Codec.csproj" /><ProjectReference Include="../com.yingyeothon.logger/Yingyeothon.Logger.csproj" /></ItemGroup>
+</Project>

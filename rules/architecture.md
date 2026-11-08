@@ -145,6 +145,24 @@ consequences and the decisions that are easy to undo by accident.
   racing it as well as by the token: a transport stream that checks its token only on
   entry otherwise leaves the timeout inert.
 
+## A sink is not a pump
+
+- `tracer-client` takes a `lock`, not the pumped clients' interlocked claim
+  (`CONVENTIONS.md` § Async points here): a log sink is
+  called from whatever thread logged, and a debug collector that threw
+  `InvalidOperationException` into that thread would be worse than one that waited a
+  microsecond. Sends still start and answers are still read only in `Poll()`; a `Poll()`
+  that overlaps another returns instead of throwing. Its waiters are settled after the
+  lock is released — in `Poll()`, or by the `Dispose()`/`CloseAsync()` call that ends
+  the client, since nothing polls a closed client. A client that a sink feeds from any
+  thread takes this shape; one whose calls belong to the game's frame keeps the claim.
+- A guard against a client's own diagnostics re-entering it (a Unity log hook) is
+  per thread: Unity raises `logMessageReceived` inline only for main-thread logs, so a
+  diagnostic written elsewhere comes back once as an ordinary line (reasoned from
+  Unity's documented behaviour, not observed in a run; the same-thread case is
+  `WhatTheClientsOwnLoggerSendsBackIsIgnored`). Say so; do not claim the loop is closed
+  everywhere.
+
 ## Lifetime
 
 - A replaced or closed `IWebSocket` is disposed exactly once. TypeScript leaves this

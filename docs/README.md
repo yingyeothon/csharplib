@@ -1,6 +1,6 @@
 # csharplib documentation
 
-The eleven packages in this repository are the client half of the yyt platform. This
+The twelve packages in this repository are the client half of the yyt platform. This
 folder is the guide; the package READMEs are the per-package reference, and the
 `service` repository owns the wire protocol.
 
@@ -34,6 +34,7 @@ folder is the guide; the package READMEs are the per-package reference, and the
 | Sign a player in, or check a kept token | [`Yingyeothon.Auth`](../packages/com.yingyeothon.auth-client/README.md) |
 | Load a database, music or a level pack from the CDN | [Asset bundles](assets.md) |
 | Decouple your own game events | [`Yingyeothon.EventBroker`](../packages/com.yingyeothon.event-broker/README.md) |
+| Send debug breadcrumbs, logs and reports with a screenshot to tracer | [`Yingyeothon.Tracer`](../packages/com.yingyeothon.tracer-client/README.md) |
 
 `gamebase-client` (the realtime gateway), `kvstore-client` (the key-value store),
 `auth-client` (the channel JWT both of them take) and `asset-client` (files on the CDN)
@@ -48,6 +49,9 @@ four APIs — every frame, payload, stored value, raw config and manifest is a `
 [`Yingyeothon.Push`](../packages/com.yingyeothon.push-client/README.md) adds the game module surface.
 
 [`Yingyeothon.GameKit`](../packages/com.yingyeothon.game-kit/README.md) adds the game module surface.
+
+[`Yingyeothon.Tracer`](../packages/com.yingyeothon.tracer-client/README.md) sends debug
+data to tracer, the platform's collector; it stands alone beside `codec` and `logger`.
 
 ## Reference
 
@@ -65,15 +69,19 @@ code. Every public type and member, with the same summary your IDE shows:
 - [`Yingyeothon.Codec`](api/Yingyeothon.Codec.md)
 - [`Yingyeothon.Logger`](api/Yingyeothon.Logger.md)
 - [`Yingyeothon.EventBroker`](api/Yingyeothon.EventBroker.md)
+- [`Yingyeothon.Tracer`](api/Yingyeothon.Tracer.md)
 
 `GamebaseRunner`, `UnityWebRequestTransport`, `AuthUnityWebRequestTransport`,
-`AssetUnityWebRequestTransport` and `UnityDebugWriter` are the five public types absent
-from it: they sit behind `#if UNITY_5_3_OR_NEWER`, so the `dotnet` build the reference is
-generated from never sees them. [Unity](unity.md#polling) documents the first,
+`AssetUnityWebRequestTransport`, `UnityDebugWriter`, `TracerRunner` and
+`TracerUnityWebRequestTransport` are the seven public types absent from it: they sit
+behind `#if UNITY_5_3_OR_NEWER`, so the `dotnet` build the reference is generated from
+never sees them. [Unity](unity.md#polling) documents the first,
 [Unity § Key-value store](unity.md#key-value-store) the second, the
 [auth-client](../packages/com.yingyeothon.auth-client/README.md#threads-and-webgl) and
 [asset-client](../packages/com.yingyeothon.asset-client/README.md#webgl) READMEs the
-next two, and the [logger README](../packages/com.yingyeothon.logger/README.md) the last.
+next two, the [logger README](../packages/com.yingyeothon.logger/README.md) the fifth,
+and the [tracer-client README](../packages/com.yingyeothon.tracer-client/README.md#unity)
+the last two.
 
 Each package's README also carries its own `## Public API` summary and the deliberate
 differences from its `@yingyeothon/*` original — read those before "fixing" a
@@ -85,7 +93,9 @@ behaviour to match tslib, because the difference is often the fix:
 [kvstore-client](../packages/com.yingyeothon.kvstore-client/README.md),
 [auth-client](../packages/com.yingyeothon.auth-client/README.md) (whose model is
 flutterlib's package; tslib has no client counterpart),
-[asset-client](../packages/com.yingyeothon.asset-client/README.md).
+[asset-client](../packages/com.yingyeothon.asset-client/README.md),
+[tracer-client](../packages/com.yingyeothon.tracer-client/README.md) (whose model is
+flutterlib's package).
 
 ## What lives in the `service` repository
 
@@ -101,6 +111,7 @@ all public, in [`yingyeothon/service`](https://github.com/yingyeothon/service):
 | `services/match/README.md` | The matchmaking socket, one source of a `gameId` |
 | `services/state/README.md` | The doc store, and the _KV routes_ the key-value store client speaks |
 | `docs/kvstore.md` | The key-value store: principals, scopes, encryption |
+| `docs/tracer.md` | tracer, the debug collector: _Wire contract for client libraries_ is the spec `tracer-client` follows |
 | `examples/sample-morpg/README.md` | A worked game, and the map asset format |
 
 When this guide and the gateway README disagree, the gateway README is right — and

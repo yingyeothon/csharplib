@@ -29,6 +29,7 @@ namespace Yingyeothon.PublicApi.Tests
         [TestCase("Yingyeothon.Push")]
         [TestCase("Yingyeothon.Match")]
         [TestCase("Yingyeothon.Platform")]
+        [TestCase("Yingyeothon.Tracer")]
         public void ThePublicSurfaceMatchesItsApprovedSnapshot(string assembly)
         {
             var actual = Describe(assembly);

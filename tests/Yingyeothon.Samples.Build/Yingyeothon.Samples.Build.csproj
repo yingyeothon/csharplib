@@ -35,6 +35,7 @@
     <Compile Include="../../packages/com.yingyeothon.gamebase-client/Samples~/WebGLTransport/*.cs" />
     <Compile Include="../../packages/com.yingyeothon.kvstore-client/Samples~/KvStoreQuickstart/KvStoreSession.cs" />
     <Compile Include="../../packages/com.yingyeothon.game-kit/Samples~/GameKitQuickstart/GameKitSession.cs" />
+    <Compile Include="../../packages/com.yingyeothon.tracer-client/Samples~/TracerQuickstart/TracerSession.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -46,6 +47,7 @@
     <ProjectReference Include="../../packages/com.yingyeothon.auth-client/Yingyeothon.Auth.csproj" />
     <ProjectReference Include="../../packages/com.yingyeothon.asset-client/Yingyeothon.Assets.csproj" />
     <ProjectReference Include="../../packages/com.yingyeothon.game-kit/Yingyeothon.GameKit.csproj" />
+    <ProjectReference Include="../../packages/com.yingyeothon.tracer-client/Yingyeothon.Tracer.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,110 @@
+  ITracerClient.Breadcrumb(String, String) : Void
+  ITracerClient.Breadcrumb(String, String, JsonValue, TracerLevel) : Void
+  ITracerClient.CloseAsync() : Task
+  ITracerClient.Enabled : Boolean get
+  ITracerClient.Feedback(String, String) : String
+  ITracerClient.FlushAsync() : Task
+  ITracerClient.Log(TracerLevel, String) : Void
+  ITracerClient.Log(TracerLevel, String, JsonValue) : Void
+  ITracerClient.Poll() : Void
+  ITracerClient.Report(String) : String
+  ITracerClient.Report(String, TracerReportOptions) : String
+  ITracerClient.SetTag(String, String) : Void
+  ITracerClient.State : TracerState get
+  ITracerClient.Stats : TracerStats get
+  ITracerClient.Trace(String, String) : Void
+  ITracerClient.Trace(String, String, JsonValue, TracerLevel) : Void
+  ITracerClient.TraceId : String get
+  ITracerTransport.SendAsync(TracerHttpRequest, CancellationToken) : Task<TracerHttpResponse>
+  TracerAttachment.AttachmentType : String get
+  TracerAttachment.Bytes : Byte[] get
+  TracerAttachment.ContentType : String get
+  TracerAttachment.Filename : String get
+  TracerAttachment.Screenshot(Byte[]) : TracerAttachment
+  TracerAttachment.ViewHierarchy(Byte[]) : TracerAttachment
+  TracerAttachment.ctor(String, Byte[], String, String)
+  TracerClient.Create(TracerOptions) : ITracerClient
+  TracerClient.SdkVersion : String
+  TracerDsn.EnvelopeUri : Uri get
+  TracerDsn.ResourceId : String get
+  TracerDsn.ToString() : String
+  TracerDsn.TryParse(String, Boolean, TracerDsn&) : Boolean
+  TracerDsn.WriteKey : String get
+  TracerHttpClientTransport.Create(HttpClient) : ITracerTransport
+  TracerHttpClientTransport.Default : ITracerTransport get
+  TracerHttpRequest.Body : Byte[] get
+  TracerHttpRequest.Headers : IReadOnlyList<KeyValuePair<String, String>> get
+  TracerHttpRequest.Timeout : TimeSpan get
+  TracerHttpRequest.Url : Uri get
+  TracerHttpRequest.ctor(Uri, IReadOnlyList<KeyValuePair<String, String>>, Byte[], TimeSpan)
+  TracerHttpResponse.RetryAfter : String get
+  TracerHttpResponse.Status : Int32 get
+  TracerHttpResponse.ctor(Int32, String)
+  TracerLevel.Debug : TracerLevel
+  TracerLevel.Error : TracerLevel
+  TracerLevel.Fatal : TracerLevel
+  TracerLevel.Info : TracerLevel
+  TracerLevel.Warning : TracerLevel
+  TracerLevel.value__ : Int32
+  TracerLimits.MaxAttachmentsPerEnvelope : Int32
+  TracerLimits.MaxBreadcrumbs : Int32
+  TracerLimits.MaxDataBytes : Int32
+  TracerLimits.MaxEnvelopeBytes : Int32
+  TracerLimits.MaxJsonBytesPerEnvelope : Int32
+  TracerLimits.MaxJsonItemBytes : Int32
+  TracerLimits.MaxLogsPerContainer : Int32
+  TracerLimits.MaxTags : Int32
+  TracerLimits.MaxTextBytes : Int32
+  TracerLogWriter.Create(ITracerClient, Boolean) : ILogWriter
+  TracerOptions.AllowHttpLoopback : Boolean get set
+  TracerOptions.BreadcrumbCapacity : Nullable<Int32> get set
+  TracerOptions.Compress : Nullable<Boolean> get set
+  TracerOptions.Contexts : JsonValue get set
+  TracerOptions.Dist : String get set
+  TracerOptions.Dsn : String get set
+  TracerOptions.Environment : String get set
+  TracerOptions.FlushInterval : Nullable<TimeSpan> get set
+  TracerOptions.LogBatchSize : Nullable<Int32> get set
+  TracerOptions.Logger : ILogger get set
+  TracerOptions.MaxQueuedBytes : Nullable<Int64> get set
+  TracerOptions.MaxQueuedEnvelopes : Nullable<Int32> get set
+  TracerOptions.NowMillis : Func<Double> get set
+  TracerOptions.Random : Func<Double> get set
+  TracerOptions.Release : String get set
+  TracerOptions.Tags : IReadOnlyDictionary<String, String> get set
+  TracerOptions.Timeout : Nullable<TimeSpan> get set
+  TracerOptions.Transport : ITracerTransport get set
+  TracerOptions.UserId : String get set
+  TracerOptions.UtcNow : Func<DateTimeOffset> get set
+  TracerOptions.ctor()
+  TracerReportOptions.Attachments : IReadOnlyList<TracerAttachment> get set
+  TracerReportOptions.Data : JsonValue get set
+  TracerReportOptions.Exception : Exception get set
+  TracerReportOptions.Level : TracerLevel get set
+  TracerReportOptions.Screenshot : Byte[] get set
+  TracerReportOptions.StackTrace : String get set
+  TracerReportOptions.ctor()
+  TracerState.Active : TracerState
+  TracerState.Closed : TracerState
+  TracerState.Off : TracerState
+  TracerState.Stopped : TracerState
+  TracerState.value__ : Int32
+  TracerStats.Dropped : IReadOnlyDictionary<String, Int32> get
+  TracerStats.EnvelopesSent : Int32 get
+  TracerStats.Queued : Int32 get
+  TracerStats.ctor(Int32, Int32, IReadOnlyDictionary<String, Int32>)
+class TracerAttachment
+class TracerDsn
+class TracerHttpRequest
+class TracerHttpResponse
+class TracerOptions
+class TracerReportOptions
+class TracerStats
+enum TracerLevel
+enum TracerState
+interface ITracerClient
+interface ITracerTransport
+static class TracerClient
+static class TracerHttpClientTransport
+static class TracerLimits
+static class TracerLogWriter

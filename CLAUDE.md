@@ -7,7 +7,8 @@
   `asset-client` (a port of tslib's later `@yingyeothon/asset-client`), and
   `auth-client`, modelled on flutterlib's since tslib has no client half. Each is a UPM package and a pair of
   `.csproj` files over the same sources. `platform-client`, `match-client`,
-  `push-client` and `game-kit` add the purpose-shaped game module surface.
+  `push-client` and `game-kit` add the purpose-shaped game module surface, and
+  `tracer-client` sends debug data to the platform's collector.
 - Everything targets `netstandard2.0` + `netstandard2.1`, C# 9, with no third-party
   dependencies and no engine references in any Runtime assembly, so Unity's Mono and
   IL2CPP backends both compile it.
@@ -29,7 +30,9 @@
   Platform routes follow `services/state/src/` and gateway presence; matchmaking
   follows `services/match/src/` and its README; push follows `docs/push.md` and
   `services/state/src/push.ts`. The game-kit interoperability contract is
-  `docs/game-kit-design.md` in `service`.
+  `docs/game-kit-design.md` in `service`. For `tracer-client` it is `docs/tracer.md`
+  _Wire contract for client libraries_ there, with `tracer/internal/` (ingest,
+  normalize) and the golden envelopes in `tracer/testdata/envelopes/`.
 
 ## Required Rule Lookup
 

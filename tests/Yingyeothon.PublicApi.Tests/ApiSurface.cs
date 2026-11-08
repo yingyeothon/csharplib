@@ -39,6 +39,7 @@ namespace Yingyeothon.PublicApi.Tests
                 yield return new TestCaseData("Yingyeothon.Push", "com.yingyeothon.push-client");
                 yield return new TestCaseData("Yingyeothon.Match", "com.yingyeothon.match-client");
                 yield return new TestCaseData("Yingyeothon.Platform", "com.yingyeothon.platform-client");
+                yield return new TestCaseData("Yingyeothon.Tracer", "com.yingyeothon.tracer-client");
             }
         }
 

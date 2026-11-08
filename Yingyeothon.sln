@@ -55,6 +55,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Yingyeothon.GameKit", "pack
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Yingyeothon.GameKit.Tests", "packages\com.yingyeothon.game-kit\Yingyeothon.GameKit.Tests.csproj", "{C2E7D1F4-2F32-4545-8412-02C07CCAE7B0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Yingyeothon.Tracer", "packages\com.yingyeothon.tracer-client\Yingyeothon.Tracer.csproj", "{F3D834F5-29FF-45B6-9BCE-FF80B08D9DFE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Yingyeothon.Tracer.Tests", "packages\com.yingyeothon.tracer-client\Yingyeothon.Tracer.Tests.csproj", "{89C49EA5-1ADA-4822-834D-749FDA02143A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -160,6 +164,14 @@ Global
 		{C2E7D1F4-2F32-4545-8412-02C07CCAE7B0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C2E7D1F4-2F32-4545-8412-02C07CCAE7B0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C2E7D1F4-2F32-4545-8412-02C07CCAE7B0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F3D834F5-29FF-45B6-9BCE-FF80B08D9DFE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F3D834F5-29FF-45B6-9BCE-FF80B08D9DFE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F3D834F5-29FF-45B6-9BCE-FF80B08D9DFE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F3D834F5-29FF-45B6-9BCE-FF80B08D9DFE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{89C49EA5-1ADA-4822-834D-749FDA02143A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{89C49EA5-1ADA-4822-834D-749FDA02143A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{89C49EA5-1ADA-4822-834D-749FDA02143A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{89C49EA5-1ADA-4822-834D-749FDA02143A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{ECEBF373-1DB4-417D-8A85-ED456AF0553B} = {DFCDE053-853B-4525-BE43-40B53E2DB5A5}
@@ -186,5 +198,7 @@ Global
 		{43E97309-3424-477D-9DE7-718A37039EE1} = {DFCDE053-853B-4525-BE43-40B53E2DB5A5}
 		{51E362A4-92D7-4027-926A-9E0662ED17C9} = {DFCDE053-853B-4525-BE43-40B53E2DB5A5}
 		{C2E7D1F4-2F32-4545-8412-02C07CCAE7B0} = {DFCDE053-853B-4525-BE43-40B53E2DB5A5}
+		{F3D834F5-29FF-45B6-9BCE-FF80B08D9DFE} = {DFCDE053-853B-4525-BE43-40B53E2DB5A5}
+		{89C49EA5-1ADA-4822-834D-749FDA02143A} = {DFCDE053-853B-4525-BE43-40B53E2DB5A5}
 	EndGlobalSection
 EndGlobal

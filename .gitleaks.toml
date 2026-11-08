@@ -1,7 +1,7 @@
 # gitleaks config (v8 syntax). Default rules plus the credential-assignment rule the
 # sibling `service` repo uses, so a leak is caught the same way in both places.
 #
-# This repository has no infrastructure and needs no credentials: it is seven client
+# This repository has no infrastructure and needs no credentials: it is twelve client
 # libraries and their tests. So the rule here is not "redact the secrets we keep" — it
 # is "nothing of that shape should ever exist", and every allowlist entry below is a
 # test fixture that is obviously not a credential.
@@ -35,6 +35,17 @@ regex = '''yak1\.[A-Za-z0-9_-]{43}'''
 [rules.allowlist]
 regexes = ['''yak1\.ASNFZ4mrze8BI0VniavN7wEjRWeJq83vASNFZ4mrze8''']
 
+# A tracer DSN (the service repository's docs/tracer.md): the resource's write key in the
+# URL's user info, ending in a trc_ resource id. It is delivered through a game's build
+# configuration, never committed. The one allowed key is the service's golden-envelope
+# fixture key, which the tracer-client tests use (malformed variants of it included); its
+# entry is in the global allowlist below, which is the one this gitleaks honours.
+[[rules]]
+id = "yyt-tracer-dsn"
+description = "tracer DSN with a write key (https://<key>@<host>/<trc_id>)"
+regex = '''(?i)https?:\\?/\\?/([^\s/\\@:"']{16,})(?::[^\s/@"']*)?@[^\s/"']+(?:/[^\s"']*)?/trc_[0-9a-z]+'''
+secretGroup = 1
+
 [allowlist]
 description = "Config itself, the deliberately fake token fixture, and the asset conformance vectors"
 paths = ['''\.gitleaks\.toml$''']
@@ -49,4 +60,5 @@ regexes = [
   '''eyJ\.secret-token\.sig''',
   '''\b(0123456789abcdef){4}\b''',
   '''yak1\.ASNFZ4mrze8BI0VniavN7wEjRWeJq83vASNFZ4mrze8''',
+  '''://fixturewritekey''',
 ]

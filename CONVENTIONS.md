@@ -52,7 +52,9 @@ to be rediscovered.
   for the duration of the pump and refuses any other entry point held by a different
   thread; it does not demand that the pump always be the *same* thread, because a
   host without a synchronization context resumes each `await` elsewhere while still
-  being single-threaded in effect.
+  being single-threaded in effect. The one exception is a client fed by a log sink from
+  any thread (`tracer-client`): it takes a lock and never refuses — see
+  `rules/architecture.md` § A sink is not a pump.
 
 ## Optional and absent
 
