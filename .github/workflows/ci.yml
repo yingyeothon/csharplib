@@ -43,8 +43,19 @@ jobs:
         with:
           fetch-depth: 0
       - name: gitleaks (full history, repo config)
+        # The release-asset URL answers 504 at times (2026-11-09); the API path
+        # with retries does not, and the checksum file pins what was fetched.
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          curl -sSL https://github.com/gitleaks/gitleaks/releases/download/v8.18.4/gitleaks_8.18.4_linux_x64.tar.gz | tar xz gitleaks
+          for i in 1 2 3 4 5; do
+            gh release download v8.18.4 -R gitleaks/gitleaks --clobber \
+              -p gitleaks_8.18.4_linux_x64.tar.gz -p gitleaks_8.18.4_checksums.txt && break
+            [ "$i" = 5 ] && exit 1
+            sleep $((i * 10))
+          done
+          sha256sum --ignore-missing -c gitleaks_8.18.4_checksums.txt
+          tar xzf gitleaks_8.18.4_linux_x64.tar.gz gitleaks
           ./gitleaks detect --redact --no-banner --config .gitleaks.toml --source .
 
   # .gitignore does not survive `git add -f`, and a fresh clone is the one place that
