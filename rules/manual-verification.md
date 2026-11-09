@@ -109,8 +109,9 @@ deleted and its key removed.
 
 ## Against a local tracer
 
-`tracer-client` is checked against the real collector run locally, never a dev resource
-someone else reads. The service repository owns the recipe (its
+`tracer-client`'s console app and native players are checked against the real collector
+run locally, never a dev resource someone else reads; only the browser player sends to a
+dev resource (below). The service repository owns the recipe (its
 `rules/manual-verification.md` "tracer" section); in short:
 
 1. From this repo's root: `cd ../service/tracer && PATH=/usr/local/go/bin:$PATH go build -o /tmp/tracer-local ./cmd/tracer`.
@@ -133,8 +134,33 @@ someone else reads. The service repository owns the recipe (its
    client `Stopped` with `unauthorized` in the client's own `Stats.Dropped` (the server's
    `/drops` does not count a 401).
 
-A browser player is not a check yet: the ingest answers a CORS preflight `405`
-(`curl -X OPTIONS` shows it), so a WebGL build is compiled, not run.
+A browser player of a full run sends to a **dev** tracer resource, because what it checks
+is the deployed ingest's CORS answer (service tracer v0.2.1 and later:
+`Access-Control-Allow-Origin: *`, a preflight `204` allowing
+`Content-Type, Content-Encoding, X-Sentry-Auth`, `Retry-After` exposed). Its events stay
+in that resource; say so in the record.
+
+1. The owner names the resource, team and project. None named, or `yyt tracer dsn`
+   (CLI `v0.20.0` or later) fails or is refused: do not create or borrow one — record
+   *WebGL tracer delivery* as not covered (the run is then not full) and ask.
+2. With `umask 077`, `yyt tracer dsn <resource> --team <team> --project <project>
+   --profile dev` into a file in the scratch directory, never to the terminal, and have a
+   script write it into a generated `.cs` constant in the scratch project's `Assets/`
+   ([security.md](security.md): a real DSN reaches a game through its build
+   configuration, never a file here). Never read it back.
+3. Check the preflight first: `curl -si -X OPTIONS -H 'Origin: http://127.0.0.1:18080'
+   -H 'Access-Control-Request-Method: POST' -H 'Access-Control-Request-Headers:
+   content-type,content-encoding,x-sentry-auth' <envelope URL>` — the client's
+   `TracerDsn.EnvelopeUri`, `{DSN without key and resource}/api/{trc_id}/envelope/`; print
+   only the status and the `access-control-*` lines.
+   Anything but a `204` with those headers is the service's, not a client finding.
+4. Run the probe; read back with `yyt tracer events|event|logs|drops … --profile dev`.
+   A refusal in the browser names the header in Chrome's console (*not allowed by
+   Access-Control-Allow-Headers*): record the header name and status — never the URL,
+   which holds the resource id — as a gap, and never strip the header (without
+   `X-Sentry-Auth` the key would move into the URL).
+5. Afterwards delete the DSN file, the generated `.cs`, the WebGL build, the project's
+   `Library` and `Temp`, `<scratch>/chrome` and the captured Chrome log.
 
 **A partial run, 2026-11-08, at `d2bc8b9`** (the commit that added `tracer-client`) —
 not a *Last verified* run, and no tag may rest on it. Unity Personal, Ubuntu 24.04,
@@ -155,10 +181,7 @@ restored after):
   the client `Stopped`.
 - WebGL built on 6000 only with stripping High, not run (no CORS answer).
 
-What a release still needs: the full matrix above on both editors with all twelve
-packages in one probe player — no row carried on "sources unchanged" — including the
-WebGL browser run, which cannot deliver to tracer until the service answers CORS (say so
-in that record rather than skipping the rest of the browser probe).
+The full run it called for, with browser delivery, is the 2026-11-09 run at `0102b50`.
 
 ## In Unity
 
@@ -337,9 +360,14 @@ A build that succeeds proves nothing about stripping — the player has to run. 
 `UnityWebRequestTransport.Instance`, `AuthClient.Create` and
 `AuthUnityWebRequestTransport.Instance`, `AssetBundleClient.Create` and
 `AssetUnityWebRequestTransport.Instance`, `EventBroker.Create` and its generic `On<T>`,
-`Json.Parse`/`Stringify`, `LogWriters.FromAction`, and `GamebaseRunner.CreatePersistent`), build with
-`ManagedStrippingLevel.High`, then run the player with `-batchmode -nographics
--logFile` and grep the log for what it printed. That is what tests `Runtime/link.xml`.
+`Json.Parse`/`Stringify`, `LogWriters.FromAction`, `GamebaseRunner.CreatePersistent`,
+`PlatformClient.Create`, `LiveMatchClient.Create`, `DeferredMatchClient.Create`,
+`PushClient.Create`, `GameKit.Create`, and `TracerClient.Create` with `TracerRunner` and
+`TracerUnityWebRequestTransport.Instance` sending a report with a screenshot as
+[Against a local tracer](#against-a-local-tracer) says), build with
+`ManagedStrippingLevel.High`, then run the player with `-logFile` under `xvfb-run`
+(not `-nographics`: the screenshot needs a frame, and Unity 6 failed its X11 input check
+without a display) and grep the log for what it printed. That is what tests `Runtime/link.xml`.
 Have it also decrypt one conformance vector through an in-memory `IAssetTransport` (the
 asset crypto on that backend), and point each Unity transport at the `302` server in
 [the auth/asset run](#the-run-that-added-auth-client-and-asset-client): each must answer
@@ -482,7 +510,65 @@ A full run is every check in [In Unity](#in-unity) on both editors. The live sec
 their last dated run. A recipe step that was skipped is named in the record, and stops the
 run being full unless the record says why it does not matter for a tag. The dated
 sections after this one are either partial runs, which say what they cover, or pieces of
-an earlier full run, which say which one.
+an earlier full run, which say which one. A record whose first line says it is not full
+names no S for [release.md](release.md) step 2.
+
+**2026-11-09, at commit `0102b50` — not full: [release.md](release.md) step 2 is not met
+by this sha until a dated line here records the owner accepting the live-CDN gap, or that
+check run (see the skipped steps below).** Unity Personal, Ubuntu 24.04, Unity 2021.3.45f2 and
+Unity 6000.0.25f1, one editor at a time. Embedded test projects came from
+`git archive 0102b50`; consumer projects installed all twelve packages from a bare clone
+pinned to that SHA, and the probe players were built from those consumer projects. The
+2021.3 OpenSSL workaround and temporary bee wrapper were used; the original
+`bee_backend` was put back and its sha256 matched. Native players ran under `xvfb-run`
+with runInBackground; the browser was headless Chrome 157 with SwiftShader.
+
+| Check | Both editors |
+| --- | --- |
+| EditMode, archived sources and git-URL sources | 1117 — 1105 passed, 0 failed, the 12 [named ignored](#run-the-package-tests-inside-the-editor) |
+| Bare-clone install | 12 packages in PackageCache, every lock hash `0102b50`, 12 Runtime DLLs with `NullableContextAttribute`, 0 immutable-folder omissions, 0 `error CS`, no Tests DLL |
+| Samples listed/imported | codec 1, event-broker 1, gamebase 3, KV 1, auth 1, asset 1, logger 1, game-kit 2, tracer 1; platform/match/push 0, matching their manifests |
+| Clean sample compile | ScriptAssemblies and Bee removed first; `CompileScripts` seen, 0 errors, 0 C# warnings. 2021.3 ran the compiler for all twelve package assemblies and the kit sample's; on 6000 the twelve were Bee global-cache hits, so 6000 counts only the samples and the harness |
+| Mono and IL2CPP, stripping High | Factories of eleven packages (game-kit through kit create below), the in-memory asset vector, three Unity transport `302` refusals as `http (302)` and their `404` controls (`kv` null, `auth http (404)`, `asset not_found (404)`), six map and four broker consumer-task shapes `finished=True` on the main thread, default `MapAsync` `status=404 offMain=True`, the imported `WebGLHttpFetcher` lines as the recipe expects (`/slow` at 30 s), stalled KV/Auth/Asset bounded at about 2 s, anonymous KV and platform time, `KitJson.Hash`, kit create and `ShutdownAsync`, DONE |
+| Tracer, native players | `TracerUnityWebRequestTransport` to a local tracer: three envelopes sent, nothing queued or dropped; read back a report with exception frames (Mono 1, IL2CPP 28), a 75 KB screenshot, `log`/`unity.log`/`probe` breadcrumbs, device/OS/trace contexts, linked feedback and log lines; `/drops` empty |
+| WebGL, stripping High, Chrome | Gateway guard `GatewayStoppedException`/`Closed`; the same factory, vector, consumer-task, fetcher, stalled and time checks; Runtime transports refused the redirect as `network (0)`; no-pool controls all `false`; DONE. `:18777` logged every request and no `FOLLOWED`; only the KV request's own target (the control server) received its fake token; no redirect target saw one |
+| WebGL tracer delivery, both editors | To a dev tracer resource over tracer's CORS answer: the client's `Stats` three envelopes sent, nothing queued or dropped; no CORS error in the console; `yyt tracer event` read back each report with frames, a 124 KB screenshot, `log`/`unity.log`/`probe` breadcrumbs and contexts, the linked feedback and log lines; `yyt tracer drops` empty. The events stay in that resource |
+| Browser auth client half | `BuildStartUrl`, the nonce in `sessionStorage` through a jslib, a same-tab return with a fixed fake token, `ParseRedirect` of `Application.absoluteURL`, and a foreign nonce refused as `nonce_mismatch` |
+
+One seam: the first 6000 Mono player was built before two probe bugs were fixed (an
+encrypted-bundle `BaseUrl` the asset client rightly refuses, and a KV client created
+without the token it requires); it stopped partway, the probe was fixed, and every player
+above was built and run again from the same `0102b50` packages.
+
+Skipped or changed steps, each with its reason:
+
+- `FetchConfigAsync` ran against a **disabled** dev auth channel — dev had no active one —
+  and printed `auth http (410)` on every player; `curl` with an `Origin` showed the `410`
+  carries `access-control-allow-origin`, so the browser path is the same as for a `200`.
+  The previous record's extra (non-recipe) kit session, kit time and push registration
+  checks need an active channel and a token that dev lacks, and were skipped; they are
+  not part of the recipe above.
+- **The browser live-CDN check was not run**: this session's permissions refused
+  `yyt asset create` and `asset key show`. The session ran as a delegated agent, so the
+  user was not handed the recipe's script; it is left for them, and the gap is under
+  *Not covered*. **This run is therefore not full for a tag until the owner either
+  accepts that gap or the check is run; until one of those is recorded here with its
+  date, [release.md](release.md) step 2 is not met.** (Context for that decision only:
+  `asset-client` Runtime is unchanged since `41ac320`, whose run passed the check in both
+  `CorsSafe` modes on both editors.)
+- The live console sections were not rerun: no source they exercise changed since their
+  last dated runs. Only `tracer-client`'s console-app path (linked feedback, typed
+  attributes, a wrong key leaving the client `Stopped`) is taken from the `d2bc8b9`
+  partial run; every player row above ran at `0102b50`.
+
+The DSN files, scratch builds, the projects' `Library`, the probe config and the Chrome
+profiles were removed after the run; the original `bee_backend` checksum matched.
+Android/Firebase, a real provider hop and Safari remain unverified (*Not covered*).
+
+### The integrated client run
+
+**A piece of an earlier full run**: the *Last verified* record until the 2026-11-09 run at
+`0102b50` replaced it, at `41ac320` (eleven packages; `tracer-client` did not exist).
 
 **2026-10-12**, at commit `41ac320`, Unity Personal, Ubuntu 24.04,
 Unity 2021.3.45f2 and Unity 6000.0.25f1. Embedded test projects came from
@@ -874,8 +960,8 @@ Not covered, and each is a real gap rather than a formality:
 
 - **`CorsSafe` in Safari.** Chrome and Firefox have run it; Safari is unavailable
   on this Linux host.
-- **`tracer-client` in a browser.** tracer answers no CORS preflight, so a WebGL
-  player is only built ([Against a local tracer](#against-a-local-tracer)).
+- **The browser live-CDN read at `0102b50`** — see that run's deviations.
+- **Android/Firebase receipt and a real provider hop in a browser.**
 
 The documentation compilation, real OAuth redirect and provider exchange, and live
 idle close were subsequently exercised in
@@ -935,7 +1021,8 @@ listed under Not covered. No release tag is implied by this record.
 ## The verification-gap run
 
 **2026-10-13**, source `04334b4` (`v0.3.0`), Ubuntu 24.04, Unity Personal.
-This supplements [Last verified](#last-verified); it is not a new full release matrix.
+This supplements [The integrated client run](#the-integrated-client-run); it is not a new
+full release matrix.
 No Runtime source, public API, package version or release tag changed.
 
 - All 37 C# blocks in the ten consumer guide pages that contain C# blocks compiled
