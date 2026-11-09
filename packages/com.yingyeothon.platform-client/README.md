@@ -5,7 +5,7 @@ Pumped wire clients for platform time, boards, social relations and gateway pres
 ## Install
 
 ```
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.platform-client#v0.3.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.platform-client#v0.3.1
 ```
 
 Dependencies: `com.yingyeothon.codec`, `com.yingyeothon.logger`, `com.yingyeothon.kvstore-client`. Add dependencies before this package on the same release tag.

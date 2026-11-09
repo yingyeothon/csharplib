@@ -5,7 +5,7 @@ Purpose-shaped session, content, conditional save, host room, deterministic turn
 ## Install
 
 ```
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.game-kit#v0.3.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.game-kit#v0.3.1
 ```
 
 Dependencies: `com.yingyeothon.platform-client`, `com.yingyeothon.match-client`, `com.yingyeothon.push-client`, `com.yingyeothon.gamebase-client`, `com.yingyeothon.auth-client`, `com.yingyeothon.kvstore-client`, `com.yingyeothon.codec`, `com.yingyeothon.logger`. Add dependencies before this package on the same release tag.

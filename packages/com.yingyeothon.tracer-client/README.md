@@ -13,7 +13,12 @@ It is debug tooling, not crash reporting: nothing here claims to catch a crash.
 
 ## Install
 
-Not in a release yet: the release that ships this package adds its install URL here.
+```
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.tracer-client#v0.3.1
+```
+
+The fragment pins a release tag; keep the same one on every `com.yingyeothon.*` URL
+([Unity § Installing](../../docs/unity.md#installing)).
 
 ## Usage
 

@@ -102,7 +102,7 @@ namespace Yingyeothon.Tracer
         /// The version this library reports in the envelope header (<c>sdk.version</c>) and in
         /// <c>X-Sentry-Auth</c> (<c>sentry_client=yyt-csharp/&lt;version&gt;</c>); the package version.
         /// </summary>
-        public const string SdkVersion = "0.3.0";
+        public const string SdkVersion = "0.3.1";
 
         /// <summary>
         /// Builds a client. A DSN that is empty or does not parse gives a client in

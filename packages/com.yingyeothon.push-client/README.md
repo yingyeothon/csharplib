@@ -5,7 +5,7 @@ Android FCM registration core with injected device tokens; the game owns Firebas
 ## Install
 
 ```
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.push-client#v0.3.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.push-client#v0.3.1
 ```
 
 Dependencies: `com.yingyeothon.platform-client`, `com.yingyeothon.codec`, `com.yingyeothon.kvstore-client`. Add dependencies before this package on the same release tag.

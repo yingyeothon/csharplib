@@ -1,6 +1,6 @@
 {
   "name": "com.yingyeothon.event-broker",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "displayName": "Yingyeothon Event Broker",
   "description": "Type-safe asynchronous event broker with on/once/off registration.",
   "unity": "2021.3",

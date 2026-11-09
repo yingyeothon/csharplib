@@ -1,6 +1,6 @@
 {
   "name": "com.yingyeothon.tracer-client",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "displayName": "Yingyeothon.Tracer",
   "description": "Client for tracer, the yyt platform's debug-data collector: breadcrumbs, logs, reports with a screenshot, feedback.",
   "unity": "2021.3",
@@ -9,8 +9,8 @@
     "url": "https://github.com/yingyeothon"
   },
   "dependencies": {
-    "com.yingyeothon.codec": "0.3.0",
-    "com.yingyeothon.logger": "0.3.0"
+    "com.yingyeothon.codec": "0.3.1",
+    "com.yingyeothon.logger": "0.3.1"
   },
   "samples": [
     {

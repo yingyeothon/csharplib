@@ -5,7 +5,7 @@ Live socket matchmaking and deferred ticket HTTP clients with one matched-result
 ## Install
 
 ```
-https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.match-client#v0.3.0
+https://github.com/yingyeothon/csharplib.git?path=/packages/com.yingyeothon.match-client#v0.3.1
 ```
 
 Dependencies: `com.yingyeothon.platform-client`, `com.yingyeothon.gamebase-client`, `com.yingyeothon.codec`, `com.yingyeothon.logger`, `com.yingyeothon.kvstore-client`. Add dependencies before this package on the same release tag.
