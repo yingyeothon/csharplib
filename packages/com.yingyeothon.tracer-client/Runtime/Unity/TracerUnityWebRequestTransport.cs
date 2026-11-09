@@ -20,8 +20,9 @@ namespace Yingyeothon.Tracer
     /// redirects (<c>redirectLimit = 0</c>); a browser may follow one regardless, with the
     /// header. A connection or data failure throws a message naming neither the URL nor a
     /// header.
-    /// A browser player cannot reach tracer today: the ingest answers no CORS preflight,
-    /// and <c>X-Sentry-Auth</c> forces one.
+    /// A browser player sends through a CORS preflight (<c>X-Sentry-Auth</c>, gzip and the
+    /// envelope content type force one), which tracer's ingest answers since service tracer
+    /// v0.2.1; an older tracer refuses it and nothing arrives.
     /// </remarks>
     public sealed class TracerUnityWebRequestTransport : ITracerTransport
     {

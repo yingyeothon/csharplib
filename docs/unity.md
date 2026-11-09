@@ -209,9 +209,9 @@ work, and there is no thread to run a receive loop on. `WebSocketTransport.Defau
 therefore throws there **on purpose**, rather than failing quietly at some later point;
 `ConnectAsync()` fails with `GatewayStoppedException`.
 
-**tracer is not reachable from a browser player today**: its ingest answers no CORS
-preflight, and the client's `X-Sentry-Auth` header forces one. Leave the tracer DSN empty
-in a WebGL build ([tracer-client README](../packages/com.yingyeothon.tracer-client/README.md#unity)).
+**tracer is reachable from a browser player** since service tracer v0.2.1: its ingest
+answers the CORS preflight the client's `X-Sentry-Auth` header forces, for any origin
+([tracer-client README](../packages/com.yingyeothon.tracer-client/README.md#unity)).
 
 **A WebGL player has no thread pool and no timer thread.** `Task.Run`, `Task.Delay` and a
 `CancellationTokenSource` with a timeout (`CancelAfter`) never run or fire there, and

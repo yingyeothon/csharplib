@@ -161,11 +161,13 @@ once and counts the rest as `closed`.
 - `TracerUnityWebRequestTransport.Instance` works on every Unity platform, so pass it
   unconditionally. Native players refuse redirects; a failure's message names neither
   the URL nor a header.
-- **A browser player cannot reach tracer today**, so leave the DSN empty in a WebGL
-  build: `X-Sentry-Auth` (and gzip, and the envelope content type) make the browser
-  send a CORS preflight, which tracer does not answer, and with a DSN set the client
-  retries with back-off and the browser console shows a CORS error each time. The
-  package still compiles for WebGL.
+- **A browser (WebGL) player sends like any other**: `X-Sentry-Auth`, gzip and the
+  envelope content type make the browser send a CORS preflight, which tracer's ingest
+  answers since service tracer v0.2.1 (any origin, no credentials, `Retry-After`
+  readable), so 401/429/503 are handled as on native players (verified 2026-11-09:
+  report, logs and screenshot from WebGL on both editors). The page's
+  Content-Security-Policy `connect-src` must list the tracer origin. Against an older
+  tracer the preflight is refused and the client retries with back-off.
 
 ## Testing
 
