@@ -36,9 +36,12 @@ wrong.
   time. The tracer fixture key `fixturewritekeyfixturewritekey00` (resource
   `trc_fixture01`) is the service's golden-envelope value (its `testdata/envelopes/`
   README), used in `tracer-client`'s tests; the `yyt-tracer-dsn` rule refuses any other key in a
-  `…://<key>@<host>/…/trc_…` DSN, and the global allowlist entry `://fixturewritekey`
-  clears only a DSN whose key starts with `fixturewritekey` — console keys are 32 hex
-  characters and never do. The local gitleaks ignored a `[rules.allowlist]` for this
+  `…://<key>@<host>/…/trc_…` DSN, and the global allowlist entry `fixturewritekey`
+  (unanchored: CI's gitleaks v8.18.4 matches allowlist regexes against the captured key, the
+  local build against the line — `://fixturewritekey` passed locally and failed CI from
+  2026-11-08 to 11-09) clears only the fixture key — console keys are 32 hex characters.
+  Prove an allowlist change with **both** builds: the CI one is `gh release download v8.18.4
+  -R gitleaks/gitleaks`. The local gitleaks ignored a `[rules.allowlist]` for this
   rule (2026-11-08); before moving the entry there, prove it with
   `gitleaks detect --no-git --source <scratch dir> --config .gitleaks.toml` over one file
   holding the fixture DSN (must pass) and one with any other 16-character key (must
