@@ -60,5 +60,6 @@ regexes = [
   '''eyJ\.secret-token\.sig''',
   '''\b(0123456789abcdef){4}\b''',
   '''yak1\.ASNFZ4mrze8BI0VniavN7wEjRWeJq83vASNFZ4mrze8''',
-  '''://fixturewritekey''',
+  # Unanchored: gitleaks v8.18.4 (CI) matches the captured secret, newer builds the line.
+  '''fixturewritekey''',
 ]
